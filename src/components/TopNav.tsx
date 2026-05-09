@@ -18,7 +18,7 @@ export function TopNav() {
         <div className="flex items-center gap-2">
           <Leaf className="h-6 w-6 text-emerald-500" />
           <Link href="/" className="flex items-center space-x-2">
-            <span className="font-bold text-xl tracking-tight text-slate-900">ESGIQ</span>
+            <span className="font-bold text-xl tracking-tight text-slate-900">ESGroww</span>
           </Link>
         </div>
 

@@ -24,7 +24,7 @@ export default function Login() {
               <Leaf className="w-8 h-8 text-emerald-600" />
             </div>
           </div>
-          <CardTitle className="text-2xl text-center font-bold text-slate-900">Sign in to ESGIQ</CardTitle>
+          <CardTitle className="text-2xl text-center font-bold text-slate-900">Sign in to ESGroww</CardTitle>
           <CardDescription className="text-center text-slate-500">
             Enterprise Sustainability Readiness Platform
           </CardDescription>

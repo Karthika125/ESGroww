@@ -1,0 +1,37 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Organization {
+  id          String   @id @default(cuid())
+  companyName String
+  industry    String
+  createdAt   DateTime @default(now())
+}
+
+model Upload {
+  id             String   @id @default(cuid())
+  organizationId String
+  category       String
+  fileUrl        String
+  month          String
+  year           Int
+  createdAt      DateTime @default(now())
+}
+
+model ESGScore {
+  id               String   @id @default(cuid())
+  organizationId   String
+  overallScore     Float
+  energyScore      Float
+  waterScore       Float
+  wasteScore       Float
+  governanceScore  Float
+  emissionsScore   Float
+  createdAt        DateTime @default(now())
+}

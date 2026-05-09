@@ -14,7 +14,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "ESGIQ - Sustainability Readiness Platform",
+  title: "ESGroww - Sustainability Readiness Platform",
   description: "Enterprise ESG Readiness Intelligence Platform. Assessing, calculating, and scoring sustainability data.",
 };
 
