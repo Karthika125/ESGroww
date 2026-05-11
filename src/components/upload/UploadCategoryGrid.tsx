@@ -181,7 +181,9 @@ export default function UploadCategoryGrid() {
                   {(cat.name === "Electricity" ||
                     cat.name === "Water" ||
                     cat.name === "Fuel" ||
-                    cat.name === "Waste") && (
+                    cat.name === "Waste" ||
+                    cat.name === "Refrigerants" ||
+                    cat.name === "Transport") && (
                       <ExcelUploadButton
                         category={
                           cat.name.toLowerCase() as
@@ -189,6 +191,8 @@ export default function UploadCategoryGrid() {
                           | "water"
                           | "fuel"
                           | "waste"
+                          | "refrigerants"
+                          | "transport"
                         }
                       />
                     )}

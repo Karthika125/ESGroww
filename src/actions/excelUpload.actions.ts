@@ -309,3 +309,146 @@ export async function uploadWasteExcel(
     };
   }
 }
+
+export async function uploadRefrigerantsExcel(
+  formData: FormData
+) {
+  try {
+    const file = formData.get(
+      "file"
+    ) as File;
+
+    if (!file) {
+      return {
+        success: false,
+        error: "No file uploaded",
+      };
+    }
+
+    const bytes =
+      await file.arrayBuffer();
+
+    const buffer = Buffer.from(bytes);
+
+    const workbook = XLSX.read(buffer, {
+      type: "buffer",
+    });
+
+    const sheetName =
+      workbook.SheetNames[0];
+
+    const worksheet =
+      workbook.Sheets[sheetName];
+
+    const rows: any[] =
+      XLSX.utils.sheet_to_json(
+        worksheet
+      );
+
+    for (const row of rows) {
+      await prisma.refrigerantData.create({
+        data: {
+          hospitalId: HOSPITAL_ID,
+
+          month: String(row.Month),
+
+          year: Number(row.Year),
+
+          refrigerantType: String(
+            row.refrigerantType || ""
+          ),
+
+          refrigerantLeakKg: Number(
+            row.refrigerantLeakKg || 0
+          ),
+        },
+      });
+    }
+
+    revalidatePath("/upload");
+
+    return {
+      success: true,
+      rowsUploaded: rows.length,
+    };
+  } catch (error) {
+    console.error(error);
+
+    return {
+      success: false,
+      error:
+        "Refrigerants upload failed",
+    };
+  }
+}
+
+export async function uploadTransportExcel(
+  formData: FormData
+) {
+  try {
+    const file = formData.get(
+      "file"
+    ) as File;
+
+    if (!file) {
+      return {
+        success: false,
+        error: "No file uploaded",
+      };
+    }
+
+    const bytes =
+      await file.arrayBuffer();
+
+    const buffer = Buffer.from(bytes);
+
+    const workbook = XLSX.read(buffer, {
+      type: "buffer",
+    });
+
+    const sheetName =
+      workbook.SheetNames[0];
+
+    const worksheet =
+      workbook.Sheets[sheetName];
+
+    const rows: any[] =
+      XLSX.utils.sheet_to_json(
+        worksheet
+      );
+
+    for (const row of rows) {
+      await prisma.transportData.create({
+        data: {
+          hospitalId: HOSPITAL_ID,
+
+          month: String(row.Month),
+
+          year: Number(row.Year),
+
+          ambulanceFuelLitres: Number(
+            row.ambulanceFuelLitres || 0
+          ),
+
+          staffCommuteKm: Number(
+            row.staffCommuteKm || 0
+          ),
+        },
+      });
+    }
+
+    revalidatePath("/upload");
+
+    return {
+      success: true,
+      rowsUploaded: rows.length,
+    };
+  } catch (error) {
+    console.error(error);
+
+    return {
+      success: false,
+      error: "Transport upload failed",
+    };
+  }
+}
