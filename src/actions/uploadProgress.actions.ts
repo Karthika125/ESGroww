@@ -39,3 +39,15 @@ export async function getUploadProgress() {
       hospital.transportData.length,
   };
 }
+export async function getRecentUploads() {
+  const uploads =
+    await prisma.upload.findMany({
+      orderBy: {
+        createdAt: "desc",
+      },
+
+      take: 10,
+    });
+
+  return uploads;
+}

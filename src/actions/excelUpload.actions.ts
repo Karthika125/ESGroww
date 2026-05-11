@@ -37,11 +37,10 @@ export async function uploadElectricityExcel(
       type: "buffer",
     });
 
-    const sheetName =
-      workbook.SheetNames[0];
-
     const worksheet =
-      workbook.Sheets[sheetName];
+      workbook.Sheets[
+        workbook.SheetNames[0]
+      ];
 
     const rows: any[] =
       XLSX.utils.sheet_to_json(
@@ -51,7 +50,7 @@ export async function uploadElectricityExcel(
     for (const row of rows) {
       await prisma.electricityData.create({
         data: {
-          hospitalId: HOSPITAL_ID,
+          hospitalId: "cmp0sbyk20000nvk8i9o68s5o",
 
           month: String(row.Month),
 
@@ -67,6 +66,24 @@ export async function uploadElectricityExcel(
         },
       });
     }
+
+    await prisma.upload.create({
+      data: {
+        hospitalId: "cmp0sbyk20000nvk8i9o68s5o",
+
+        category: "Electricity",
+
+        fileUrl: file.name,
+
+        month: String(
+          rows[0]?.Month || ""
+        ),
+
+        year: Number(
+          rows[0]?.Year || 2026
+        ),
+      },
+    });
 
     revalidatePath("/upload");
 
@@ -113,11 +130,10 @@ export async function uploadWaterExcel(
       type: "buffer",
     });
 
-    const sheetName =
-      workbook.SheetNames[0];
-
     const worksheet =
-      workbook.Sheets[sheetName];
+      workbook.Sheets[
+        workbook.SheetNames[0]
+      ];
 
     const rows: any[] =
       XLSX.utils.sheet_to_json(
@@ -127,7 +143,7 @@ export async function uploadWaterExcel(
     for (const row of rows) {
       await prisma.waterData.create({
         data: {
-          hospitalId: HOSPITAL_ID,
+          hospitalId: "cmp0sbyk20000nvk8i9o68s5o",
 
           month: String(row.Month),
 
@@ -143,6 +159,24 @@ export async function uploadWaterExcel(
         },
       });
     }
+
+    await prisma.upload.create({
+      data: {
+        hospitalId: "cmp0sbyk20000nvk8i9o68s5o",
+
+        category: "Water",
+
+        fileUrl: file.name,
+
+        month: String(
+          rows[0]?.Month || ""
+        ),
+
+        year: Number(
+          rows[0]?.Year || 2026
+        ),
+      },
+    });
 
     revalidatePath("/upload");
 
@@ -188,11 +222,10 @@ export async function uploadFuelExcel(
       type: "buffer",
     });
 
-    const sheetName =
-      workbook.SheetNames[0];
-
     const worksheet =
-      workbook.Sheets[sheetName];
+      workbook.Sheets[
+        workbook.SheetNames[0]
+      ];
 
     const rows: any[] =
       XLSX.utils.sheet_to_json(
@@ -202,7 +235,7 @@ export async function uploadFuelExcel(
     for (const row of rows) {
       await prisma.fuelData.create({
         data: {
-          hospitalId: HOSPITAL_ID,
+          hospitalId: "cmp0sbyk20000nvk8i9o68s5o",
 
           month: String(row.Month),
 
@@ -214,6 +247,24 @@ export async function uploadFuelExcel(
         },
       });
     }
+
+    await prisma.upload.create({
+      data: {
+        hospitalId: "cmp0sbyk20000nvk8i9o68s5o",
+
+        category: "Fuel",
+
+        fileUrl: file.name,
+
+        month: String(
+          rows[0]?.Month || ""
+        ),
+
+        year: Number(
+          rows[0]?.Year || 2026
+        ),
+      },
+    });
 
     revalidatePath("/upload");
 
@@ -259,11 +310,10 @@ export async function uploadWasteExcel(
       type: "buffer",
     });
 
-    const sheetName =
-      workbook.SheetNames[0];
-
     const worksheet =
-      workbook.Sheets[sheetName];
+      workbook.Sheets[
+        workbook.SheetNames[0]
+      ];
 
     const rows: any[] =
       XLSX.utils.sheet_to_json(
@@ -273,7 +323,7 @@ export async function uploadWasteExcel(
     for (const row of rows) {
       await prisma.wasteData.create({
         data: {
-          hospitalId: HOSPITAL_ID,
+          hospitalId: "cmp0sbyk20000nvk8i9o68s5o",
 
           month: String(row.Month),
 
@@ -294,6 +344,24 @@ export async function uploadWasteExcel(
       });
     }
 
+    await prisma.upload.create({
+      data: {
+        hospitalId: "cmp0sbyk20000nvk8i9o68s5o",
+
+        category: "Waste",
+
+        fileUrl: file.name,
+
+        month: String(
+          rows[0]?.Month || ""
+        ),
+
+        year: Number(
+          rows[0]?.Year || 2026
+        ),
+      },
+    });
+
     revalidatePath("/upload");
 
     return {
@@ -309,6 +377,10 @@ export async function uploadWasteExcel(
     };
   }
 }
+
+/* ============================= */
+/* REFRIGERANTS UPLOAD           */
+/* ============================= */
 
 export async function uploadRefrigerantsExcel(
   formData: FormData
@@ -334,11 +406,10 @@ export async function uploadRefrigerantsExcel(
       type: "buffer",
     });
 
-    const sheetName =
-      workbook.SheetNames[0];
-
     const worksheet =
-      workbook.Sheets[sheetName];
+      workbook.Sheets[
+        workbook.SheetNames[0]
+      ];
 
     const rows: any[] =
       XLSX.utils.sheet_to_json(
@@ -348,7 +419,7 @@ export async function uploadRefrigerantsExcel(
     for (const row of rows) {
       await prisma.refrigerantData.create({
         data: {
-          hospitalId: HOSPITAL_ID,
+          hospitalId: "cmp0sbyk20000nvk8i9o68s5o",
 
           month: String(row.Month),
 
@@ -364,6 +435,24 @@ export async function uploadRefrigerantsExcel(
         },
       });
     }
+
+    await prisma.upload.create({
+      data: {
+        hospitalId: "cmp0sbyk20000nvk8i9o68s5o",
+
+        category: "Refrigerants",
+
+        fileUrl: file.name,
+
+        month: String(
+          rows[0]?.Month || ""
+        ),
+
+        year: Number(
+          rows[0]?.Year || 2026
+        ),
+      },
+    });
 
     revalidatePath("/upload");
 
@@ -381,6 +470,10 @@ export async function uploadRefrigerantsExcel(
     };
   }
 }
+
+/* ============================= */
+/* TRANSPORT UPLOAD              */
+/* ============================= */
 
 export async function uploadTransportExcel(
   formData: FormData
@@ -406,11 +499,10 @@ export async function uploadTransportExcel(
       type: "buffer",
     });
 
-    const sheetName =
-      workbook.SheetNames[0];
-
     const worksheet =
-      workbook.Sheets[sheetName];
+      workbook.Sheets[
+        workbook.SheetNames[0]
+      ];
 
     const rows: any[] =
       XLSX.utils.sheet_to_json(
@@ -420,7 +512,7 @@ export async function uploadTransportExcel(
     for (const row of rows) {
       await prisma.transportData.create({
         data: {
-          hospitalId: HOSPITAL_ID,
+          hospitalId: "cmp0sbyk20000nvk8i9o68s5o",
 
           month: String(row.Month),
 
@@ -437,6 +529,24 @@ export async function uploadTransportExcel(
       });
     }
 
+    await prisma.upload.create({
+      data: {
+        hospitalId: "cmp0sbyk20000nvk8i9o68s5o",
+
+        category: "Transport",
+
+        fileUrl: file.name,
+
+        month: String(
+          rows[0]?.Month || ""
+        ),
+
+        year: Number(
+          rows[0]?.Year || 2026
+        ),
+      },
+    });
+
     revalidatePath("/upload");
 
     return {
@@ -448,7 +558,8 @@ export async function uploadTransportExcel(
 
     return {
       success: false,
-      error: "Transport upload failed",
+      error:
+        "Transport upload failed",
     };
   }
 }
