@@ -4,7 +4,7 @@ import Link from "next/link";
 import { Leaf, User } from "lucide-react";
 import { usePathname } from "next/navigation";
 
-export function TopNav() {
+export default function TopNav() {
   const pathname = usePathname();
 
   // Simple step logic based on pathname

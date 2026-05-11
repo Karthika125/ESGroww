@@ -1,7 +1,7 @@
 "use client";
 import { CheckCircle2 } from "lucide-react";
 
-export function RecentUploadsTable() {
+export default function RecentUploadsTable() {
   const rows = [
     { file: "Electricity_Jul2024.pdf", cat: "Electricity", month: "Jul 2024", date: "05 Aug 2024" },
     { file: "Water_Jul2024.pdf", cat: "Water", month: "Jul 2024", date: "05 Aug 2024" },

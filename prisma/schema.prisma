@@ -8,30 +8,70 @@ datasource db {
 }
 
 model Organization {
-  id          String   @id @default(cuid())
-  companyName String
-  industry    String
-  createdAt   DateTime @default(now())
+  id            String        @id @default(cuid())
+  companyName   String
+  industry      String
+  builtUpArea   Float         @default(0)
+
+  createdAt     DateTime      @default(now())
+
+  monthlyData   MonthlyData[]
+  uploads       Upload[]
+  esgScores     ESGScore[]
+}
+
+model MonthlyData {
+  id                 String   @id @default(cuid())
+
+  organizationId     String
+  organization       Organization @relation(fields: [organizationId], references: [id])
+
+  month              String
+  year               Int
+
+  electricityKwh     Float @default(0)
+  renewableKwh       Float @default(0)
+
+  dgDieselLitres     Float @default(0)
+
+  waterKl            Float @default(0)
+  recycledWaterKl    Float @default(0)
+
+  totalWasteKg       Float @default(0)
+  recycledWasteKg    Float @default(0)
+
+  createdAt          DateTime @default(now())
 }
 
 model Upload {
   id             String   @id @default(cuid())
+
   organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id])
+
   category       String
   fileUrl        String
+
   month          String
   year           Int
+
   createdAt      DateTime @default(now())
 }
 
 model ESGScore {
   id               String   @id @default(cuid())
+
   organizationId   String
+  organization     Organization @relation(fields: [organizationId], references: [id])
+
   overallScore     Float
+
   energyScore      Float
   waterScore       Float
   wasteScore       Float
+
   governanceScore  Float
   emissionsScore   Float
+
   createdAt        DateTime @default(now())
 }
