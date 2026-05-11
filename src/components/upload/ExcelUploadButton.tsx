@@ -4,9 +4,24 @@ import { useState } from "react";
 
 import { UploadCloud } from "lucide-react";
 
-import { uploadElectricityExcel } from "@/actions/excelUpload.actions";
+import {
+  uploadElectricityExcel,
+  uploadWaterExcel,
+  uploadFuelExcel,
+  uploadWasteExcel,
+} from "@/actions/excelUpload.actions";
 
-export default function ExcelUploadButton() {
+interface Props {
+  category:
+    | "electricity"
+    | "water"
+    | "fuel"
+    | "waste";
+}
+
+export default function ExcelUploadButton({
+  category,
+}: Props) {
   const [loading, setLoading] =
     useState(false);
 
@@ -17,7 +32,6 @@ export default function ExcelUploadButton() {
       "file"
     ) as File;
 
-    // Prevent empty submit
     if (!file || file.size === 0) {
       alert("Please select an Excel file");
 
@@ -26,10 +40,43 @@ export default function ExcelUploadButton() {
 
     setLoading(true);
 
-    const result =
-      await uploadElectricityExcel(
-        formData
-      );
+    let result;
+
+    switch (category) {
+      case "electricity":
+        result =
+          await uploadElectricityExcel(
+            formData
+          );
+        break;
+
+      case "water":
+        result =
+          await uploadWaterExcel(
+            formData
+          );
+        break;
+
+      case "fuel":
+        result =
+          await uploadFuelExcel(
+            formData
+          );
+        break;
+
+      case "waste":
+        result =
+          await uploadWasteExcel(
+            formData
+          );
+        break;
+
+      default:
+        result = {
+          success: false,
+          error: "Invalid category",
+        };
+    }
 
     alert(
       result.success

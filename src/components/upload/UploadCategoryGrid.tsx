@@ -32,7 +32,6 @@ export default function UploadCategoryGrid() {
 
     loadProgress();
   }, []);
-
   const categories = [
     {
       name: "Electricity",
@@ -40,8 +39,10 @@ export default function UploadCategoryGrid() {
       color: "text-amber-500",
       desc: "Upload electricity bills",
       uploadedMonths:
-        progress?.electricityMonths || 0,
+        progress?.electricity || 0,
       totalMonths: 12,
+      template:
+        "/templates/electricity-template.xlsx",
     },
 
     {
@@ -50,8 +51,10 @@ export default function UploadCategoryGrid() {
       color: "text-blue-500",
       desc: "Upload water bills",
       uploadedMonths:
-        progress?.waterMonths || 0,
+        progress?.water || 0,
       totalMonths: 12,
+      template:
+        "/templates/water-template.xlsx",
     },
 
     {
@@ -60,8 +63,10 @@ export default function UploadCategoryGrid() {
       color: "text-slate-700",
       desc: "Upload fuel / DG invoices",
       uploadedMonths:
-        progress?.fuelMonths || 0,
+        progress?.fuel || 0,
       totalMonths: 12,
+      template:
+        "/templates/fuel-template.xlsx",
     },
 
     {
@@ -70,8 +75,10 @@ export default function UploadCategoryGrid() {
       color: "text-green-600",
       desc: "Upload waste records",
       uploadedMonths:
-        progress?.wasteMonths || 0,
+        progress?.waste || 0,
       totalMonths: 12,
+      template:
+        "/templates/waste-template.xlsx",
     },
 
     {
@@ -79,8 +86,11 @@ export default function UploadCategoryGrid() {
       icon: Snowflake,
       color: "text-sky-400",
       desc: "Upload AC / Refrigerant data",
-      uploadedMonths: 0,
+      uploadedMonths:
+        progress?.refrigerants || 0,
       totalMonths: 12,
+      template:
+        "/templates/refrigerants-template.xlsx",
     },
 
     {
@@ -88,8 +98,11 @@ export default function UploadCategoryGrid() {
       icon: Truck,
       color: "text-emerald-700",
       desc: "Upload transport data",
-      uploadedMonths: 0,
+      uploadedMonths:
+        progress?.transport || 0,
       totalMonths: 12,
+      template:
+        "/templates/transport-template.xlsx",
     },
   ];
 
@@ -110,8 +123,8 @@ export default function UploadCategoryGrid() {
             progressPercentage >= 80
               ? "text-emerald-600"
               : progressPercentage >= 40
-              ? "text-amber-600"
-              : "text-rose-600";
+                ? "text-amber-600"
+                : "text-rose-600";
 
           return (
             <Card
@@ -165,25 +178,33 @@ export default function UploadCategoryGrid() {
 
                 {/* Actions */}
                 <div className="flex flex-col gap-3">
-                  {cat.name ===
-                  "Electricity" ? (
-                    <ExcelUploadButton />
-                  ) : (
-                    <Button
-                      variant="outline"
-                      className="w-full border-emerald-200 text-emerald-700 hover:bg-emerald-50"
-                    >
-                      <UploadCloud className="w-4 h-4 mr-2" />
-                      Upload Excel
-                    </Button>
-                  )}
+                  {(cat.name === "Electricity" ||
+                    cat.name === "Water" ||
+                    cat.name === "Fuel" ||
+                    cat.name === "Waste") && (
+                      <ExcelUploadButton
+                        category={
+                          cat.name.toLowerCase() as
+                          | "electricity"
+                          | "water"
+                          | "fuel"
+                          | "waste"
+                        }
+                      />
+                    )}
 
-                  <Button
-                    variant="ghost"
-                    className="w-full text-slate-600 hover:bg-slate-100"
+                  <a
+                    href={cat.template}
+                    download
+                    className="w-full"
                   >
-                    Download Template
-                  </Button>
+                    <Button
+                      variant="ghost"
+                      className="w-full text-slate-600 hover:bg-slate-100"
+                    >
+                      Download Template
+                    </Button>
+                  </a>
                 </div>
               </CardContent>
             </Card>

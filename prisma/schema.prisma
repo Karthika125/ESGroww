@@ -7,71 +7,163 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model Organization {
-  id            String        @id @default(cuid())
-  companyName   String
-  industry      String
-  builtUpArea   Float         @default(0)
+model Hospital {
+  id                String   @id @default(cuid())
 
-  createdAt     DateTime      @default(now())
+  hospitalName      String
+  industry          String   @default("Healthcare")
 
-  monthlyData   MonthlyData[]
-  uploads       Upload[]
-  esgScores     ESGScore[]
+  builtUpArea       Float    @default(0)
+  numberOfBeds      Int      @default(0)
+
+  createdAt         DateTime @default(now())
+
+  electricityData   ElectricityData[]
+  waterData         WaterData[]
+  fuelData          FuelData[]
+  wasteData         WasteData[]
+  refrigerantData   RefrigerantData[]
+  transportData     TransportData[]
+
+  uploads           Upload[]
+  esgScores         ESGScore[]
+
+  governanceData    GovernanceData?
 }
 
-model MonthlyData {
-  id                 String   @id @default(cuid())
+model ElectricityData {
+  id                String   @id @default(cuid())
 
-  organizationId     String
-  organization       Organization @relation(fields: [organizationId], references: [id])
+  hospitalId        String
+  hospital          Hospital @relation(fields: [hospitalId], references: [id])
 
-  month              String
-  year               Int
+  month             String
+  year              Int
 
-  electricityKwh     Float @default(0)
-  renewableKwh       Float @default(0)
+  electricityKwh    Float    @default(0)
+  renewableKwh      Float    @default(0)
 
-  dgDieselLitres     Float @default(0)
+  createdAt         DateTime @default(now())
+}
 
-  waterKl            Float @default(0)
-  recycledWaterKl    Float @default(0)
+model WaterData {
+  id                String   @id @default(cuid())
 
-  totalWasteKg       Float @default(0)
-  recycledWasteKg    Float @default(0)
+  hospitalId        String
+  hospital          Hospital @relation(fields: [hospitalId], references: [id])
 
-  createdAt          DateTime @default(now())
+  month             String
+  year              Int
+
+  waterKl           Float    @default(0)
+  recycledWaterKl   Float    @default(0)
+
+  createdAt         DateTime @default(now())
+}
+
+model FuelData {
+  id                String   @id @default(cuid())
+
+  hospitalId        String
+  hospital          Hospital @relation(fields: [hospitalId], references: [id])
+
+  month             String
+  year              Int
+
+  dgDieselLitres    Float    @default(0)
+
+  createdAt         DateTime @default(now())
+}
+
+model WasteData {
+  id                     String   @id @default(cuid())
+
+  hospitalId             String
+  hospital               Hospital @relation(fields: [hospitalId], references: [id])
+
+  month                  String
+  year                   Int
+
+  biomedicalWasteKg      Float    @default(0)
+  recyclableWasteKg      Float    @default(0)
+  landfillWasteKg        Float    @default(0)
+
+  createdAt              DateTime @default(now())
+}
+
+model RefrigerantData {
+  id                     String   @id @default(cuid())
+
+  hospitalId             String
+  hospital               Hospital @relation(fields: [hospitalId], references: [id])
+
+  month                  String
+  year                   Int
+
+  refrigerantType        String
+  refrigerantLeakKg      Float    @default(0)
+
+  createdAt              DateTime @default(now())
+}
+
+model TransportData {
+  id                     String   @id @default(cuid())
+
+  hospitalId             String
+  hospital               Hospital @relation(fields: [hospitalId], references: [id])
+
+  month                  String
+  year                   Int
+
+  ambulanceFuelLitres    Float    @default(0)
+  staffCommuteKm         Float    @default(0)
+
+  createdAt              DateTime @default(now())
+}
+
+model GovernanceData {
+  id                         String   @id @default(cuid())
+
+  hospitalId                 String   @unique
+  hospital                   Hospital @relation(fields: [hospitalId], references: [id])
+
+  hasEsgPolicy               Boolean  @default(false)
+  hasSustainabilityCommittee Boolean  @default(false)
+  hasAuditReports            Boolean  @default(false)
+  hasComplianceDocs          Boolean  @default(false)
+
+  createdAt                  DateTime @default(now())
 }
 
 model Upload {
-  id             String   @id @default(cuid())
+  id                String   @id @default(cuid())
 
-  organizationId String
-  organization   Organization @relation(fields: [organizationId], references: [id])
+  hospitalId        String
+  hospital          Hospital @relation(fields: [hospitalId], references: [id])
 
-  category       String
-  fileUrl        String
+  category          String
+  fileUrl           String
 
-  month          String
-  year           Int
+  month             String
+  year              Int
 
-  createdAt      DateTime @default(now())
+  createdAt         DateTime @default(now())
 }
 
 model ESGScore {
-  id               String   @id @default(cuid())
+  id                    String   @id @default(cuid())
 
-  organizationId   String
-  organization     Organization @relation(fields: [organizationId], references: [id])
+  hospitalId            String
+  hospital              Hospital @relation(fields: [hospitalId], references: [id])
 
-  overallScore     Float
+  overallScore          Float
 
-  energyScore      Float
-  waterScore       Float
-  wasteScore       Float
+  energyScore           Float
+  waterScore            Float
+  wasteScore            Float
 
-  governanceScore  Float
-  emissionsScore   Float
+  governanceScore       Float
+  emissionsScore        Float
 
-  createdAt        DateTime @default(now())
+  createdAt             DateTime @default(now())
 }

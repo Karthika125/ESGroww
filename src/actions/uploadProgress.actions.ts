@@ -3,40 +3,39 @@
 import { prisma } from "@/lib/db";
 
 export async function getUploadProgress() {
-  const org = await prisma.organization.findFirst({
-    include: {
-      monthlyData: true,
-    },
-  });
+  const hospital =
+    await prisma.hospital.findFirst({
+      include: {
+        electricityData: true,
+        waterData: true,
+        fuelData: true,
+        wasteData: true,
+        refrigerantData: true,
+        transportData: true,
+      },
+    });
 
-  if (!org) {
+  if (!hospital) {
     return null;
   }
 
-  const electricityMonths =
-    org.monthlyData.filter(
-      (m) => m.electricityKwh > 0
-    ).length;
-
-  const waterMonths =
-    org.monthlyData.filter(
-      (m) => m.waterKl > 0
-    ).length;
-
-  const fuelMonths =
-    org.monthlyData.filter(
-      (m) => m.dgDieselLitres > 0
-    ).length;
-
-  const wasteMonths =
-    org.monthlyData.filter(
-      (m) => m.totalWasteKg > 0
-    ).length;
-
   return {
-    electricityMonths,
-    waterMonths,
-    fuelMonths,
-    wasteMonths,
+    electricity:
+      hospital.electricityData.length,
+
+    water:
+      hospital.waterData.length,
+
+    fuel:
+      hospital.fuelData.length,
+
+    waste:
+      hospital.wasteData.length,
+
+    refrigerants:
+      hospital.refrigerantData.length,
+
+    transport:
+      hospital.transportData.length,
   };
 }
