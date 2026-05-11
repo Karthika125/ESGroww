@@ -30,6 +30,15 @@ export default function UploadPage() {
         <div className="mt-10">
           <RecentUploadsTable />
         </div>
+
+        <div className="mt-10 flex justify-end">
+          <a
+            href="/summary"
+            className="bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-3 rounded-xl font-medium transition rounded-xl"
+          >
+            Continue to Summary →
+          </a>
+        </div>
       </main>
     </div>
   );
