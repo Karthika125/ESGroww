@@ -1,7 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
-import { SustainabilityOverview } from "@/components/dashboard/SustainabilityOverview";
+import SustainabilityOverview from "@/components/dashboard/SustainabilityOverview";
 import { CertificationReadiness } from "@/components/dashboard/CertificationReadiness";
 import { RegulatoryReadiness } from "@/components/dashboard/RegulatoryReadiness";
 import { StrengthsWidget, CriticalGapsWidget, ActionRoadmapWidget } from "@/components/dashboard/RoadmapWidgets";

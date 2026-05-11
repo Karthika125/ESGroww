@@ -1,217 +1,310 @@
 "use server";
 
-import { calculateEmissions, calculateReadinessScores } from "@/lib/esgCalculations";
 import { prisma } from "@/lib/db";
 
-export async function fetchDashboardIntelligence(
-  orgId: string = "mock-id"
-) {
-  /**
-   * FETCH ORGANIZATION
-   */
-  const org = await prisma.organization.findFirst();
+import {
+  calculateScope2Emissions,
+  calculateDieselEmissions,
+  calculateTransportEmissions,
+  calculateRefrigerantEmissions,
 
-  if (!org) {
+  calculateRenewablePercentage,
+  calculateWaterRecyclingPercentage,
+  calculateWasteDiversionPercentage,
+
+  calculateEnergyPerBed,
+  calculateWaterPerBed,
+  calculateWastePerBed,
+
+  calculateESGReadinessScore,
+} from "@/lib/esgCalculations";
+
+export async function fetchDashboardIntelligence() {
+  const hospital =
+    await prisma.hospital.findFirst({
+      include: {
+        electricityData: true,
+        waterData: true,
+        fuelData: true,
+        wasteData: true,
+        refrigerantData: true,
+        transportData: true,
+        governanceData: true,
+      },
+    });
+
+  if (!hospital) {
     throw new Error(
-      "No organization found. Please add one in Prisma Studio."
+      "No hospital found."
     );
   }
 
-  /**
-   * TEMP MOCK DATA
-   * Since monthlyData/governanceData relations
-   * are not created yet in Prisma schema,
-   * we simulate operational sustainability data.
-   */
+  /* =============================== */
+  /* ELECTRICITY                     */
+  /* =============================== */
 
-  const monthlyData = [
-    {
-      electricityKwh: 88000,
-      renewableKwh: 0,
-      dgDieselLitres: 1200,
-      waterKl: 2400,
-      recycledWaterKl: 600,
-      totalWasteKg: 12000,
-      recycledWasteKg: 7000,
-    },
-  ];
-
-  const governanceData = {
-    hasEsgPolicy: true,
-    hasSustainabilityComm: true,
-    hasAuditReports: true,
-    hasComplianceDocs: true,
-  };
-
-  /**
-   * MONTH CALCULATIONS
-   */
-  const monthsUploaded = monthlyData?.length || 1;
-  const extrapolationFactor = 12 / monthsUploaded;
-
-  /**
-   * ENERGY
-   */
   const electricityKwh =
-    monthlyData.reduce(
-      (acc, m) => acc + (m.electricityKwh || 0),
+    hospital.electricityData.reduce(
+      (acc, row) =>
+        acc + row.electricityKwh,
       0
-    ) * extrapolationFactor;
+    );
 
   const renewableKwh =
-    monthlyData.reduce(
-      (acc, m) => acc + (m.renewableKwh || 0),
+    hospital.electricityData.reduce(
+      (acc, row) =>
+        acc + row.renewableKwh,
       0
-    ) * extrapolationFactor;
+    );
 
-  const dgDieselLitres =
-    monthlyData.reduce(
-      (acc, m) => acc + (m.dgDieselLitres || 0),
-      0
-    ) * extrapolationFactor;
+  /* =============================== */
+  /* WATER                           */
+  /* =============================== */
 
-  /**
-   * WATER
-   */
   const waterKl =
-    monthlyData.reduce(
-      (acc, m) => acc + (m.waterKl || 0),
+    hospital.waterData.reduce(
+      (acc, row) =>
+        acc + row.waterKl,
       0
-    ) * extrapolationFactor;
+    );
 
   const recycledWaterKl =
-    monthlyData.reduce(
-      (acc, m) => acc + (m.recycledWaterKl || 0),
+    hospital.waterData.reduce(
+      (acc, row) =>
+        acc + row.recycledWaterKl,
       0
-    ) * extrapolationFactor;
+    );
 
-  /**
-   * WASTE
-   */
+  /* =============================== */
+  /* FUEL                            */
+  /* =============================== */
+
+  const dgDieselLitres =
+    hospital.fuelData.reduce(
+      (acc, row) =>
+        acc + row.dgDieselLitres,
+      0
+    );
+
+  /* =============================== */
+  /* WASTE                           */
+  /* =============================== */
+
   const totalWasteKg =
-    monthlyData.reduce(
-      (acc, m) => acc + (m.totalWasteKg || 0),
+    hospital.wasteData.reduce(
+      (acc, row) =>
+        acc +
+        row.biomedicalWasteKg +
+        row.recyclableWasteKg +
+        row.landfillWasteKg,
       0
-    ) * extrapolationFactor;
+    );
 
-  const recycledWasteKg =
-    monthlyData.reduce(
-      (acc, m) => acc + (m.recycledWasteKg || 0),
+  const recyclableWasteKg =
+    hospital.wasteData.reduce(
+      (acc, row) =>
+        acc +
+        row.recyclableWasteKg,
       0
-    ) * extrapolationFactor;
+    );
 
-  /**
-   * EMISSIONS
-   */
-  const emissions = calculateEmissions(
-    electricityKwh,
-    dgDieselLitres
-  );
+  /* =============================== */
+  /* TRANSPORT                       */
+  /* =============================== */
 
-  /**
-   * ESG READINESS
-   */
-  const readiness = calculateReadinessScores({
-    energyKwh: electricityKwh,
-    renewableKwh,
-    waterKl,
-    recycledWaterKl,
-    totalWasteKg,
-    recycledWasteKg,
-    govPolicy: governanceData.hasEsgPolicy,
-    govComm: governanceData.hasSustainabilityComm,
-    govAudit: governanceData.hasAuditReports,
-    govDocs: governanceData.hasComplianceDocs,
-  });
+  const ambulanceFuelLitres =
+    hospital.transportData.reduce(
+      (acc, row) =>
+        acc +
+        row.ambulanceFuelLitres,
+      0
+    );
 
-  /**
-   * KPI CALCULATIONS
-   */
-  const builtUpArea = 10000;
+  /* =============================== */
+  /* EMISSIONS                       */
+  /* =============================== */
 
-  const energyIntensity =
-    builtUpArea > 0
-      ? electricityKwh / builtUpArea
-      : 0;
+  const scope2Emissions =
+    calculateScope2Emissions(
+      electricityKwh
+    );
 
-  const waterIntensity =
-    builtUpArea > 0
-      ? waterKl / builtUpArea
-      : 0;
+  const dieselEmissions =
+    calculateDieselEmissions(
+      dgDieselLitres
+    );
 
-  /**
-   * CERTIFICATION MAPPING
-   */
-  let recommendedCertifications = [
+  const transportEmissions =
+    calculateTransportEmissions(
+      ambulanceFuelLitres
+    );
+
+  let refrigerantEmissions = 0;
+
+  for (const row of hospital.refrigerantData) {
+    refrigerantEmissions +=
+      calculateRefrigerantEmissions(
+        row.refrigerantType,
+        row.refrigerantLeakKg
+      );
+  }
+
+  const totalEmissions =
+    scope2Emissions +
+    dieselEmissions +
+    transportEmissions +
+    refrigerantEmissions;
+
+  /* =============================== */
+  /* PERCENTAGES                     */
+  /* =============================== */
+
+  const renewablePercentage =
+    calculateRenewablePercentage(
+      renewableKwh,
+      electricityKwh
+    );
+
+  const waterRecyclingPercentage =
+    calculateWaterRecyclingPercentage(
+      recycledWaterKl,
+      waterKl
+    );
+
+  const wasteDiversionPercentage =
+    calculateWasteDiversionPercentage(
+      recyclableWasteKg,
+      totalWasteKg
+    );
+
+  /* =============================== */
+  /* HOSPITAL KPIs                   */
+  /* =============================== */
+
+  const energyPerBed =
+    calculateEnergyPerBed(
+      electricityKwh,
+      hospital.numberOfBeds
+    );
+
+  const waterPerBed =
+    calculateWaterPerBed(
+      waterKl,
+      hospital.numberOfBeds
+    );
+
+  const wastePerBed =
+    calculateWastePerBed(
+      totalWasteKg,
+      hospital.numberOfBeds
+    );
+
+  /* =============================== */
+  /* ESG READINESS SCORE             */
+  /* =============================== */
+
+  const readinessScore =
+    calculateESGReadinessScore({
+      renewablePercentage,
+
+      waterRecyclingPercentage,
+
+      wasteDiversionPercentage,
+
+      hasEsgPolicy:
+        hospital.governanceData
+          ?.hasEsgPolicy || false,
+
+      hasAuditReports:
+        hospital.governanceData
+          ?.hasAuditReports || false,
+    });
+
+  /* =============================== */
+  /* CERTIFICATIONS                  */
+  /* =============================== */
+
+  const certifications = [
     {
-      name: "ISO 14001",
-      score: readiness.totalScore + 4,
-      status:
-        readiness.totalScore > 75
+      name: "NABH",
+
+      readiness:
+        readinessScore > 75
           ? "Strong Readiness"
           : "Moderate Readiness",
-      color:
-        readiness.totalScore > 75
-          ? "text-emerald-600"
-          : "text-amber-600",
-      time: "6-12 months",
+    },
+
+    {
+      name: "ISO 14001",
+
+      readiness:
+        readinessScore > 65
+          ? "Certification Possible"
+          : "Needs Improvement",
+    },
+
+    {
+      name: "IGBC Healthcare",
+
+      readiness:
+        readinessScore > 70
+          ? "Strong Potential"
+          : "Developing",
     },
   ];
 
-  if (org.industry === "Healthcare") {
-    recommendedCertifications.unshift(
-      {
-        name: "NABH",
-        score: readiness.totalScore + 10,
-        status:
-          readiness.totalScore > 70
-            ? "Strong Readiness"
-            : "Certification Possible",
-        color: "text-emerald-600",
-        time: "3-6 months",
-      },
-      {
-        name: "IGBC Healthcare",
-        score: readiness.totalScore + 2,
-        status: "Certification Possible",
-        color: "text-amber-600",
-        time: "6-12 months",
-      }
-    );
-  }
+  /* =============================== */
+  /* FINAL RESPONSE                  */
+  /* =============================== */
 
-  /**
-   * FINAL RESPONSE
-   */
   return {
-    organization: org.companyName,
-    industry: org.industry,
+    hospitalName:
+      hospital.hospitalName,
 
-    emissions,
+    industry:
+      hospital.industry,
 
-    readiness,
+    emissions: {
+      scope2Emissions:
+        scope2Emissions.toFixed(2),
 
-    kpis: {
-      energyIntensity:
-        energyIntensity.toFixed(2),
+      dieselEmissions:
+        dieselEmissions.toFixed(2),
 
-      waterIntensity:
-        waterIntensity.toFixed(2),
+      transportEmissions:
+        transportEmissions.toFixed(2),
 
-      renewablePercentage:
-        (
-          (renewableKwh / electricityKwh) *
-          100
-        ).toFixed(2),
+      refrigerantEmissions:
+        refrigerantEmissions.toFixed(2),
 
-      recyclingRate:
-        (
-          (recycledWasteKg / totalWasteKg) *
-          100
-        ).toFixed(2),
+      totalEmissions:
+        totalEmissions.toFixed(2),
     },
 
-    certifications:
-      recommendedCertifications,
+    percentages: {
+      renewablePercentage:
+        renewablePercentage.toFixed(2),
+
+      waterRecyclingPercentage:
+        waterRecyclingPercentage.toFixed(2),
+
+      wasteDiversionPercentage:
+        wasteDiversionPercentage.toFixed(2),
+    },
+
+    kpis: {
+      energyPerBed:
+        energyPerBed.toFixed(2),
+
+      waterPerBed:
+        waterPerBed.toFixed(2),
+
+      wastePerBed:
+        wastePerBed.toFixed(2),
+    },
+
+    readinessScore,
+
+    certifications,
   };
 }

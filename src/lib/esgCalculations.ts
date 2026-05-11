@@ -1,86 +1,230 @@
-export function calculateEmissions(energyKwh: number, dgDieselLiters: number) {
-  // Scope 1: Diesel / Fuel / Refrigerants.
-  // Standard factor: ~ 2.6 kg CO2e per Litre of Diesel
-  const scope1 = dgDieselLiters * 0.0026; 
+/* ========================================= */
+/* ESGROWW HOSPITAL ESG CALCULATION ENGINE   */
+/* ========================================= */
 
-  // Scope 2: Purchased Electricity
-  // Grid factor: 0.72 tCO2e/MWh -> 0.00072 tCO2e/kWh
-  const scope2 = energyKwh * 0.00072;
+/**
+ * EMISSION FACTORS
+ *
+ * NOTE:
+ * These can later be moved to DB/config.
+ */
 
-  // Scope 3: Estimated (Transport, Waste, etc)
-  const scope3 = (scope1 + scope2) * 0.15; // Rough estimate of 15% for missing fields
+const EMISSION_FACTORS = {
+  electricity: 0.82, // kg CO2e / kWh
 
-  const total = scope1 + scope2 + scope3;
+  diesel: 2.68, // kg CO2e / litre
 
-  return { scope1, scope2, scope3, total };
+  ambulanceFuel: 2.68,
+
+  refrigerants: {
+    R410A: 2088,
+    R32: 675,
+    R134A: 1430,
+  },
+};
+
+/* ========================================= */
+/* SCOPE 2 EMISSIONS                         */
+/* ========================================= */
+
+export function calculateScope2Emissions(
+  electricityKwh: number
+) {
+  return (
+    electricityKwh *
+    EMISSION_FACTORS.electricity
+  );
 }
 
-export function calculateReadinessScores(
-  data: {
-    energyKwh: number;
-    renewableKwh: number;
-    waterKl: number;
-    recycledWaterKl: number;
-    totalWasteKg: number;
-    recycledWasteKg: number;
-    govPolicy: boolean;
-    govComm: boolean;
-    govAudit: boolean;
-    govDocs: boolean;
-  }
+/* ========================================= */
+/* SCOPE 1 EMISSIONS                         */
+/* ========================================= */
+
+export function calculateDieselEmissions(
+  dgDieselLitres: number
 ) {
-  // Energy Score Formulation (out of 25)
-  // Max score if 100% renewable + complete tracking.
-  const renewablePct = data.energyKwh > 0 ? (data.renewableKwh / data.energyKwh) * 100 : 0;
-  let energyBase = 15; // baseline for tracking
-  if (renewablePct > 20) energyBase += 10;
-  else if (renewablePct > 5) energyBase += 5;
-  const energyScore = Math.min(25, energyBase);
+  return (
+    dgDieselLitres *
+    EMISSION_FACTORS.diesel
+  );
+}
 
-  // Water (out of 15)
-  const waterRecyclePct = data.waterKl > 0 ? (data.recycledWaterKl / data.waterKl) * 100 : 0;
-  let waterBase = 8;
-  if (waterRecyclePct > 50) waterBase += 7;
-  else if (waterRecyclePct > 20) waterBase += 4;
-  const waterScore = Math.min(15, waterBase);
+/* ========================================= */
+/* TRANSPORT EMISSIONS                       */
+/* ========================================= */
 
-  // Waste (out of 15)
-  const wasteRecyclePct = data.totalWasteKg > 0 ? (data.recycledWasteKg / data.totalWasteKg) * 100 : 0;
-  let wasteBase = 8;
-  if (wasteRecyclePct > 60) wasteBase += 7;
-  else if (wasteRecyclePct > 30) wasteBase += 4;
-  const wasteScore = Math.min(15, wasteBase);
+export function calculateTransportEmissions(
+  ambulanceFuelLitres: number
+) {
+  return (
+    ambulanceFuelLitres *
+    EMISSION_FACTORS.ambulanceFuel
+  );
+}
 
-  // Emissions (out of 20 - requires monitoring maturity)
-  let emissionScore = 15; // baseline assumption for active use
-  
-  // Governance (out of 25)
-  let govScore = 0;
-  if (data.govPolicy) govScore += 7;
-  if (data.govComm) govScore += 6;
-  if (data.govAudit) govScore += 6;
-  if (data.govDocs) govScore += 6;
+/* ========================================= */
+/* REFRIGERANT EMISSIONS                     */
+/* ========================================= */
 
-  const totalScore = energyScore + waterScore + wasteScore + emissionScore + govScore;
+export function calculateRefrigerantEmissions(
+  refrigerantType: string,
+  leakKg: number
+) {
+  const factor =
+    EMISSION_FACTORS.refrigerants[
+      refrigerantType as keyof typeof EMISSION_FACTORS.refrigerants
+    ] || 0;
 
-  let level = "Foundational";
-  if (totalScore >= 86) level = "Industry Leading";
-  else if (totalScore >= 71) level = "Advanced";
-  else if (totalScore >= 51) level = "Structured";
-  else if (totalScore >= 31) level = "Developing";
+  return factor * leakKg;
+}
 
-  return {
-    energyScore,
-    waterScore,
-    wasteScore,
-    emissionScore,
-    govScore,
-    totalScore,
-    level,
-    percentages: {
-      renewable: renewablePct,
-      waterRecycle: waterRecyclePct,
-      wasteRecycle: wasteRecyclePct
-    }
-  };
+/* ========================================= */
+/* RENEWABLE ENERGY PERCENTAGE               */
+/* ========================================= */
+
+export function calculateRenewablePercentage(
+  renewableKwh: number,
+  totalElectricityKwh: number
+) {
+  if (totalElectricityKwh === 0)
+    return 0;
+
+  return (
+    (renewableKwh /
+      totalElectricityKwh) *
+    100
+  );
+}
+
+/* ========================================= */
+/* WATER RECYCLING PERCENTAGE                */
+/* ========================================= */
+
+export function calculateWaterRecyclingPercentage(
+  recycledWaterKl: number,
+  totalWaterKl: number
+) {
+  if (totalWaterKl === 0)
+    return 0;
+
+  return (
+    (recycledWaterKl /
+      totalWaterKl) *
+    100
+  );
+}
+
+/* ========================================= */
+/* WASTE DIVERSION PERCENTAGE                */
+/* ========================================= */
+
+export function calculateWasteDiversionPercentage(
+  recyclableWasteKg: number,
+  totalWasteKg: number
+) {
+  if (totalWasteKg === 0)
+    return 0;
+
+  return (
+    (recyclableWasteKg /
+      totalWasteKg) *
+    100
+  );
+}
+
+/* ========================================= */
+/* ENERGY INTENSITY PER BED                  */
+/* ========================================= */
+
+export function calculateEnergyPerBed(
+  electricityKwh: number,
+  numberOfBeds: number
+) {
+  if (numberOfBeds === 0)
+    return 0;
+
+  return (
+    electricityKwh / numberOfBeds
+  );
+}
+
+/* ========================================= */
+/* WATER INTENSITY PER BED                   */
+/* ========================================= */
+
+export function calculateWaterPerBed(
+  waterKl: number,
+  numberOfBeds: number
+) {
+  if (numberOfBeds === 0)
+    return 0;
+
+  return waterKl / numberOfBeds;
+}
+
+/* ========================================= */
+/* WASTE PER BED                             */
+/* ========================================= */
+
+export function calculateWastePerBed(
+  wasteKg: number,
+  numberOfBeds: number
+) {
+  if (numberOfBeds === 0)
+    return 0;
+
+  return wasteKg / numberOfBeds;
+}
+
+/* ========================================= */
+/* ESG READINESS SCORE                       */
+/* ========================================= */
+
+export function calculateESGReadinessScore({
+  renewablePercentage,
+  waterRecyclingPercentage,
+  wasteDiversionPercentage,
+  hasEsgPolicy,
+  hasAuditReports,
+}: {
+  renewablePercentage: number;
+
+  waterRecyclingPercentage: number;
+
+  wasteDiversionPercentage: number;
+
+  hasEsgPolicy: boolean;
+
+  hasAuditReports: boolean;
+}) {
+  let score = 0;
+
+  /**
+   * ENVIRONMENTAL
+   */
+
+  score += renewablePercentage * 0.25;
+
+  score +=
+    waterRecyclingPercentage * 0.2;
+
+  score +=
+    wasteDiversionPercentage * 0.2;
+
+  /**
+   * GOVERNANCE
+   */
+
+  if (hasEsgPolicy) score += 15;
+
+  if (hasAuditReports) score += 20;
+
+  /**
+   * MAX CAP
+   */
+
+  return Math.min(
+    Math.round(score),
+    100
+  );
 }
