@@ -186,6 +186,7 @@ export function calculateESGReadinessScore({
   wasteDiversionPercentage,
   hasEsgPolicy,
   hasAuditReports,
+  coverageRatio = 1,
 }: {
   renewablePercentage: number;
 
@@ -196,6 +197,8 @@ export function calculateESGReadinessScore({
   hasEsgPolicy: boolean;
 
   hasAuditReports: boolean;
+
+  coverageRatio?: number;
 }) {
   let score = 0;
 
@@ -218,6 +221,15 @@ export function calculateESGReadinessScore({
   if (hasEsgPolicy) score += 15;
 
   if (hasAuditReports) score += 20;
+
+  /**
+   * COVERAGE ADJUSTMENT
+   */
+
+  const normalizedCoverage =
+    Math.min(Math.max(coverageRatio, 0), 1);
+
+  score *= normalizedCoverage;
 
   /**
    * MAX CAP

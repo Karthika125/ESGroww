@@ -1,5 +1,23 @@
+interface CoverageData {
+  averageCoverage: number;
+}
+
+interface Percentages {
+  renewablePercentage: string;
+  waterRecyclingPercentage: string;
+  wasteDiversionPercentage: string;
+}
+
+interface DashboardData {
+  readinessScore: number;
+  hospitalName: string;
+  industry: string;
+  percentages: Percentages;
+  coverage?: CoverageData;
+}
+
 interface Props {
-  data: any;
+  data: DashboardData;
 }
 
 export default function SustainabilityOverview({
@@ -33,7 +51,7 @@ export default function SustainabilityOverview({
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-8">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mt-8">
         <div className="rounded-xl bg-slate-50 p-4">
           <p className="text-sm text-slate-500">
             Renewable Energy
@@ -73,6 +91,16 @@ export default function SustainabilityOverview({
                 .wasteDiversionPercentage
             }
             %
+          </h3>
+        </div>
+
+        <div className="rounded-xl bg-slate-50 p-4">
+          <p className="text-sm text-slate-500">
+            Data Coverage
+          </p>
+
+          <h3 className="text-2xl font-bold text-slate-900 mt-2">
+            {data.coverage?.averageCoverage ?? 0}%
           </h3>
         </div>
       </div>

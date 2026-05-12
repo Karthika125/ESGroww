@@ -200,6 +200,25 @@ export async function fetchDashboardIntelligence() {
     );
 
   /* =============================== */
+  /* COVERAGE                        */
+  /* =============================== */
+
+  const categoryCoverageRatios = [
+    Math.min(hospital.electricityData.length / 12, 1),
+    Math.min(hospital.waterData.length / 12, 1),
+    Math.min(hospital.fuelData.length / 12, 1),
+    Math.min(hospital.wasteData.length / 12, 1),
+    Math.min(hospital.refrigerantData.length / 12, 1),
+    Math.min(hospital.transportData.length / 12, 1),
+  ];
+
+  const averageCoverageRatio =
+    categoryCoverageRatios.reduce(
+      (acc, ratio) => acc + ratio,
+      0
+    ) / categoryCoverageRatios.length;
+
+  /* =============================== */
   /* ESG READINESS SCORE             */
   /* =============================== */
 
@@ -218,6 +237,8 @@ export async function fetchDashboardIntelligence() {
       hasAuditReports:
         hospital.governanceData
           ?.hasAuditReports || false,
+
+      coverageRatio: averageCoverageRatio,
     });
 
   /* =============================== */
@@ -301,6 +322,23 @@ export async function fetchDashboardIntelligence() {
 
       wastePerBed:
         wastePerBed.toFixed(2),
+    },
+
+    coverage: {
+      electricityMonths:
+        hospital.electricityData.length,
+      waterMonths:
+        hospital.waterData.length,
+      fuelMonths:
+        hospital.fuelData.length,
+      wasteMonths:
+        hospital.wasteData.length,
+      refrigerantMonths:
+        hospital.refrigerantData.length,
+      transportMonths:
+        hospital.transportData.length,
+      averageCoverage:
+        Math.round(averageCoverageRatio * 100),
     },
 
     readinessScore,

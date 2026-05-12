@@ -3,10 +3,10 @@
 import { prisma } from "@/lib/db";
 
 const HOSPITAL_ID =
-  "cmp0sbyk20000nvk8i9o68s5o";
+  "cmp2cdhyz0001evczibh2ke4b";
 
 export async function getSummaryData() {
-  const hospital =
+  let hospital =
     await prisma.hospital.findUnique({
       where: {
         id: HOSPITAL_ID,
@@ -24,9 +24,30 @@ export async function getSummaryData() {
     });
 
   if (!hospital) {
-    throw new Error(
-      "Hospital not found"
+    const fallbackHospital =
+      await prisma.hospital.findFirst({
+        include: {
+          electricityData: true,
+          waterData: true,
+          fuelData: true,
+          wasteData: true,
+          refrigerantData: true,
+          transportData: true,
+          governanceData: true,
+        },
+      });
+
+    if (!fallbackHospital) {
+      throw new Error(
+        `Hospital not found for id ${HOSPITAL_ID}. No hospitals exist in the database.`
+      );
+    }
+
+    console.warn(
+      `Hospital id ${HOSPITAL_ID} not found. Falling back to hospital id ${fallbackHospital.id}.`
     );
+
+    hospital = fallbackHospital;
   }
 
   /* ========================== */
