@@ -84,6 +84,7 @@ export function MistralChatbot({
   className,
 }: ChatbotProps) {
   const [isOpen, setIsOpen] = useState(false);
+  const [isTranscriptVisible, setIsTranscriptVisible] = useState(false);
   const [messages, setMessages] = useState<ChatMessage[]>([
     {
       role: "assistant",
@@ -175,6 +176,10 @@ export function MistralChatbot({
     setIsOpen(false);
   }
 
+  function toggleTranscript() {
+    setIsTranscriptVisible((current) => !current);
+  }
+
   if (!isOpen) {
     return (
       <div className={cn("fixed bottom-4 right-4 z-50", className)}>
@@ -231,55 +236,72 @@ export function MistralChatbot({
       </CardHeader>
 
       <CardContent className="space-y-4 p-4 md:p-5">
-        <div
-          ref={viewportRef}
-          className="max-h-[28rem] space-y-3 overflow-y-auto rounded-2xl border border-slate-200 bg-white/80 p-3 shadow-inner"
-          aria-live="polite"
-        >
-          {conversation.map((message, index) => (
-            <div
-              key={`${message.role}-${index}`}
-              className={cn(
-                "flex gap-3",
-                message.role === "user" ? "justify-end" : "justify-start"
-              )}
-            >
-              {message.role === "assistant" && (
-                <div className="mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-emerald-700">
-                  <Sparkles className="size-4" />
-                </div>
-              )}
+        <div className="flex items-center justify-between rounded-2xl border border-slate-200 bg-white/80 px-3 py-2">
+          <div className="text-xs text-slate-500">
+            {conversation.length > 1 ? `${conversation.length - 1} replies` : "No replies shown"}
+          </div>
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            className="text-slate-600 hover:text-slate-900"
+            onClick={toggleTranscript}
+          >
+            {isTranscriptVisible ? "Hide output" : "Show output"}
+          </Button>
+        </div>
 
+        {isTranscriptVisible && (
+          <div
+            ref={viewportRef}
+            className="max-h-[22rem] space-y-3 overflow-y-auto rounded-2xl border border-slate-200 bg-white/80 p-3 shadow-inner"
+            aria-live="polite"
+          >
+            {conversation.map((message, index) => (
               <div
+                key={`${message.role}-${index}`}
                 className={cn(
-                  "max-w-[85%] rounded-2xl px-4 py-3 text-sm leading-6",
-                  message.role === "user"
-                    ? "rounded-br-md bg-emerald-600 text-white"
-                    : "rounded-bl-md border border-slate-200 bg-slate-50 text-slate-700"
+                  "flex gap-3",
+                  message.role === "user" ? "justify-end" : "justify-start"
                 )}
               >
+                {message.role === "assistant" && (
+                  <div className="mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-emerald-700">
+                    <Sparkles className="size-4" />
+                  </div>
+                )}
+
+                <div
+                  className={cn(
+                    "max-w-[85%] rounded-2xl px-4 py-3 text-sm leading-6",
+                    message.role === "user"
+                      ? "rounded-br-md bg-emerald-600 text-white"
+                      : "rounded-bl-md border border-slate-200 bg-slate-50 text-slate-700"
+                  )}
+                >
                   {stripMarkdownFormatting(normalizeMessageContent(message.content))}
-              </div>
-
-              {message.role === "user" && (
-                <div className="mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-full bg-slate-900 text-white">
-                  <UserRound className="size-4" />
                 </div>
-              )}
-            </div>
-          ))}
 
-          {isSending && (
-            <div className="flex gap-3">
-              <div className="mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-emerald-700">
-                <Loader2 className="size-4 animate-spin" />
+                {message.role === "user" && (
+                  <div className="mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-full bg-slate-900 text-white">
+                    <UserRound className="size-4" />
+                  </div>
+                )}
               </div>
-              <div className="rounded-2xl rounded-bl-md border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-500">
-                Mistral is thinking...
+            ))}
+
+            {isSending && (
+              <div className="flex gap-3">
+                <div className="mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-emerald-700">
+                  <Loader2 className="size-4 animate-spin" />
+                </div>
+                <div className="rounded-2xl rounded-bl-md border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-500">
+                  Mistral is thinking...
+                </div>
               </div>
-            </div>
-          )}
-        </div>
+            )}
+          </div>
+        )}
 
         <div className="flex flex-wrap gap-2">
           {suggestions.map((prompt) => (

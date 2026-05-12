@@ -120,13 +120,6 @@ function extractErrorMessage(
   );
 }
 
-function logChatbotEvent(
-  label: string,
-  details: Record<string, unknown>
-) {
-  console.log(`[Mistral Chatbot] ${label}`, details);
-}
-
 export async function sendMistralChatMessage(
   input: SendMistralChatInput
 ) {
@@ -141,12 +134,6 @@ export async function sendMistralChatMessage(
   }
 
   const message = input.message.trim();
-
-  logChatbotEvent("Sending request", {
-    model: DEFAULT_MODEL,
-    conversationId: input.conversationId ?? null,
-    message,
-  });
 
   try {
     const controller = new AbortController();
@@ -185,13 +172,6 @@ export async function sendMistralChatMessage(
       CHAT_REQUEST_TIMEOUT_MS + 2000
     );
 
-    logChatbotEvent("Received response", {
-      conversationId: input.conversationId ?? null,
-      ok: response.ok,
-      status: response.status,
-      statusText: response.statusText,
-    });
-
     clearTimeout(timeoutId);
 
     const rawText = await response.text();
@@ -219,13 +199,6 @@ export async function sendMistralChatMessage(
     if (!response.ok) {
       const errorMessage = extractErrorMessage(response, payload);
 
-      logChatbotEvent("Request failed", {
-        conversationId: input.conversationId ?? null,
-        status: response.status,
-        error: errorMessage,
-        rawResponse: rawText,
-      });
-
       return {
         success: false,
         error: errorMessage,
@@ -239,21 +212,11 @@ export async function sendMistralChatMessage(
     );
 
     if (!reply) {
-      logChatbotEvent("Empty reply", {
-        conversationId: input.conversationId || null,
-        rawResponse: rawText,
-      });
-
       return {
         success: false,
         error: "Mistral returned an empty response.",
       };
     }
-
-    logChatbotEvent("Reply received", {
-      conversationId: input.conversationId || null,
-      reply,
-    });
 
     return {
       success: true,
