@@ -40,6 +40,56 @@ export async function fetchDashboardIntelligence() {
   }
 
   /* =============================== */
+  /* MINIMUM DATA REQUIREMENT        */
+  /* =============================== */
+
+  // Count unique month-year combinations across all categories
+  const uniqueMonths = new Set<string>();
+
+  // Add electricity months
+  hospital.electricityData.forEach(row => {
+    uniqueMonths.add(`${row.month}-${row.year}`);
+  });
+
+  // Add water months
+  hospital.waterData.forEach(row => {
+    uniqueMonths.add(`${row.month}-${row.year}`);
+  });
+
+  // Add fuel months
+  hospital.fuelData.forEach(row => {
+    uniqueMonths.add(`${row.month}-${row.year}`);
+  });
+
+  // Add waste months
+  hospital.wasteData.forEach(row => {
+    uniqueMonths.add(`${row.month}-${row.year}`);
+  });
+
+  // Add refrigerant months
+  hospital.refrigerantData.forEach(row => {
+    uniqueMonths.add(`${row.month}-${row.year}`);
+  });
+
+  // Add transport months
+  hospital.transportData.forEach(row => {
+    uniqueMonths.add(`${row.month}-${row.year}`);
+  });
+
+  const totalUniqueMonths = uniqueMonths.size;
+
+  if (totalUniqueMonths < 6) {
+    return {
+      hospitalName: hospital.hospitalName,
+      industry: hospital.industry,
+      error: `Insufficient data for ESG analysis. You have uploaded ${totalUniqueMonths} months of data. Minimum 6 months required.`,
+      requiresMoreData: true,
+      monthsUploaded: totalUniqueMonths,
+      minimumRequired: 6,
+    };
+  }
+
+  /* =============================== */
   /* ELECTRICITY                     */
   /* =============================== */
 

@@ -8,162 +8,133 @@ datasource db {
 }
 
 model Hospital {
-  id                String   @id @default(cuid())
+  id              String   @id @default(cuid())
+  hospitalName    String
+  industry        String   @default("Healthcare")
+  builtUpArea     Float    @default(0)
+  numberOfBeds    Int      @default(0)
+  createdAt       DateTime @default(now())
 
-  hospitalName      String
-  industry          String   @default("Healthcare")
+  users           User[]
+  electricityData ElectricityData[]
+  waterData       WaterData[]
+  fuelData        FuelData[]
+  wasteData       WasteData[]
+  refrigerantData RefrigerantData[]
+  transportData   TransportData[]
+  uploads         Upload[]
+  esgScores       ESGScore[]
+  governanceData  GovernanceData?
+}
 
-  builtUpArea       Float    @default(0)
-  numberOfBeds      Int      @default(0)
+model User {
+  id         String   @id @default(cuid())
+  email      String   @unique
+  password   String
+  role       String   @default("hospital")
+  hospitalId String
+  createdAt  DateTime @default(now())
 
-  createdAt         DateTime @default(now())
-
-  electricityData   ElectricityData[]
-  waterData         WaterData[]
-  fuelData          FuelData[]
-  wasteData         WasteData[]
-  refrigerantData   RefrigerantData[]
-  transportData     TransportData[]
-
-  uploads           Upload[]
-  esgScores         ESGScore[]
-
-  governanceData    GovernanceData?
+  hospital Hospital @relation(fields: [hospitalId], references: [id])
 }
 
 model ElectricityData {
-  id                String   @id @default(cuid())
-
-  hospitalId        String
-  hospital          Hospital @relation(fields: [hospitalId], references: [id])
-
-  month             String
-  year              Int
-
-  electricityKwh    Float    @default(0)
-  renewableKwh      Float    @default(0)
-
-  createdAt         DateTime @default(now())
+  id              String   @id @default(cuid())
+  hospitalId      String
+  hospital        Hospital @relation(fields: [hospitalId], references: [id])
+  month           String
+  year            Int
+  electricityKwh  Float    @default(0)
+  renewableKwh    Float    @default(0)
+  createdAt       DateTime @default(now())
 }
 
 model WaterData {
   id                String   @id @default(cuid())
-
   hospitalId        String
   hospital          Hospital @relation(fields: [hospitalId], references: [id])
-
   month             String
   year              Int
-
   waterKl           Float    @default(0)
   recycledWaterKl   Float    @default(0)
-
   createdAt         DateTime @default(now())
 }
 
 model FuelData {
   id                String   @id @default(cuid())
-
   hospitalId        String
   hospital          Hospital @relation(fields: [hospitalId], references: [id])
-
   month             String
   year              Int
-
   dgDieselLitres    Float    @default(0)
-
   createdAt         DateTime @default(now())
 }
 
 model WasteData {
   id                     String   @id @default(cuid())
-
   hospitalId             String
   hospital               Hospital @relation(fields: [hospitalId], references: [id])
-
   month                  String
   year                   Int
-
   biomedicalWasteKg      Float    @default(0)
   recyclableWasteKg      Float    @default(0)
   landfillWasteKg        Float    @default(0)
-
   createdAt              DateTime @default(now())
 }
 
 model RefrigerantData {
   id                     String   @id @default(cuid())
-
   hospitalId             String
   hospital               Hospital @relation(fields: [hospitalId], references: [id])
-
   month                  String
   year                   Int
-
   refrigerantType        String
   refrigerantLeakKg      Float    @default(0)
-
   createdAt              DateTime @default(now())
 }
 
 model TransportData {
   id                     String   @id @default(cuid())
-
   hospitalId             String
   hospital               Hospital @relation(fields: [hospitalId], references: [id])
-
   month                  String
   year                   Int
-
   ambulanceFuelLitres    Float    @default(0)
   staffCommuteKm         Float    @default(0)
-
   createdAt              DateTime @default(now())
 }
 
 model GovernanceData {
   id                         String   @id @default(cuid())
-
   hospitalId                 String   @unique
   hospital                   Hospital @relation(fields: [hospitalId], references: [id])
-
   hasEsgPolicy               Boolean  @default(false)
   hasSustainabilityCommittee Boolean  @default(false)
   hasAuditReports            Boolean  @default(false)
   hasComplianceDocs          Boolean  @default(false)
-
   createdAt                  DateTime @default(now())
 }
 
 model Upload {
   id                String   @id @default(cuid())
-
   hospitalId        String
   hospital          Hospital @relation(fields: [hospitalId], references: [id])
-
   category          String
   fileUrl           String
-
   month             String
   year              Int
-
   createdAt         DateTime @default(now())
 }
 
 model ESGScore {
-  id                    String   @id @default(cuid())
-
-  hospitalId            String
-  hospital              Hospital @relation(fields: [hospitalId], references: [id])
-
-  overallScore          Float
-
-  energyScore           Float
-  waterScore            Float
-  wasteScore            Float
-
-  governanceScore       Float
-  emissionsScore        Float
-
-  createdAt             DateTime @default(now())
+  id                String   @id @default(cuid())
+  hospitalId        String
+  hospital          Hospital @relation(fields: [hospitalId], references: [id])
+  overallScore      Float
+  energyScore       Float
+  waterScore        Float
+  wasteScore        Float
+  governanceScore   Float
+  emissionsScore    Float
+  createdAt         DateTime @default(now())
 }

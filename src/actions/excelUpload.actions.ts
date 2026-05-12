@@ -7,11 +7,136 @@ import { prisma } from "@/lib/db";
 import { revalidatePath } from "next/cache";
 
 const HOSPITAL_ID =
-  "cmp2d6lbg0001gjjez1d6axq9a";
+  "cmp2cdhyz0001evczibh2ke4b";
+
+  const VALID_MONTHS = [
+  "Jan",
+  "Feb",
+  "Mar",
+  "Apr",
+  "May",
+  "Jun",
+  "Jul",
+  "Aug",
+  "Sep",
+  "Oct",
+  "Nov",
+  "Dec",
+];
 
 function parseNumber(value: unknown, fallback = 0) {
-  const parsed = Number(value);
+  const parsed = Number(String(value).replace(/,/g, "").trim());
   return Number.isNaN(parsed) ? fallback : parsed;
+}
+
+function parseYear(value: unknown) {
+  const parsed = parseNumber(value, NaN);
+  return Number.isInteger(parsed) && parsed > 0 ? parsed : NaN;
+}
+
+function normalizeMonth(value: unknown) {
+  const raw = String(value ?? "").trim();
+  if (!raw) return "";
+
+  const normalized = raw.toLowerCase();
+  const monthMap: Record<string, string> = {
+    jan: "Jan",
+    january: "Jan",
+    feb: "Feb",
+    february: "Feb",
+    mar: "Mar",
+    march: "Mar",
+    apr: "Apr",
+    april: "Apr",
+    may: "May",
+    jun: "Jun",
+    june: "Jun",
+    jul: "Jul",
+    july: "Jul",
+    aug: "Aug",
+    august: "Aug",
+    sep: "Sep",
+    sept: "Sep",
+    september: "Sep",
+    oct: "Oct",
+    october: "Oct",
+    nov: "Nov",
+    november: "Nov",
+    dec: "Dec",
+    december: "Dec",
+    "1": "Jan",
+    "2": "Feb",
+    "3": "Mar",
+    "4": "Apr",
+    "5": "May",
+    "6": "Jun",
+    "7": "Jul",
+    "8": "Aug",
+    "9": "Sep",
+    "10": "Oct",
+    "11": "Nov",
+    "12": "Dec",
+  };
+
+  return monthMap[normalized] ?? raw;
+}
+
+function parseNumericField(
+  value: unknown,
+  fallback = 0
+) {
+  const raw =
+    String(value ?? "").trim();
+
+  if (!raw) {
+    return fallback;
+  }
+
+  const numeric = Number(
+    raw.replace(/,/g, "")
+  );
+
+  if (!Number.isFinite(numeric)) {
+    return fallback;
+  }
+
+  return numeric;
+}
+
+function validateNumericFields(
+  rows: any[],
+  fields: string[],
+  category: string
+) {
+  for (let i = 0; i < rows.length; i++) {
+    const row = rows[i];
+
+    for (const field of fields) {
+      const rawValue = row[field];
+
+      if (
+        rawValue === undefined ||
+        rawValue === null ||
+        String(rawValue).trim() === ""
+      ) {
+        continue;
+      }
+
+      const numeric = Number(
+        String(rawValue)
+          .replace(/,/g, "")
+          .trim()
+      );
+
+      if (!Number.isFinite(numeric)) {
+        return `Invalid numeric value "${rawValue}" found in column "${field}" at row ${
+          i + 1
+        } in ${category} upload.`;
+      }
+    }
+  }
+
+  return null;
 }
 
 function getUploadError(category: string, error: unknown) {
@@ -29,9 +154,29 @@ function validateRows(
   requiredFields: string[],
   category: string
 ) {
+  /* ========================= */
+  /* EMPTY FILE CHECK          */
+  /* ========================= */
+
   if (!rows.length) {
-    return `Your ${category} file is empty or the headers do not match the expected column names.`;
+    return `Your ${category} file is empty or the column headers are incorrect.`;
   }
+
+  /* ========================= */
+  /* MIN/MAX MONTH VALIDATION  */
+  /* ========================= */
+
+  if (rows.length < 6) {
+    return `${category} upload must contain at least 6 months of data.`;
+  }
+
+  if (rows.length > 12) {
+    return `${category} upload cannot contain more than 12 months of data.`;
+  }
+
+  /* ========================= */
+  /* REQUIRED COLUMN CHECK     */
+  /* ========================= */
 
   const missingFields = requiredFields.filter(
     (field) =>
@@ -44,12 +189,101 @@ function validateRows(
   );
 
   if (missingFields.length) {
-    return `Missing expected columns for ${category}: ${missingFields.join(", ")}.`;
+    return `Missing required columns in ${category} upload: ${missingFields.join(
+      ", "
+    )}.`;
+  }
+
+  /* ========================= */
+  /* MONTH VALIDATION          */
+  /* ========================= */
+
+  const uploadedMonths = new Set<string>();
+
+  for (let i = 0; i < rows.length; i++) {
+    const row = rows[i];
+
+    const normalizedMonth =
+      normalizeMonth(row.Month);
+
+    const year =
+      parseYear(row.Year);
+
+    /* INVALID MONTH */
+
+    if (
+      !VALID_MONTHS.includes(
+        normalizedMonth
+      )
+    ) {
+      return `Invalid month "${row.Month}" found in row ${
+        i + 1
+      }. Allowed values are Jan-Dec only.`;
+    }
+
+    /* INVALID YEAR */
+
+    if (Number.isNaN(year)) {
+      return `Invalid year "${row.Year}" found in row ${
+        i + 1
+      }.`;
+    }
+
+    /* DUPLICATE MONTH INSIDE EXCEL */
+
+    const monthKey = `${normalizedMonth}-${year}`;
+
+    if (uploadedMonths.has(monthKey)) {
+      return `Duplicate month "${normalizedMonth} ${year}" found inside uploaded ${category} file.`;
+    }
+
+    uploadedMonths.add(monthKey);
   }
 
   return null;
 }
+async function validateMonthEntry({
+  month,
+  year,
+  category,
+}: {
+  month: string;
+  year: number;
+  category: string;
+}) {
+  const normalizedMonth = normalizeMonth(month);
 
+  /* ========================= */
+  /* VALID MONTH CHECK         */
+  /* ========================= */
+
+  if (!VALID_MONTHS.includes(normalizedMonth)) {
+    return `Invalid month "${month}". Allowed values are Jan-Dec only.`;
+  }
+
+  /* ========================= */
+  /* DUPLICATE CHECK           */
+  /* ========================= */
+
+  const existingUpload =
+    await prisma.upload.findFirst({
+      where: {
+        hospitalId: HOSPITAL_ID,
+
+        category,
+
+        month: normalizedMonth,
+
+        year,
+      },
+    });
+
+  if (existingUpload) {
+    return `${category} data for ${month} ${year} already exists.`;
+  }
+
+  return null;
+}
 /* ============================= */
 /* ELECTRICITY UPLOAD            */
 /* ============================= */
@@ -100,22 +334,57 @@ export async function uploadElectricityExcel(
       };
     }
 
+    const numericError = validateNumericFields(
+      rows,
+      ["electricityKwh", "renewableKwh"],
+      "Electricity"
+    );
+    if (numericError) {
+      return {
+        success: false,
+        error: numericError,
+      };
+    }
+
+    const monthValue = normalizeMonth(rows[0].Month);
+    const yearValue = parseYear(rows[0].Year);
+
+    if (!monthValue || Number.isNaN(yearValue)) {
+      return {
+        success: false,
+        error: "Invalid Month or Year in Electricity upload. Month must be Jan-Dec and Year must be a number.",
+      };
+    }
+
+    const duplicateError =
+      await validateMonthEntry({
+        month: monthValue,
+        year: yearValue,
+        category: "Electricity",
+      });
+
+    if (duplicateError) {
+      return {
+        success: false,
+        error: duplicateError,
+      };
+    }
+
     for (const row of rows) {
+      const rowMonth = normalizeMonth(row.Month);
+      const rowYear = parseYear(row.Year);
+
       await prisma.electricityData.create({
         data: {
           hospitalId: HOSPITAL_ID,
 
-          month: String(row.Month),
+          month: rowMonth,
 
-          year: parseNumber(row.Year),
+          year: rowYear,
 
-          electricityKwh: Number(
-            row.electricityKwh || 0
-          ),
+          electricityKwh: parseNumericField(row.electricityKwh),
 
-          renewableKwh: Number(
-            row.renewableKwh || 0
-          ),
+          renewableKwh: parseNumericField(row.renewableKwh),
         },
       });
     }
@@ -128,13 +397,9 @@ export async function uploadElectricityExcel(
 
         fileUrl: file.name,
 
-        month: String(
-          rows[0]?.Month || ""
-        ),
+        month: monthValue,
 
-        year: Number(
-          rows[0]?.Year || 2026
-        ),
+        year: yearValue,
       },
     });
 
@@ -204,41 +469,72 @@ export async function uploadWaterExcel(
       };
     }
 
+    const numericError = validateNumericFields(
+      rows,
+      ["waterKl", "recycledWaterKl"],
+      "Water"
+    );
+    if (numericError) {
+      return {
+        success: false,
+        error: numericError,
+      };
+    }
+
+    const monthValue = normalizeMonth(rows[0].Month);
+    const yearValue = parseYear(rows[0].Year);
+
+    if (!monthValue || Number.isNaN(yearValue)) {
+      return {
+        success: false,
+        error: "Invalid Month or Year in Water upload. Month must be Jan-Dec and Year must be a number.",
+      };
+    }
+
+    const duplicateError =
+      await validateMonthEntry({
+        month: monthValue,
+        year: yearValue,
+        category: "Water",
+      });
+
+    if (duplicateError) {
+      return {
+        success: false,
+        error: duplicateError,
+      };
+    }
+
     for (const row of rows) {
+      const rowMonth = normalizeMonth(row.Month);
+      const rowYear = parseYear(row.Year);
+
       await prisma.waterData.create({
         data: {
-          hospitalId: "cmp2d6lbg0001gjjez1d6axq9a",
+          hospitalId: HOSPITAL_ID,
 
-          month: String(row.Month),
+          month: rowMonth,
 
-          year: Number(row.Year),
+          year: rowYear,
 
-          waterKl: Number(
-            row.waterKl || 0
-          ),
+          waterKl: parseNumericField(row.waterKl),
 
-          recycledWaterKl: Number(
-            row.recycledWaterKl || 0
-          ),
+          recycledWaterKl: parseNumericField(row.recycledWaterKl),
         },
       });
     }
 
     await prisma.upload.create({
       data: {
-        hospitalId: "cmp2d6lbg0001gjjez1d6axq9a",
+        hospitalId: HOSPITAL_ID,
 
         category: "Water",
 
         fileUrl: file.name,
 
-        month: String(
-          rows[0]?.Month || ""
-        ),
+        month: monthValue,
 
-        year: Number(
-          rows[0]?.Year || 2026
-        ),
+        year: yearValue,
       },
     });
 
@@ -308,37 +604,70 @@ export async function uploadFuelExcel(
       };
     }
 
+    const numericError = validateNumericFields(
+      rows,
+      ["dgDieselLitres"],
+      "Fuel"
+    );
+    if (numericError) {
+      return {
+        success: false,
+        error: numericError,
+      };
+    }
+
+    const monthValue = normalizeMonth(rows[0].Month);
+    const yearValue = parseYear(rows[0].Year);
+
+    if (!monthValue || Number.isNaN(yearValue)) {
+      return {
+        success: false,
+        error: "Invalid Month or Year in Fuel upload. Month must be Jan-Dec and Year must be a number.",
+      };
+    }
+
+    const duplicateError =
+      await validateMonthEntry({
+        month: monthValue,
+        year: yearValue,
+        category: "Fuel",
+      });
+
+    if (duplicateError) {
+      return {
+        success: false,
+        error: duplicateError,
+      };
+    }
+
     for (const row of rows) {
+      const rowMonth = normalizeMonth(row.Month);
+      const rowYear = parseYear(row.Year);
+
       await prisma.fuelData.create({
         data: {
-          hospitalId: "cmp2d6lbg0001gjjez1d6axq9a",
+          hospitalId: HOSPITAL_ID,
 
-          month: String(row.Month),
+          month: rowMonth,
 
-          year: Number(row.Year),
+          year: rowYear,
 
-          dgDieselLitres: Number(
-            row.dgDieselLitres || 0
-          ),
+          dgDieselLitres: parseNumericField(row.dgDieselLitres),
         },
       });
     }
 
     await prisma.upload.create({
       data: {
-        hospitalId: "cmp2d6lbg0001gjjez1d6axq9a",
+        hospitalId: HOSPITAL_ID,
 
         category: "Fuel",
 
         fileUrl: file.name,
 
-        month: String(
-          rows[0]?.Month || ""
-        ),
+        month: monthValue,
 
-        year: Number(
-          rows[0]?.Year || 2026
-        ),
+        year: yearValue,
       },
     });
 
@@ -408,45 +737,74 @@ export async function uploadWasteExcel(
       };
     }
 
+    const numericError = validateNumericFields(
+      rows,
+      ["biomedicalWasteKg", "recyclableWasteKg", "landfillWasteKg"],
+      "Waste"
+    );
+    if (numericError) {
+      return {
+        success: false,
+        error: numericError,
+      };
+    }
+
+    const monthValue = normalizeMonth(rows[0].Month);
+    const yearValue = parseYear(rows[0].Year);
+
+    if (!monthValue || Number.isNaN(yearValue)) {
+      return {
+        success: false,
+        error: "Invalid Month or Year in Waste upload. Month must be Jan-Dec and Year must be a number.",
+      };
+    }
+
+    const duplicateError =
+      await validateMonthEntry({
+        month: monthValue,
+        year: yearValue,
+        category: "Waste",
+      });
+
+    if (duplicateError) {
+      return {
+        success: false,
+        error: duplicateError,
+      };
+    }
+
     for (const row of rows) {
+      const rowMonth = normalizeMonth(row.Month);
+      const rowYear = parseYear(row.Year);
+
       await prisma.wasteData.create({
         data: {
-          hospitalId: "cmp2d6lbg0001gjjez1d6axq9a",
+          hospitalId: HOSPITAL_ID,
 
-          month: String(row.Month),
+          month: rowMonth,
 
-          year: Number(row.Year),
+          year: rowYear,
 
-          biomedicalWasteKg: Number(
-            row.biomedicalWasteKg || 0
-          ),
+          biomedicalWasteKg: parseNumericField(row.biomedicalWasteKg),
 
-          recyclableWasteKg: Number(
-            row.recyclableWasteKg || 0
-          ),
+          recyclableWasteKg: parseNumericField(row.recyclableWasteKg),
 
-          landfillWasteKg: Number(
-            row.landfillWasteKg || 0
-          ),
+          landfillWasteKg: parseNumericField(row.landfillWasteKg),
         },
       });
     }
 
     await prisma.upload.create({
       data: {
-        hospitalId: "cmp2d6lbg0001gjjez1d6axq9a",
+        hospitalId: HOSPITAL_ID,
 
         category: "Waste",
 
         fileUrl: file.name,
 
-        month: String(
-          rows[0]?.Month || ""
-        ),
+        month: monthValue,
 
-        year: Number(
-          rows[0]?.Year || 2026
-        ),
+        year: yearValue,
       },
     });
 
@@ -516,21 +874,60 @@ export async function uploadRefrigerantsExcel(
       };
     }
 
+    const numericError = validateNumericFields(
+      rows,
+      ["refrigerantLeakKg"],
+      "Refrigerants"
+    );
+    if (numericError) {
+      return {
+        success: false,
+        error: numericError,
+      };
+    }
+
+    const monthValue = normalizeMonth(rows[0].Month);
+    const yearValue = parseYear(rows[0].Year);
+
+    if (!monthValue || Number.isNaN(yearValue)) {
+      return {
+        success: false,
+        error: "Invalid Month or Year in Refrigerants upload. Month must be Jan-Dec and Year must be a number.",
+      };
+    }
+
+    const duplicateError =
+      await validateMonthEntry({
+        month: monthValue,
+        year: yearValue,
+        category: "Refrigerants",
+      });
+
+    if (duplicateError) {
+      return {
+        success: false,
+        error: duplicateError,
+      };
+    }
+
     for (const row of rows) {
+      const rowMonth = normalizeMonth(row.Month);
+      const rowYear = parseYear(row.Year);
+
       await prisma.refrigerantData.create({
         data: {
-          hospitalId: "cmp2d6lbg0001gjjez1d6axq9a",
+          hospitalId: HOSPITAL_ID,
 
-          month: String(row.Month),
+          month: rowMonth,
 
-          year: Number(row.Year),
+          year: rowYear,
 
           refrigerantType: String(
             row.refrigerantType || ""
           ),
 
-          refrigerantLeakKg: Number(
-            row.refrigerantLeakKg || 0
+          refrigerantLeakKg: parseNumericField(
+            row.refrigerantLeakKg
           ),
         },
       });
@@ -538,19 +935,15 @@ export async function uploadRefrigerantsExcel(
 
     await prisma.upload.create({
       data: {
-        hospitalId: "cmp2d6lbg0001gjjez1d6axq9a",
+        hospitalId: HOSPITAL_ID,
 
         category: "Refrigerants",
 
         fileUrl: file.name,
 
-        month: String(
-          rows[0]?.Month || ""
-        ),
+        month: monthValue,
 
-        year: Number(
-          rows[0]?.Year || 2026
-        ),
+        year: yearValue,
       },
     });
 
@@ -620,21 +1013,60 @@ export async function uploadTransportExcel(
       };
     }
 
+    const numericError = validateNumericFields(
+      rows,
+      ["ambulanceFuelLitres", "staffCommuteKm"],
+      "Transport"
+    );
+    if (numericError) {
+      return {
+        success: false,
+        error: numericError,
+      };
+    }
+
+    const monthValue = normalizeMonth(rows[0].Month);
+    const yearValue = parseYear(rows[0].Year);
+
+    if (!monthValue || Number.isNaN(yearValue)) {
+      return {
+        success: false,
+        error: "Invalid Month or Year in Transport upload. Month must be Jan-Dec and Year must be a number.",
+      };
+    }
+
+    const duplicateError =
+      await validateMonthEntry({
+        month: monthValue,
+        year: yearValue,
+        category: "Transport",
+      });
+
+    if (duplicateError) {
+      return {
+        success: false,
+        error: duplicateError,
+      };
+    }
+
     for (const row of rows) {
+      const rowMonth = normalizeMonth(row.Month);
+      const rowYear = parseYear(row.Year);
+
       await prisma.transportData.create({
         data: {
-          hospitalId: "cmp2d6lbg0001gjjez1d6axq9a",
+          hospitalId: HOSPITAL_ID,
 
-          month: String(row.Month),
+          month: rowMonth,
 
-          year: Number(row.Year),
+          year: rowYear,
 
-          ambulanceFuelLitres: Number(
-            row.ambulanceFuelLitres || 0
+          ambulanceFuelLitres: parseNumericField(
+            row.ambulanceFuelLitres
           ),
 
-          staffCommuteKm: Number(
-            row.staffCommuteKm || 0
+          staffCommuteKm: parseNumericField(
+            row.staffCommuteKm
           ),
         },
       });
@@ -642,19 +1074,15 @@ export async function uploadTransportExcel(
 
     await prisma.upload.create({
       data: {
-        hospitalId: "cmp2d6lbg0001gjjez1d6axq9a",
+        hospitalId: HOSPITAL_ID,
 
         category: "Transport",
 
         fileUrl: file.name,
 
-        month: String(
-          rows[0]?.Month || ""
-        ),
+        month: monthValue,
 
-        year: Number(
-          rows[0]?.Year || 2026
-        ),
+        year: yearValue,
       },
     });
 
