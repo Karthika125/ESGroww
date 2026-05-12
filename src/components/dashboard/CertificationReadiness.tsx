@@ -15,10 +15,14 @@ export function CertificationReadiness({ certifications }: { certifications: any
         <div className="space-y-4">
           {certifications.map((cert, i) => (
             <div key={i} className="flex justify-between items-center text-sm border-b pb-2 last:border-0 last:pb-0">
-              <div className="font-medium text-slate-900 w-32">{cert.name}</div>
-              <div className="font-bold w-12">{cert.score}%</div>
-              <div className={`w-36 ${cert.color}`}>{cert.status}</div>
-              <div className="text-slate-500 w-24 text-right">{cert.time}</div>
+              <div className="font-medium text-slate-900 flex-1">{cert.name}</div>
+              <div className={`px-2 py-1 rounded-full text-xs font-medium ${
+                cert.readiness === "Ready"
+                  ? "bg-emerald-100 text-emerald-800"
+                  : "bg-amber-100 text-amber-800"
+              }`}>
+                {cert.readiness}
+              </div>
             </div>
           ))}
         </div>

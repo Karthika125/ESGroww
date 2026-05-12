@@ -2,213 +2,333 @@
 
 import { prisma } from "@/lib/db";
 
-const HOSPITAL_ID =
-  "cmp2cdhyz0001evczibh2ke4b";
-
 export async function getSummaryData() {
-  let hospital =
-    await prisma.hospital.findUnique({
-      where: {
-        id: HOSPITAL_ID,
-      },
 
-      include: {
-        electricityData: true,
-        waterData: true,
-        fuelData: true,
-        wasteData: true,
-        refrigerantData: true,
-        transportData: true,
-        governanceData: true,
-      },
-    });
+  /* ===================================== */
+  /* GET HOSPITAL                          */
+  /* ===================================== */
+
+  const latestUpload =
+  await prisma.upload.findFirst({
+    orderBy: {
+      createdAt: "desc",
+    },
+  });
+
+if (!latestUpload) {
+  throw new Error("No uploads found");
+}
+
+const hospital =
+  await prisma.hospital.findUnique({
+    where: {
+      id: latestUpload.hospitalId,
+    },
+
+    include: {
+      electricityData: true,
+      waterData: true,
+      fuelData: true,
+      wasteData: true,
+      refrigerantData: true,
+      transportData: true,
+      governanceData: true,
+    },
+  });
+
+if (!hospital) {
+  throw new Error(
+    "Hospital not found"
+  );
+}
 
   if (!hospital) {
-    const fallbackHospital =
-      await prisma.hospital.findFirst({
-        include: {
-          electricityData: true,
-          waterData: true,
-          fuelData: true,
-          wasteData: true,
-          refrigerantData: true,
-          transportData: true,
-          governanceData: true,
-        },
-      });
-
-    if (!fallbackHospital) {
-      throw new Error(
-        `Hospital not found for id ${HOSPITAL_ID}. No hospitals exist in the database.`
-      );
-    }
-
-    console.warn(
-      `Hospital id ${HOSPITAL_ID} not found. Falling back to hospital id ${fallbackHospital.id}.`
+    throw new Error(
+      "No hospital found"
     );
-
-    hospital = fallbackHospital;
   }
 
-  /* ========================== */
-  /* MONTH COVERAGE             */
-  /* ========================== */
+  /* ===================================== */
+  /* MONTH COVERAGE                        */
+  /* ===================================== */
 
   const electricityMonths =
-    hospital.electricityData.length;
+    new Set(
+      hospital.electricityData.map(
+        (d) =>
+          `${d.month}-${d.year}`
+      )
+    ).size;
 
   const waterMonths =
-    hospital.waterData.length;
+    new Set(
+      hospital.waterData.map(
+        (d) =>
+          `${d.month}-${d.year}`
+      )
+    ).size;
 
   const fuelMonths =
-    hospital.fuelData.length;
+    new Set(
+      hospital.fuelData.map(
+        (d) =>
+          `${d.month}-${d.year}`
+      )
+    ).size;
 
   const wasteMonths =
-    hospital.wasteData.length;
+    new Set(
+      hospital.wasteData.map(
+        (d) =>
+          `${d.month}-${d.year}`
+      )
+    ).size;
 
   const refrigerantMonths =
-    hospital.refrigerantData.length;
+    new Set(
+      hospital.refrigerantData.map(
+        (d) =>
+          `${d.month}-${d.year}`
+      )
+    ).size;
 
   const transportMonths =
-    hospital.transportData.length;
+    new Set(
+      hospital.transportData.map(
+        (d) =>
+          `${d.month}-${d.year}`
+      )
+    ).size;
 
-  /* ========================== */
-  /* TOTALS                     */
-  /* ========================== */
+  /* ===================================== */
+  /* TOTALS                                */
+  /* ===================================== */
 
   const totalElectricity =
     hospital.electricityData.reduce(
-      (acc, row) =>
-        acc + row.electricityKwh,
+      (sum, item) =>
+        sum + item.electricityKwh,
       0
     );
 
   const renewableElectricity =
     hospital.electricityData.reduce(
-      (acc, row) =>
-        acc + row.renewableKwh,
+      (sum, item) =>
+        sum + item.renewableKwh,
       0
     );
 
   const totalWater =
     hospital.waterData.reduce(
-      (acc, row) =>
-        acc + row.waterKl,
+      (sum, item) =>
+        sum + item.waterKl,
       0
     );
 
   const recycledWater =
     hospital.waterData.reduce(
-      (acc, row) =>
-        acc + row.recycledWaterKl,
+      (sum, item) =>
+        sum +
+        item.recycledWaterKl,
       0
     );
 
   const totalDiesel =
     hospital.fuelData.reduce(
-      (acc, row) =>
-        acc + row.dgDieselLitres,
+      (sum, item) =>
+        sum +
+        item.dgDieselLitres,
       0
     );
 
   const totalWaste =
     hospital.wasteData.reduce(
-      (acc, row) =>
-        acc +
-        row.biomedicalWasteKg +
-        row.recyclableWasteKg +
-        row.landfillWasteKg,
+      (sum, item) =>
+        sum +
+        item.biomedicalWasteKg +
+        item.recyclableWasteKg +
+        item.landfillWasteKg,
       0
     );
 
   const recyclableWaste =
     hospital.wasteData.reduce(
-      (acc, row) =>
-        acc +
-        row.recyclableWasteKg,
+      (sum, item) =>
+        sum +
+        item.recyclableWasteKg,
       0
     );
 
-  /* ========================== */
-  /* PERCENTAGES                */
-  /* ========================== */
+  /* ===================================== */
+  /* PERCENTAGES                           */
+  /* ===================================== */
 
   const renewablePercentage =
     totalElectricity > 0
-      ? (
+      ? Math.round(
           (renewableElectricity /
             totalElectricity) *
-          100
-        ).toFixed(2)
-      : "0";
+            100
+        )
+      : 0;
 
   const waterRecyclePercentage =
     totalWater > 0
-      ? (
+      ? Math.round(
           (recycledWater /
             totalWater) *
-          100
-        ).toFixed(2)
-      : "0";
+            100
+        )
+      : 0;
 
-  const wasteRecyclePercentage =
+  const recyclableWastePercentage =
     totalWaste > 0
-      ? (
+      ? Math.round(
           (recyclableWaste /
             totalWaste) *
-          100
-        ).toFixed(2)
-      : "0";
+            100
+        )
+      : 0;
 
-  /* ========================== */
-  /* DATA QUALITY CHECKS        */
-  /* ========================== */
+  /* ===================================== */
+  /* ESG EMISSIONS                         */
+  /* ===================================== */
+
+  const electricityEmissions =
+    totalElectricity * 0.82;
+
+  const dieselEmissions =
+    totalDiesel * 2.68;
+
+  const refrigerantEmissions =
+    hospital.refrigerantData.reduce(
+      (sum, item) =>
+        sum +
+        item.refrigerantLeakKg *
+          1430,
+      0
+    );
+
+  const totalEmissions =
+    electricityEmissions +
+    dieselEmissions +
+    refrigerantEmissions;
+
+  /* ===================================== */
+  /* DATA CONFIDENCE                       */
+  /* ===================================== */
+
+  const totalCoverage =
+    electricityMonths +
+    waterMonths +
+    fuelMonths +
+    wasteMonths +
+    refrigerantMonths +
+    transportMonths;
+
+  const confidence =
+    Math.round(
+      (totalCoverage / 72) * 100
+    );
+
+  /* ===================================== */
+  /* ESG SCORE                             */
+  /* ===================================== */
+
+  const environmentalScore =
+    Math.max(
+      0,
+      100 -
+        totalEmissions / 1000
+    );
+
+  const socialScore =
+    waterRecyclePercentage > 40
+      ? 85
+      : 65;
+
+  const governanceScore =
+    hospital.governanceData
+      ?.hasEsgPolicy
+      ? 90
+      : 45;
+
+  const overallScore =
+    Math.round(
+      (environmentalScore +
+        socialScore +
+        governanceScore) /
+        3
+    );
+
+  /* ===================================== */
+  /* READINESS STAGE                       */
+  /* ===================================== */
+
+  let readinessStage =
+    "Early Stage";
+
+  if (overallScore >= 80) {
+    readinessStage =
+      "Advanced";
+  } else if (
+    overallScore >= 60
+  ) {
+    readinessStage =
+      "Moderate";
+  }
+
+  /* ===================================== */
+  /* QUALITY CHECKS                        */
+  /* ===================================== */
 
   const checks = [
     {
       label:
-        "Electricity data sufficient",
-
+        "Electricity Tracking",
       status:
         electricityMonths >= 6,
     },
 
     {
       label:
-        "Water data sufficient",
-
+        "Water Consumption Data",
       status:
         waterMonths >= 6,
     },
 
     {
       label:
-        "Waste tracking available",
-
+        "Fuel Monitoring",
       status:
-        wasteMonths > 0,
+        fuelMonths >= 6,
     },
 
     {
       label:
-        "Fuel monitoring available",
-
+        "Waste Management Tracking",
       status:
-        fuelMonths > 0,
+        wasteMonths >= 6,
     },
 
     {
       label:
-        "Transport tracking available",
-
+        "Transport Monitoring",
       status:
-        transportMonths > 0,
+        transportMonths >= 3,
+    },
+
+    {
+      label:
+        "Governance Documentation",
+      status:
+        !!hospital.governanceData,
     },
   ];
 
-  /* ========================== */
-  /* FINAL RESPONSE             */
-  /* ========================== */
+  /* ===================================== */
+  /* RETURN FINAL DATA                     */
+  /* ===================================== */
 
   return {
     hospital: {
@@ -236,23 +356,50 @@ export async function getSummaryData() {
 
     totals: {
       totalElectricity,
-      renewableElectricity,
-
       totalWater,
-      recycledWater,
-
       totalDiesel,
-
       totalWaste,
-      recyclableWaste,
+      totalEmissions,
     },
 
     percentages: {
       renewablePercentage,
-
       waterRecyclePercentage,
+      recyclableWastePercentage,
+    },
 
-      wasteRecyclePercentage,
+    scores: {
+      environmentalScore:
+        Math.round(
+          environmentalScore
+        ),
+
+      socialScore,
+
+      governanceScore,
+
+      overallScore,
+    },
+
+    confidence,
+
+    readinessStage,
+
+    emissions: {
+      electricityEmissions:
+        Math.round(
+          electricityEmissions
+        ),
+
+      dieselEmissions:
+        Math.round(
+          dieselEmissions
+        ),
+
+      refrigerantEmissions:
+        Math.round(
+          refrigerantEmissions
+        ),
     },
 
     checks,

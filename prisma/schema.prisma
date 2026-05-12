@@ -25,6 +25,7 @@ model Hospital {
   uploads         Upload[]
   esgScores       ESGScore[]
   governanceData  GovernanceData?
+  assessmentHistory AssessmentHistory[]
 }
 
 model User {
@@ -138,3 +139,18 @@ model ESGScore {
   emissionsScore    Float
   createdAt         DateTime @default(now())
 }
+
+model AssessmentHistory {
+  id               String   @id @default(cuid())
+  hospitalId       String
+  createdAt        DateTime @default(now())
+  completenessPct Float?
+  confidenceScore  Float?
+  annualizedValues Json?
+  benchmarkScores  Json?
+  certificationReadiness Json?
+  gapAnalysis      Json?
+  readinessStage   String?
+  hospital         Hospital @relation(fields: [hospitalId], references: [id])
+  @@index([hospitalId])
+}

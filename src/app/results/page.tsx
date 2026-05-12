@@ -1,127 +1,100 @@
-import { Button } from "@/components/ui/button";
-import { ArrowLeft } from "lucide-react";
-import Link from "next/link";
-import SustainabilityOverview from "@/components/dashboard/SustainabilityOverview";
-import { CertificationReadiness } from "@/components/dashboard/CertificationReadiness";
-import { RegulatoryReadiness } from "@/components/dashboard/RegulatoryReadiness";
-import { EmissionsChart } from "@/components/dashboard/EmissionsChart";
-import { StrengthsWidget, CriticalGapsWidget, ActionRoadmapWidget } from "@/components/dashboard/RoadmapWidgets";
-import { AIExecutiveSummary } from "@/components/dashboard/AIExecutiveSummary";
-
-// Server action mapping
-import { fetchDashboardIntelligence } from "@/actions/dashboard.actions";
-
-// Type for insufficient data response
-interface InsufficientDataResponse {
-  hospitalName: string;
-  industry: string;
-  error: string;
-  requiresMoreData: boolean;
-  monthsUploaded: number;
-  minimumRequired: number;
+import ScoreCard from "@/components/results/ScoreCard";
+async function getAssessment() {
+const res = await fetch(
+"http://localhost:3000/api/assessment",
+{
+cache: "no-store",
 }
-
-// This becomes a React Server Component to fetch the dynamic Intel securely!
+);
+return res.json();
+}
 export default async function ResultsPage() {
-  
-  // 1. We dynamically fetch the calculated ESGIQ engine output 
-  const dashboardData = await fetchDashboardIntelligence();
-
-  // Check if there's insufficient data
-  if ((dashboardData as InsufficientDataResponse).error && (dashboardData as InsufficientDataResponse).requiresMoreData) {
-    const insufficientData = dashboardData as InsufficientDataResponse;
-    return (
-      <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500 pb-20 print:space-y-4 print:pb-0 print:m-0">
-        <div className="max-w-4xl mx-auto">
-          <div className="bg-amber-50 border border-amber-200 rounded-2xl p-8 text-center">
-            <div className="mb-6">
-              <div className="w-16 h-16 bg-amber-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <svg className="w-8 h-8 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" />
-                </svg>
-              </div>
-              <h2 className="text-2xl font-bold text-amber-900 mb-2">
-                Insufficient Data for ESG Analysis
-              </h2>
-              <p className="text-amber-700 mb-6">
-                {insufficientData.error}
-              </p>
-            </div>
-
-            <div className="bg-white rounded-xl p-6 border border-amber-200 mb-6">
-              <div className="grid grid-cols-2 gap-4 text-sm">
-                <div className="text-center">
-                  <div className="text-2xl font-bold text-amber-600">{insufficientData.monthsUploaded}</div>
-                  <div className="text-amber-700">Months Uploaded</div>
-                </div>
-                <div className="text-center">
-                  <div className="text-2xl font-bold text-amber-600">{insufficientData.minimumRequired}</div>
-                  <div className="text-amber-700">Months Required</div>
-                </div>
-              </div>
-            </div>
-
-            <div className="space-y-4">
-              <p className="text-amber-600 font-medium">
-                Please upload data for at least {insufficientData.minimumRequired - insufficientData.monthsUploaded} more month{insufficientData.minimumRequired - insufficientData.monthsUploaded !== 1 ? 's' : ''} to generate your ESG analysis.
-              </p>
-              
-              <Link href="/upload">
-                <Button className="bg-amber-600 hover:bg-amber-700 text-white">
-                  Go to Upload Page
-                </Button>
-              </Link>
-            </div>
-          </div>
-        </div>
-
-        <div className="flex justify-between pt-6 border-t print:hidden">
-          <Link href="/summary">
-            <Button variant="outline" className="text-slate-600">
-              <ArrowLeft className="w-4 h-4 mr-2" /> Back to Summary
-            </Button>
-          </Link>
-        </div>
-      </div>
-    );
+const response =
+await getAssessment();
+const data = response.data;
+return (
+<div className="min-h-screen bg-slate-50 p-6">
+<div className="max-w-7xl mx-auto space-y-5">
+<div>
+<h1 className="text-3xl font-bold text-slate-900">
+ESG Intelligence Dashboard
+</h1>
+<p className="text-sm text-slate-500 mt-1">
+Executive sustainability overview
+</p>
+</div>
+<div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
+<ScoreCard
+title="ESG Score"
+value={data.overallScore}
+/>
+<ScoreCard
+title="Readiness"
+value={data.readinessStage}
+/>
+<ScoreCard
+title="Completeness"
+value={`${Math.round(
+data.completeness
+)}%`}
+/>
+<ScoreCard
+title="Confidence"
+value={`${Math.round(
+data.confidence * 100
+)}%`}
+/>
+<ScoreCard
+title="Emissions"
+value={`${Math.round(
+data.totalEmissions
+)} kgCO₂e`}
+/>
+</div>
+<div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+<div className="bg-white rounded-xl border border-slate-200 p-4">
+<h2 className="font-semibold text-slate-900 mb-4">
+Annualized Values
+</h2>
+<div className="space-y-2 text-sm">
+<p>
+Electricity: {Math.round(data.annualizedValues.electricity)} kWh
+</p>
+<p>
+Water: {Math.round(data.annualizedValues.water)} KL
+</p>
+<p>
+Fuel: {Math.round(data.annualizedValues.fuel)} L
+</p>
+<p>
+Waste: {Math.round(data.annualizedValues.waste)} kg
+</p>
+</div>
+</div>
+<div className="bg-white rounded-xl border border-slate-200 p-4">
+<h2 className="font-semibold text-slate-900 mb-4">
+Certification Readiness
+</h2>
+<div className="space-y-2 text-sm">
+{Object.entries(
+data.certificationReadiness
+).map(([key, value]) => (
+<div
+key={key}
+className="flex items-center justify-between"
+>
+<span>{key}</span>
+<span>
+{value
+? "Ready"
+: "Not Ready"}
+</span>
+</div>
+))}
+</div>
+</div>
+</div>
+</div>
+</div>
+);
   }
-
-  return (
-    <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500 pb-20 print:space-y-4 print:pb-0 print:m-0">
-      
-      {/* Overview Top Section dynamically injected with ESG score algorithms */}
-      <SustainabilityOverview data={dashboardData} />
-
-      {/* Emissions Chart */}
-      <EmissionsChart emissions={dashboardData.emissions} />
-
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 print:block print:space-y-4">
-        {/* Certification Mapping Dynamically Injected */}
-        <CertificationReadiness certifications={dashboardData.certifications} />
-        <RegulatoryReadiness />
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 print:block print:space-y-4">
-        <StrengthsWidget />
-        <CriticalGapsWidget />
-        <ActionRoadmapWidget />
-      </div>
-
-      <AIExecutiveSummary />
-
-      <div className="flex justify-between pt-6 border-t print:hidden">
-        <Link href="/summary">
-          <Button variant="outline" className="text-slate-600">
-            <ArrowLeft className="w-4 h-4 mr-2" /> Back to Summary
-          </Button>
-        </Link>
-        <div className="space-x-4">
-          <Button variant="outline">Compare Industry Benchmark</Button>
-          <Button className="bg-emerald-600 hover:bg-emerald-700 text-white">
-            Book Expert Consultation
-          </Button>
-        </div>
-      </div>
-    </div>
-  );
-}

@@ -292,35 +292,88 @@ export async function fetchDashboardIntelligence() {
     });
 
   /* =============================== */
+  /* BENCHMARK SCORES                */
+  /* =============================== */
+
+  const benchmarkScores =
+    calculateBenchmarkScores({
+      industry: hospital.industry,
+      renewablePercentage,
+      waterRecyclingPercentage,
+      wasteDiversionPercentage,
+      energyPerBed,
+      waterPerBed,
+      wastePerBed,
+    });
+
+  /* =============================== */
+  /* CERTIFICATION READINESS         */
+  /* =============================== */
+
+  const certificationReadiness =
+    calculateCertificationReadiness({
+      renewablePercentage,
+      waterRecyclingPercentage,
+      wasteDiversionPercentage,
+      governanceScore: readinessScore, // Using readiness score as governance proxy
+      completeness: Math.round(averageCoverageRatio * 100),
+      confidence: calculateConfidenceScore(Math.round(averageCoverageRatio * 12)),
+      benchmarkScores,
+    });
+
+  /* =============================== */
+  /* GAP ANALYSIS                    */
+  /* =============================== */
+
+  const gapAnalysis =
+    calculateGapAnalysis(
+      {
+        renewableScore: renewablePercentage,
+        waterScore: waterRecyclingPercentage,
+        wasteScore: wasteDiversionPercentage,
+        energyIntensityScore: energyPerBed > 0 ? (15000 / energyPerBed) * 100 : 0,
+        waterIntensityScore: waterPerBed > 0 ? (800 / waterPerBed) * 100 : 0,
+        wasteIntensityScore: wastePerBed > 0 ? (1200 / wastePerBed) * 100 : 0,
+      },
+      benchmarkScores
+    );
+
+  /* =============================== */
   /* CERTIFICATIONS                  */
   /* =============================== */
 
   const certifications = [
     {
       name: "NABH",
-
-      readiness:
-        readinessScore > 75
-          ? "Strong Readiness"
-          : "Moderate Readiness",
+      readiness: certificationReadiness.NABH ? "Ready" : "Needs Improvement",
     },
-
     {
       name: "ISO 14001",
-
-      readiness:
-        readinessScore > 65
-          ? "Certification Possible"
-          : "Needs Improvement",
+      readiness: certificationReadiness.ISO14001 ? "Ready" : "Needs Improvement",
     },
-
     {
       name: "IGBC Healthcare",
-
-      readiness:
-        readinessScore > 70
-          ? "Strong Potential"
-          : "Developing",
+      readiness: certificationReadiness.IGBC ? "Ready" : "Needs Improvement",
+    },
+    {
+      name: "LEED",
+      readiness: certificationReadiness.LEED ? "Ready" : "Needs Improvement",
+    },
+    {
+      name: "WELL",
+      readiness: certificationReadiness.WELL ? "Ready" : "Needs Improvement",
+    },
+    {
+      name: "BRSR",
+      readiness: certificationReadiness.BRSR ? "Ready" : "Needs Improvement",
+    },
+    {
+      name: "GRI",
+      readiness: certificationReadiness.GRI ? "Ready" : "Needs Improvement",
+    },
+    {
+      name: "CDP",
+      readiness: certificationReadiness.CDP ? "Ready" : "Needs Improvement",
     },
   ];
 
@@ -373,6 +426,10 @@ export async function fetchDashboardIntelligence() {
       wastePerBed:
         wastePerBed.toFixed(2),
     },
+
+    benchmarkScores,
+
+    gapAnalysis,
 
     coverage: {
       electricityMonths:
