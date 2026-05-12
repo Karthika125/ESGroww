@@ -78,11 +78,7 @@ const SECTOR_OPTIONS = [
 ];
 
 const INITIAL_ASSISTANT_MESSAGE =
-<<<<<<< Updated upstream
   "Hi, I am Evio. I can help explain ESG scores, data coverage, and recommended actions. Ask me anything.";
-=======
-  "Hi — I'm Evio. I can help explain ESG scores, data coverage, and practical next steps. Ask me anything.";
->>>>>>> Stashed changes
 
 function normalizeMessageContent(content: unknown) {
   if (typeof content === "string") {
@@ -136,15 +132,9 @@ function stripMarkdownFormatting(text: string) {
 
 export function MistralChatbot({
   title = "Evio",
-<<<<<<< Updated upstream
   description = "Evio — Ask about ESG readiness, scores, and practical next steps.",
   systemPrompt =
     "You are Evio, an ESG assistant for a sustainability readiness platform. Answer clearly, concisely, and in plain text only. Do not use markdown tables, bullets, numbering, emojis, code fences, or decorative symbols unless absolutely necessary.",
-=======
-  description = "Evio — Ask about ESG readiness, scores, and next steps.",
-  systemPrompt =
-    "You are Evio, an ESG assistant. Answer clearly, concisely, and in plain text only. Do not use markdown tables, bullets, numbering, emojis, code fences, or decorative symbols unless absolutely necessary.",
->>>>>>> Stashed changes
   suggestions = DEFAULT_SUGGESTIONS,
   className,
 }: ChatbotProps) {
@@ -300,17 +290,10 @@ export function MistralChatbot({
 
   return (
     <div className={cn("fixed bottom-4 right-4 z-50 w-[min(24rem,calc(100vw-2rem))]", className)}>
-<<<<<<< Updated upstream
       <Card className="border-slate-200 bg-gradient-to-br from-white via-slate-50 to-emerald-50/60 shadow-xl max-h-[90vh] overflow-y-auto flex flex-col">
       <CardHeader className="border-b border-slate-200/80 pb-3">
         <div className="flex items-start justify-between gap-3">
           <div className="space-y-0.5">
-=======
-      <Card className="border-slate-200 bg-gradient-to-br from-white via-slate-50 to-emerald-50/60 shadow-xl">
-      <CardHeader className="border-b border-slate-200/80 pb-3">
-        <div className="flex items-start justify-between gap-4">
-          <div className="space-y-1">
->>>>>>> Stashed changes
             <div className="flex items-center gap-2">
               <div className="flex size-7 items-center justify-center rounded-lg bg-emerald-600 text-white">
                 <Bot className="size-3.5" />
@@ -321,17 +304,9 @@ export function MistralChatbot({
                   {activeMode === "certificate" ? "Certificate" : activeMode === "regulatory" ? "Regulatory" : "General"}
                 </span>
               </div>
-<<<<<<< Updated upstream
             </div>
             <p className="text-xs text-slate-500 mt-1">{description}</p>
-=======
-              <div>
-                <CardTitle className="text-slate-900">{title}</CardTitle>
-                <p className="text-xs text-slate-500">{description}</p>
-              </div>
->>>>>>> Stashed changes
           </div>
-        </div>
 
           <div className="flex items-center gap-2">
             <Button
