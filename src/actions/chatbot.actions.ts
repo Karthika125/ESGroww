@@ -21,7 +21,7 @@ const DEFAULT_AGENT_ID =
 
 const DEFAULT_MODEL = process.env.MISTRAL_MODEL || "mistral-small-latest";
 
-const CHAT_REQUEST_TIMEOUT_MS = 20000;
+const CHAT_REQUEST_TIMEOUT_MS = 60000;
 
 function createAbortError(message: string) {
   return new Error(message);
@@ -32,8 +32,8 @@ function withTimeout<T>(promise: Promise<T>, timeoutMs: number) {
     promise,
     new Promise<T>((_, reject) => {
       setTimeout(() => {
-        reject(createAbortError("Mistral request timed out."));
-      }, timeoutMs);
+          reject(createAbortError("Evio request timed out."));
+        }, timeoutMs);
     }),
   ]);
 }
@@ -109,14 +109,14 @@ function extractErrorMessage(
   } | null
 ) {
   if (response.status === 401 || response.status === 403) {
-    return "Mistral authentication failed. Check the API key and agent access.";
+    return "Evio authentication failed. Check the API key and agent access.";
   }
 
   return (
     payload?.error?.message ||
     payload?.detail ||
     payload?.message ||
-    "Mistral request failed."
+    "Evio request failed."
   );
 }
 
@@ -214,7 +214,7 @@ export async function sendMistralChatMessage(
     if (!reply) {
       return {
         success: false,
-        error: "Mistral returned an empty response.",
+        error: "Evio returned an empty response.",
       };
     }
 
@@ -230,9 +230,9 @@ export async function sendMistralChatMessage(
       success: false,
       error:
         error instanceof Error &&
-        error.message === "Mistral request timed out."
-          ? "Mistral is taking too long to respond. Try again or check the agent configuration."
-          : "Unable to reach the Mistral API.",
+        error.message === "Evio request timed out."
+          ? "Evio is taking too long to respond. Try again or check the agent configuration."
+          : "Unable to reach the Evio service.",
     };
   }
 }
