@@ -3,7 +3,7 @@
 import { prisma } from "@/lib/db";
 
 const HOSPITAL_ID =
-  "cmp2cdhyz0001evczibh2ke4b";
+  "cmp2d6lbg0001gjjez1d6axq9a";
 
 export async function getSummaryData() {
   let hospital =
