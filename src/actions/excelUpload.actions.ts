@@ -7,7 +7,48 @@ import { prisma } from "@/lib/db";
 import { revalidatePath } from "next/cache";
 
 const HOSPITAL_ID =
-  "cmp0sbyk20000nvk8i9o68s5o";
+  "cmp2cdhyz0001evczibh2ke4b";
+
+function parseNumber(value: unknown, fallback = 0) {
+  const parsed = Number(value);
+  return Number.isNaN(parsed) ? fallback : parsed;
+}
+
+function getUploadError(category: string, error: unknown) {
+  const message =
+    error instanceof Error
+      ? error.message
+      : typeof error === "string"
+      ? error
+      : JSON.stringify(error);
+  return `Upload failed (${category}): ${message}`;
+}
+
+function validateRows(
+  rows: any[],
+  requiredFields: string[],
+  category: string
+) {
+  if (!rows.length) {
+    return `Your ${category} file is empty or the headers do not match the expected column names.`;
+  }
+
+  const missingFields = requiredFields.filter(
+    (field) =>
+      rows.every(
+        (row) =>
+          row[field] === undefined ||
+          row[field] === null ||
+          String(row[field]).trim() === ""
+      )
+  );
+
+  if (missingFields.length) {
+    return `Missing expected columns for ${category}: ${missingFields.join(", ")}.`;
+  }
+
+  return null;
+}
 
 /* ============================= */
 /* ELECTRICITY UPLOAD            */
@@ -47,14 +88,26 @@ export async function uploadElectricityExcel(
         worksheet
       );
 
+    const validationError = validateRows(
+      rows,
+      ["Month", "Year"],
+      "Electricity"
+    );
+    if (validationError) {
+      return {
+        success: false,
+        error: validationError,
+      };
+    }
+
     for (const row of rows) {
       await prisma.electricityData.create({
         data: {
-          hospitalId: "cmp0sbyk20000nvk8i9o68s5o",
+          hospitalId: HOSPITAL_ID,
 
           month: String(row.Month),
 
-          year: Number(row.Year),
+          year: parseNumber(row.Year),
 
           electricityKwh: Number(
             row.electricityKwh || 0
@@ -69,7 +122,7 @@ export async function uploadElectricityExcel(
 
     await prisma.upload.create({
       data: {
-        hospitalId: "cmp0sbyk20000nvk8i9o68s5o",
+        hospitalId: HOSPITAL_ID,
 
         category: "Electricity",
 
@@ -92,12 +145,11 @@ export async function uploadElectricityExcel(
       rowsUploaded: rows.length,
     };
   } catch (error) {
-    console.error(error);
+    console.error("Electricity upload error:", error);
 
     return {
       success: false,
-      error:
-        "Electricity upload failed",
+      error: getUploadError("Electricity", error),
     };
   }
 }
@@ -140,10 +192,22 @@ export async function uploadWaterExcel(
         worksheet
       );
 
+    const validationError = validateRows(
+      rows,
+      ["Month", "Year"],
+      "Water"
+    );
+    if (validationError) {
+      return {
+        success: false,
+        error: validationError,
+      };
+    }
+
     for (const row of rows) {
       await prisma.waterData.create({
         data: {
-          hospitalId: "cmp0sbyk20000nvk8i9o68s5o",
+          hospitalId: "cmp2cdhyz0001evczibh2ke4b",
 
           month: String(row.Month),
 
@@ -162,7 +226,7 @@ export async function uploadWaterExcel(
 
     await prisma.upload.create({
       data: {
-        hospitalId: "cmp0sbyk20000nvk8i9o68s5o",
+        hospitalId: "cmp2cdhyz0001evczibh2ke4b",
 
         category: "Water",
 
@@ -185,11 +249,11 @@ export async function uploadWaterExcel(
       rowsUploaded: rows.length,
     };
   } catch (error) {
-    console.error(error);
+    console.error("Water upload error:", error);
 
     return {
       success: false,
-      error: "Water upload failed",
+      error: getUploadError("Water", error),
     };
   }
 }
@@ -232,10 +296,22 @@ export async function uploadFuelExcel(
         worksheet
       );
 
+    const validationError = validateRows(
+      rows,
+      ["Month", "Year"],
+      "Fuel"
+    );
+    if (validationError) {
+      return {
+        success: false,
+        error: validationError,
+      };
+    }
+
     for (const row of rows) {
       await prisma.fuelData.create({
         data: {
-          hospitalId: "cmp0sbyk20000nvk8i9o68s5o",
+          hospitalId: "cmp2cdhyz0001evczibh2ke4b",
 
           month: String(row.Month),
 
@@ -250,7 +326,7 @@ export async function uploadFuelExcel(
 
     await prisma.upload.create({
       data: {
-        hospitalId: "cmp0sbyk20000nvk8i9o68s5o",
+        hospitalId: "cmp2cdhyz0001evczibh2ke4b",
 
         category: "Fuel",
 
@@ -273,11 +349,11 @@ export async function uploadFuelExcel(
       rowsUploaded: rows.length,
     };
   } catch (error) {
-    console.error(error);
+    console.error("Fuel upload error:", error);
 
     return {
       success: false,
-      error: "Fuel upload failed",
+      error: getUploadError("Fuel", error),
     };
   }
 }
@@ -320,10 +396,22 @@ export async function uploadWasteExcel(
         worksheet
       );
 
+    const validationError = validateRows(
+      rows,
+      ["Month", "Year"],
+      "Waste"
+    );
+    if (validationError) {
+      return {
+        success: false,
+        error: validationError,
+      };
+    }
+
     for (const row of rows) {
       await prisma.wasteData.create({
         data: {
-          hospitalId: "cmp0sbyk20000nvk8i9o68s5o",
+          hospitalId: "cmp2cdhyz0001evczibh2ke4b",
 
           month: String(row.Month),
 
@@ -346,7 +434,7 @@ export async function uploadWasteExcel(
 
     await prisma.upload.create({
       data: {
-        hospitalId: "cmp0sbyk20000nvk8i9o68s5o",
+        hospitalId: "cmp2cdhyz0001evczibh2ke4b",
 
         category: "Waste",
 
@@ -369,11 +457,11 @@ export async function uploadWasteExcel(
       rowsUploaded: rows.length,
     };
   } catch (error) {
-    console.error(error);
+    console.error("Waste upload error:", error);
 
     return {
       success: false,
-      error: "Waste upload failed",
+      error: getUploadError("Waste", error),
     };
   }
 }
@@ -416,10 +504,22 @@ export async function uploadRefrigerantsExcel(
         worksheet
       );
 
+    const validationError = validateRows(
+      rows,
+      ["Month", "Year"],
+      "Refrigerants"
+    );
+    if (validationError) {
+      return {
+        success: false,
+        error: validationError,
+      };
+    }
+
     for (const row of rows) {
       await prisma.refrigerantData.create({
         data: {
-          hospitalId: "cmp0sbyk20000nvk8i9o68s5o",
+          hospitalId: "cmp2cdhyz0001evczibh2ke4b",
 
           month: String(row.Month),
 
@@ -438,7 +538,7 @@ export async function uploadRefrigerantsExcel(
 
     await prisma.upload.create({
       data: {
-        hospitalId: "cmp0sbyk20000nvk8i9o68s5o",
+        hospitalId: "cmp2cdhyz0001evczibh2ke4b",
 
         category: "Refrigerants",
 
@@ -461,12 +561,11 @@ export async function uploadRefrigerantsExcel(
       rowsUploaded: rows.length,
     };
   } catch (error) {
-    console.error(error);
+    console.error("Refrigerants upload error:", error);
 
     return {
       success: false,
-      error:
-        "Refrigerants upload failed",
+      error: getUploadError("Refrigerants", error),
     };
   }
 }
@@ -509,10 +608,22 @@ export async function uploadTransportExcel(
         worksheet
       );
 
+    const validationError = validateRows(
+      rows,
+      ["Month", "Year"],
+      "Transport"
+    );
+    if (validationError) {
+      return {
+        success: false,
+        error: validationError,
+      };
+    }
+
     for (const row of rows) {
       await prisma.transportData.create({
         data: {
-          hospitalId: "cmp0sbyk20000nvk8i9o68s5o",
+          hospitalId: "cmp2cdhyz0001evczibh2ke4b",
 
           month: String(row.Month),
 
@@ -531,7 +642,7 @@ export async function uploadTransportExcel(
 
     await prisma.upload.create({
       data: {
-        hospitalId: "cmp0sbyk20000nvk8i9o68s5o",
+        hospitalId: "cmp2cdhyz0001evczibh2ke4b",
 
         category: "Transport",
 
@@ -554,12 +665,11 @@ export async function uploadTransportExcel(
       rowsUploaded: rows.length,
     };
   } catch (error) {
-    console.error(error);
+    console.error("Transport upload error:", error);
 
     return {
       success: false,
-      error:
-        "Transport upload failed",
+      error: getUploadError("Transport", error),
     };
   }
 }
