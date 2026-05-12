@@ -6,13 +6,45 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useRouter } from "next/navigation";
 import { Leaf } from "lucide-react";
+import { useState } from "react";
 
 export default function Login() {
   const router = useRouter();
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    router.push("/upload");
+    setError("");
+    setLoading(true);
+
+    try {
+      const response = await fetch("/api/login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          email,
+          password,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        setError(data.error || "Login failed");
+        setLoading(false);
+        return;
+      }
+
+      router.push("/upload");
+    } catch (err) {
+      setError("Something went wrong. Please try again.");
+      setLoading(false);
+    }
   };
 
   return (
@@ -31,9 +63,22 @@ export default function Login() {
         </CardHeader>
         <CardContent>
           <form onSubmit={handleLogin} className="space-y-4">
+            {error && (
+              <div className="bg-red-50 border border-red-200 text-red-600 rounded-lg px-3 py-2 text-sm">
+                {error}
+              </div>
+            )}
             <div className="space-y-2">
               <Label htmlFor="email">Work Email</Label>
-              <Input id="email" type="email" placeholder="name@company.com" required className="focus-visible:ring-emerald-500" />
+              <Input
+                id="email"
+                type="email"
+                placeholder="name@company.com"
+                required
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="focus-visible:ring-emerald-500"
+              />
             </div>
             <div className="space-y-2">
               <div className="flex items-center justify-between">
@@ -42,16 +87,33 @@ export default function Login() {
                   Forgot password?
                 </a>
               </div>
-              <Input id="password" type="password" required className="focus-visible:ring-emerald-500" />
+              <Input
+                id="password"
+                type="password"
+                required
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="focus-visible:ring-emerald-500"
+              />
             </div>
-            <Button type="submit" className="w-full bg-emerald-600 hover:bg-emerald-700">
-              Sign In
+            <Button
+              type="submit"
+              disabled={loading}
+              className="w-full bg-emerald-600 hover:bg-emerald-700"
+            >
+              {loading ? "Signing In..." : "Sign In"}
             </Button>
           </form>
         </CardContent>
         <CardFooter className="flex justify-center border-t p-4 mt-2">
           <p className="text-sm text-slate-500">
-            Don't have an account? <a href="#" className="text-emerald-600 font-medium">Request access</a>
+            Don't have an account?{" "}
+            <button
+              onClick={() => router.push("/register")}
+              className="text-emerald-600 font-medium hover:text-emerald-700 transition"
+            >
+              Register
+            </button>
           </p>
         </CardFooter>
       </Card>

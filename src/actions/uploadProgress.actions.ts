@@ -1,10 +1,22 @@
 "use server";
 
 import { prisma } from "@/lib/db";
+import { getCurrentUser } from "@/lib/getUser";
 
 export async function getUploadProgress() {
+  const user = await getCurrentUser();
+
+  if (!user || typeof user === "string" || !("hospitalId" in user)) {
+    return null;
+  }
+
+  const hospitalId = String(user.hospitalId);
+
   const hospital =
-    await prisma.hospital.findFirst({
+    await prisma.hospital.findUnique({
+      where: {
+        id: hospitalId,
+      },
       include: {
         electricityData: true,
         waterData: true,
@@ -40,8 +52,19 @@ export async function getUploadProgress() {
   };
 }
 export async function getRecentUploads() {
+  const user = await getCurrentUser();
+
+  if (!user || typeof user === "string" || !("hospitalId" in user)) {
+    return null;
+  }
+
+  const hospitalId = String(user.hospitalId);
+
   const uploads =
     await prisma.upload.findMany({
+      where: {
+        hospitalId,
+      },
       orderBy: {
         createdAt: "desc",
       },

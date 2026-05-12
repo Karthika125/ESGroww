@@ -240,3 +240,96 @@ export function calculateESGReadinessScore({
     100
   );
 }
+
+/* ========================================= */
+/* COMPLETENESS ENGINE                       */
+/* ========================================= */
+
+export function calculateCategoryCompleteness(
+  monthsUploaded: number
+): number {
+  return Math.min((monthsUploaded / 12) * 100, 100);
+}
+
+export function calculateOverallCompleteness({
+  electricityCompleteness,
+  waterCompleteness,
+  wasteCompleteness,
+  governanceCompleteness,
+}: {
+  electricityCompleteness: number;
+  waterCompleteness: number;
+  wasteCompleteness: number;
+  governanceCompleteness: number;
+}): number {
+  return (
+    (electricityCompleteness +
+      waterCompleteness +
+      wasteCompleteness +
+      governanceCompleteness) /
+    4
+  );
+}
+
+/* ========================================= */
+/* CONFIDENCE ENGINE                         */
+/* ========================================= */
+
+export function calculateConfidenceScore(
+  monthsUploaded: number
+): number {
+  if (monthsUploaded >= 12) return 1.0;
+  if (monthsUploaded >= 9) return 0.95;
+  if (monthsUploaded >= 6) return 0.85;
+  if (monthsUploaded >= 3) return 0.7;
+  return 0;
+}
+
+/* ========================================= */
+/* ANNUALIZATION ENGINE                      */
+/* ========================================= */
+
+export function annualizeValue(
+  uploadedTotal: number,
+  monthsUploaded: number
+): number {
+  if (monthsUploaded === 0) return 0;
+  return (uploadedTotal / monthsUploaded) * 12;
+}
+
+export function annualizeElectricity(
+  totalElectricityKwh: number,
+  monthsUploaded: number
+): number {
+  return annualizeValue(
+    totalElectricityKwh,
+    monthsUploaded
+  );
+}
+
+export function annualizeWater(
+  totalWaterKl: number,
+  monthsUploaded: number
+): number {
+  return annualizeValue(totalWaterKl, monthsUploaded);
+}
+
+export function annualizeFuel(
+  totalFuelLitres: number,
+  monthsUploaded: number
+): number {
+  return annualizeValue(
+    totalFuelLitres,
+    monthsUploaded
+  );
+}
+
+export function annualizeWaste(
+  totalWasteKg: number,
+  monthsUploaded: number
+): number {
+  return annualizeValue(
+    totalWasteKg,
+    monthsUploaded
+  );
+}

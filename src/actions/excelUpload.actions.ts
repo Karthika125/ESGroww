@@ -6,8 +6,7 @@ import { prisma } from "@/lib/db";
 
 import { revalidatePath } from "next/cache";
 
-const HOSPITAL_ID =
-  "cmp2cdhyz0001evczibh2ke4b";
+import { getCurrentUser } from "@/lib/getUser";
 
   const VALID_MONTHS = [
   "Jan",
@@ -149,6 +148,118 @@ function getUploadError(category: string, error: unknown) {
   return `Upload failed (${category}): ${message}`;
 }
 
+/* ========================= */
+/* NEGATIVE VALUE CHECK      */
+/* ========================= */
+
+function validateNegativeValues(
+  rows: any[],
+  fields: string[],
+  category: string
+) {
+  for (let i = 0; i < rows.length; i++) {
+    const row = rows[i];
+
+    for (const field of fields) {
+      const rawValue = row[field];
+
+      if (
+        rawValue === undefined ||
+        rawValue === null ||
+        String(rawValue).trim() === ""
+      ) {
+        continue;
+      }
+
+      const numeric = Number(
+        String(rawValue)
+          .replace(/,/g, "")
+          .trim()
+      );
+
+      if (numeric < 0) {
+        return `Negative value "${numeric}" found in column "${field}" at row ${
+          i + 1
+        } in ${category} upload. Only positive values are allowed.`;
+      }
+    }
+  }
+
+  return null;
+}
+
+/* ========================= */
+/* ABNORMAL SPIKE DETECTION  */
+/* ========================= */
+
+function detectAbnormalSpikes(
+  rows: any[],
+  fields: string[],
+  category: string
+): string[] {
+  const warnings: string[] = [];
+
+  for (const field of fields) {
+    const values: number[] = [];
+
+    for (let i = 0; i < rows.length; i++) {
+      const rawValue = rows[i][field];
+
+      if (
+        rawValue === undefined ||
+        rawValue === null ||
+        String(rawValue).trim() === ""
+      ) {
+        values.push(0);
+        continue;
+      }
+
+      const numeric = Number(
+        String(rawValue)
+          .replace(/,/g, "")
+          .trim()
+      );
+
+      values.push(Number.isFinite(numeric) ? numeric : 0);
+    }
+
+    for (let i = 1; i < values.length; i++) {
+      const prev = values[i - 1];
+      const curr = values[i];
+
+      if (prev === 0 && curr === 0) continue;
+
+      if (prev === 0) {
+        if (curr > 0) {
+          warnings.push(
+            `⚠️ Spike detected: ${field} jumped from 0 to ${curr} in row ${i + 1} (${category}). Please verify.`
+          );
+        }
+      } else {
+        const percentChange = Math.abs((curr - prev) / prev) * 100;
+
+        if (percentChange > 100) {
+          warnings.push(
+            `⚠️ Spike detected: ${field} increased by ${percentChange.toFixed(1)}% from row ${i} to row ${
+              i + 1
+            } (${category}). Verify data accuracy.`
+          );
+        }
+
+        if (percentChange > 70 && curr < prev) {
+          warnings.push(
+            `⚠️ Drop detected: ${field} decreased by ${percentChange.toFixed(1)}% from row ${i} to row ${
+              i + 1
+            } (${category}). Verify data accuracy.`
+          );
+        }
+      }
+    }
+  }
+
+  return warnings;
+}
+
 function validateRows(
   rows: any[],
   requiredFields: string[],
@@ -246,29 +357,23 @@ async function validateMonthEntry({
   month,
   year,
   category,
+  hospitalId,
 }: {
   month: string;
   year: number;
   category: string;
+  hospitalId: string;
 }) {
   const normalizedMonth = normalizeMonth(month);
-
-  /* ========================= */
-  /* VALID MONTH CHECK         */
-  /* ========================= */
 
   if (!VALID_MONTHS.includes(normalizedMonth)) {
     return `Invalid month "${month}". Allowed values are Jan-Dec only.`;
   }
 
-  /* ========================= */
-  /* DUPLICATE CHECK           */
-  /* ========================= */
-
   const existingUpload =
     await prisma.upload.findFirst({
       where: {
-        hospitalId: HOSPITAL_ID,
+        hospitalId,
 
         category,
 
@@ -292,6 +397,17 @@ export async function uploadElectricityExcel(
   formData: FormData
 ) {
   try {
+    const user = await getCurrentUser();
+
+    if (!user || typeof user === "string" || !("hospitalId" in user)) {
+      return {
+        success: false,
+        error: "Unauthorized user.",
+      };
+    }
+
+    const hospitalId = String(user.hospitalId);
+
     const file = formData.get(
       "file"
     ) as File;
@@ -346,6 +462,24 @@ export async function uploadElectricityExcel(
       };
     }
 
+    const negativeError = validateNegativeValues(
+      rows,
+      ["electricityKwh", "renewableKwh"],
+      "Electricity"
+    );
+    if (negativeError) {
+      return {
+        success: false,
+        error: negativeError,
+      };
+    }
+
+    const spikeWarnings = detectAbnormalSpikes(
+      rows,
+      ["electricityKwh", "renewableKwh"],
+      "Electricity"
+    );
+
     const monthValue = normalizeMonth(rows[0].Month);
     const yearValue = parseYear(rows[0].Year);
 
@@ -361,6 +495,7 @@ export async function uploadElectricityExcel(
         month: monthValue,
         year: yearValue,
         category: "Electricity",
+        hospitalId,
       });
 
     if (duplicateError) {
@@ -376,7 +511,7 @@ export async function uploadElectricityExcel(
 
       await prisma.electricityData.create({
         data: {
-          hospitalId: HOSPITAL_ID,
+          hospitalId: hospitalId,
 
           month: rowMonth,
 
@@ -391,7 +526,7 @@ export async function uploadElectricityExcel(
 
     await prisma.upload.create({
       data: {
-        hospitalId: HOSPITAL_ID,
+        hospitalId: hospitalId,
 
         category: "Electricity",
 
@@ -408,6 +543,7 @@ export async function uploadElectricityExcel(
     return {
       success: true,
       rowsUploaded: rows.length,
+      warnings: spikeWarnings.length > 0 ? spikeWarnings : undefined,
     };
   } catch (error) {
     console.error("Electricity upload error:", error);
@@ -427,6 +563,17 @@ export async function uploadWaterExcel(
   formData: FormData
 ) {
   try {
+    const user = await getCurrentUser();
+
+    if (!user || typeof user === "string" || !("hospitalId" in user)) {
+      return {
+        success: false,
+        error: "Unauthorized user.",
+      };
+    }
+
+    const hospitalId = String(user.hospitalId);
+
     const file = formData.get(
       "file"
     ) as File;
@@ -481,6 +628,24 @@ export async function uploadWaterExcel(
       };
     }
 
+    const negativeError = validateNegativeValues(
+      rows,
+      ["waterKl", "recycledWaterKl"],
+      "Water"
+    );
+    if (negativeError) {
+      return {
+        success: false,
+        error: negativeError,
+      };
+    }
+
+    const spikeWarnings = detectAbnormalSpikes(
+      rows,
+      ["waterKl", "recycledWaterKl"],
+      "Water"
+    );
+
     const monthValue = normalizeMonth(rows[0].Month);
     const yearValue = parseYear(rows[0].Year);
 
@@ -496,6 +661,7 @@ export async function uploadWaterExcel(
         month: monthValue,
         year: yearValue,
         category: "Water",
+        hospitalId,
       });
 
     if (duplicateError) {
@@ -511,7 +677,7 @@ export async function uploadWaterExcel(
 
       await prisma.waterData.create({
         data: {
-          hospitalId: HOSPITAL_ID,
+          hospitalId: hospitalId,
 
           month: rowMonth,
 
@@ -526,7 +692,7 @@ export async function uploadWaterExcel(
 
     await prisma.upload.create({
       data: {
-        hospitalId: HOSPITAL_ID,
+        hospitalId: hospitalId,
 
         category: "Water",
 
@@ -543,6 +709,7 @@ export async function uploadWaterExcel(
     return {
       success: true,
       rowsUploaded: rows.length,
+      warnings: spikeWarnings.length > 0 ? spikeWarnings : undefined,
     };
   } catch (error) {
     console.error("Water upload error:", error);
@@ -562,6 +729,17 @@ export async function uploadFuelExcel(
   formData: FormData
 ) {
   try {
+    const user = await getCurrentUser();
+
+    if (!user || typeof user === "string" || !("hospitalId" in user)) {
+      return {
+        success: false,
+        error: "Unauthorized user.",
+      };
+    }
+
+    const hospitalId = String(user.hospitalId);
+
     const file = formData.get(
       "file"
     ) as File;
@@ -616,6 +794,24 @@ export async function uploadFuelExcel(
       };
     }
 
+    const negativeError = validateNegativeValues(
+      rows,
+      ["dgDieselLitres"],
+      "Fuel"
+    );
+    if (negativeError) {
+      return {
+        success: false,
+        error: negativeError,
+      };
+    }
+
+    const spikeWarnings = detectAbnormalSpikes(
+      rows,
+      ["dgDieselLitres"],
+      "Fuel"
+    );
+
     const monthValue = normalizeMonth(rows[0].Month);
     const yearValue = parseYear(rows[0].Year);
 
@@ -631,6 +827,7 @@ export async function uploadFuelExcel(
         month: monthValue,
         year: yearValue,
         category: "Fuel",
+        hospitalId,
       });
 
     if (duplicateError) {
@@ -646,7 +843,7 @@ export async function uploadFuelExcel(
 
       await prisma.fuelData.create({
         data: {
-          hospitalId: HOSPITAL_ID,
+          hospitalId: hospitalId,
 
           month: rowMonth,
 
@@ -659,7 +856,7 @@ export async function uploadFuelExcel(
 
     await prisma.upload.create({
       data: {
-        hospitalId: HOSPITAL_ID,
+        hospitalId: hospitalId,
 
         category: "Fuel",
 
@@ -676,6 +873,7 @@ export async function uploadFuelExcel(
     return {
       success: true,
       rowsUploaded: rows.length,
+      warnings: spikeWarnings.length > 0 ? spikeWarnings : undefined,
     };
   } catch (error) {
     console.error("Fuel upload error:", error);
@@ -695,6 +893,17 @@ export async function uploadWasteExcel(
   formData: FormData
 ) {
   try {
+    const user = await getCurrentUser();
+
+    if (!user || typeof user === "string" || !("hospitalId" in user)) {
+      return {
+        success: false,
+        error: "Unauthorized user.",
+      };
+    }
+
+    const hospitalId = String(user.hospitalId);
+
     const file = formData.get(
       "file"
     ) as File;
@@ -749,6 +958,24 @@ export async function uploadWasteExcel(
       };
     }
 
+    const negativeError = validateNegativeValues(
+      rows,
+      ["biomedicalWasteKg", "recyclableWasteKg", "landfillWasteKg"],
+      "Waste"
+    );
+    if (negativeError) {
+      return {
+        success: false,
+        error: negativeError,
+      };
+    }
+
+    const spikeWarnings = detectAbnormalSpikes(
+      rows,
+      ["biomedicalWasteKg", "recyclableWasteKg", "landfillWasteKg"],
+      "Waste"
+    );
+
     const monthValue = normalizeMonth(rows[0].Month);
     const yearValue = parseYear(rows[0].Year);
 
@@ -764,6 +991,7 @@ export async function uploadWasteExcel(
         month: monthValue,
         year: yearValue,
         category: "Waste",
+        hospitalId,
       });
 
     if (duplicateError) {
@@ -779,7 +1007,7 @@ export async function uploadWasteExcel(
 
       await prisma.wasteData.create({
         data: {
-          hospitalId: HOSPITAL_ID,
+          hospitalId: hospitalId,
 
           month: rowMonth,
 
@@ -796,7 +1024,7 @@ export async function uploadWasteExcel(
 
     await prisma.upload.create({
       data: {
-        hospitalId: HOSPITAL_ID,
+        hospitalId: hospitalId,
 
         category: "Waste",
 
@@ -813,6 +1041,7 @@ export async function uploadWasteExcel(
     return {
       success: true,
       rowsUploaded: rows.length,
+      warnings: spikeWarnings.length > 0 ? spikeWarnings : undefined,
     };
   } catch (error) {
     console.error("Waste upload error:", error);
@@ -832,6 +1061,17 @@ export async function uploadRefrigerantsExcel(
   formData: FormData
 ) {
   try {
+    const user = await getCurrentUser();
+
+    if (!user || typeof user === "string" || !("hospitalId" in user)) {
+      return {
+        success: false,
+        error: "Unauthorized user.",
+      };
+    }
+
+    const hospitalId = String(user.hospitalId);
+
     const file = formData.get(
       "file"
     ) as File;
@@ -886,6 +1126,24 @@ export async function uploadRefrigerantsExcel(
       };
     }
 
+    const negativeError = validateNegativeValues(
+      rows,
+      ["refrigerantLeakKg"],
+      "Refrigerants"
+    );
+    if (negativeError) {
+      return {
+        success: false,
+        error: negativeError,
+      };
+    }
+
+    const spikeWarnings = detectAbnormalSpikes(
+      rows,
+      ["refrigerantLeakKg"],
+      "Refrigerants"
+    );
+
     const monthValue = normalizeMonth(rows[0].Month);
     const yearValue = parseYear(rows[0].Year);
 
@@ -901,6 +1159,7 @@ export async function uploadRefrigerantsExcel(
         month: monthValue,
         year: yearValue,
         category: "Refrigerants",
+        hospitalId,
       });
 
     if (duplicateError) {
@@ -916,7 +1175,7 @@ export async function uploadRefrigerantsExcel(
 
       await prisma.refrigerantData.create({
         data: {
-          hospitalId: HOSPITAL_ID,
+          hospitalId: hospitalId,
 
           month: rowMonth,
 
@@ -935,7 +1194,7 @@ export async function uploadRefrigerantsExcel(
 
     await prisma.upload.create({
       data: {
-        hospitalId: HOSPITAL_ID,
+        hospitalId: hospitalId,
 
         category: "Refrigerants",
 
@@ -952,6 +1211,7 @@ export async function uploadRefrigerantsExcel(
     return {
       success: true,
       rowsUploaded: rows.length,
+      warnings: spikeWarnings.length > 0 ? spikeWarnings : undefined,
     };
   } catch (error) {
     console.error("Refrigerants upload error:", error);
@@ -971,6 +1231,17 @@ export async function uploadTransportExcel(
   formData: FormData
 ) {
   try {
+    const user = await getCurrentUser();
+
+    if (!user || typeof user === "string" || !("hospitalId" in user)) {
+      return {
+        success: false,
+        error: "Unauthorized user.",
+      };
+    }
+
+    const hospitalId = String(user.hospitalId);
+
     const file = formData.get(
       "file"
     ) as File;
@@ -1025,6 +1296,24 @@ export async function uploadTransportExcel(
       };
     }
 
+    const negativeError = validateNegativeValues(
+      rows,
+      ["ambulanceFuelLitres", "staffCommuteKm"],
+      "Transport"
+    );
+    if (negativeError) {
+      return {
+        success: false,
+        error: negativeError,
+      };
+    }
+
+    const spikeWarnings = detectAbnormalSpikes(
+      rows,
+      ["ambulanceFuelLitres", "staffCommuteKm"],
+      "Transport"
+    );
+
     const monthValue = normalizeMonth(rows[0].Month);
     const yearValue = parseYear(rows[0].Year);
 
@@ -1040,6 +1329,7 @@ export async function uploadTransportExcel(
         month: monthValue,
         year: yearValue,
         category: "Transport",
+        hospitalId,
       });
 
     if (duplicateError) {
@@ -1055,7 +1345,7 @@ export async function uploadTransportExcel(
 
       await prisma.transportData.create({
         data: {
-          hospitalId: HOSPITAL_ID,
+          hospitalId: hospitalId,
 
           month: rowMonth,
 
@@ -1074,7 +1364,7 @@ export async function uploadTransportExcel(
 
     await prisma.upload.create({
       data: {
-        hospitalId: HOSPITAL_ID,
+        hospitalId: hospitalId,
 
         category: "Transport",
 
@@ -1091,6 +1381,7 @@ export async function uploadTransportExcel(
     return {
       success: true,
       rowsUploaded: rows.length,
+      warnings: spikeWarnings.length > 0 ? spikeWarnings : undefined,
     };
   } catch (error) {
     console.error("Transport upload error:", error);
@@ -1101,3 +1392,4 @@ export async function uploadTransportExcel(
     };
   }
 }
+

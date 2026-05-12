@@ -169,6 +169,19 @@ export default function Page() {
               : "Register"}
           </button>
         </div>
+
+        {/* Sign In Link */}
+        <div className="mt-8 text-center">
+          <p className="text-slate-600">
+            Already have an account?{" "}
+            <button
+              onClick={() => router.push("/login")}
+              className="text-emerald-600 hover:text-emerald-700 font-semibold transition"
+            >
+              Sign in
+            </button>
+          </p>
+        </div>
       </div>
     </div>
   );

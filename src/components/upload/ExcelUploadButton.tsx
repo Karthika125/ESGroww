@@ -1,131 +1,133 @@
 "use client";
 
 import { useState } from "react";
-
-import { UploadCloud } from "lucide-react";
-
+import { UploadCloud, CheckCircle2, AlertCircle, Loader2 } from "lucide-react";
 import {
-    uploadElectricityExcel,
-    uploadWaterExcel,
-    uploadFuelExcel,
-    uploadWasteExcel,
-    uploadRefrigerantsExcel,
-    uploadTransportExcel,
+  uploadElectricityExcel,
+  uploadWaterExcel,
+  uploadFuelExcel,
+  uploadWasteExcel,
+  uploadRefrigerantsExcel,
+  uploadTransportExcel,
 } from "@/actions/excelUpload.actions";
 
 interface Props {
-    category:
-    | "electricity"
-    | "water"
-    | "fuel"
-    | "waste"
-    | "refrigerants"
-    | "transport";
+  category: "electricity" | "water" | "fuel" | "waste" | "refrigerants" | "transport";
+  onUploadSuccess?: () => void;
 }
 
-export default function ExcelUploadButton({
-    category,
-}: Props) {
-    const [loading, setLoading] =
-        useState(false);
+type UploadStatus = "idle" | "loading" | "success" | "error";
 
-    async function handleUpload(
-        formData: FormData
-    ) {
-        const file = formData.get(
-            "file"
-        ) as File;
+const ACTION_MAP = {
+  electricity: uploadElectricityExcel,
+  water: uploadWaterExcel,
+  fuel: uploadFuelExcel,
+  waste: uploadWasteExcel,
+  refrigerants: uploadRefrigerantsExcel,
+  transport: uploadTransportExcel,
+};
 
-        if (!file || file.size === 0) {
-            alert("Please select an Excel file");
+export default function ExcelUploadButton({ category, onUploadSuccess }: Props) {
+  const [status, setStatus] = useState<UploadStatus>("idle");
+  const [message, setMessage] = useState("");
+  const [fileName, setFileName] = useState("");
 
-            return;
-        }
+  function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    setFileName(file?.name ?? "");
+    setStatus("idle");
+    setMessage("");
+  }
 
-        setLoading(true);
-
-        let result;
-
-        switch (category) {
-            case "electricity":
-                result =
-                    await uploadElectricityExcel(
-                        formData
-                    );
-                break;
-
-            case "water":
-                result =
-                    await uploadWaterExcel(
-                        formData
-                    );
-                break;
-
-            case "fuel":
-                result =
-                    await uploadFuelExcel(
-                        formData
-                    );
-                break;
-
-            case "waste":
-                result =
-                    await uploadWasteExcel(
-                        formData
-                    );
-                break;
-            case "refrigerants":
-                result =
-                    await uploadRefrigerantsExcel(
-                        formData
-                    );
-                break;
-
-            case "transport":
-                result =
-                    await uploadTransportExcel(
-                        formData
-                    );
-                break;
-
-            default:
-                result = {
-                    success: false,
-                    error: "Invalid category",
-                };
-        }
-
-        alert(
-            result.success
-                ? `Uploaded ${result.rowsUploaded} rows`
-                : result.error
-        );
-
-        setLoading(false);
+  async function handleUpload(formData: FormData) {
+    const file = formData.get("file") as File;
+    if (!file || file.size === 0) {
+      setStatus("error");
+      setMessage("Please select an Excel file first.");
+      return;
     }
 
-    return (
-        <form action={handleUpload}>
-            <div className="space-y-3">
-                <input
-                    type="file"
-                    name="file"
-                    accept=".xlsx,.xls"
-                    required
-                    className="block w-full text-sm"
-                />
+    setStatus("loading");
+    setMessage("");
 
-                <button
-                    type="submit"
-                    className="w-full flex items-center justify-center bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl px-4 py-2"
-                >
-                    <UploadCloud className="w-4 h-4 mr-2" />
+    try {
+      const action = ACTION_MAP[category];
+      const result = await action(formData);
 
-                    {loading
-                        ? "Uploading..."
-                        : "Upload Excel"}
-                </button>
-            </div>
-        </form>
-    );
+      if (result.success) {
+        setStatus("success");
+        const message = `${result.rowsUploaded} month${result.rowsUploaded !== 1 ? "s" : ""} uploaded successfully${result.warnings && result.warnings.length > 0 ? " with warnings" : ""}`;
+        setMessage(message);
+        if (result.warnings && result.warnings.length > 0) {
+          console.warn("Upload warnings:", result.warnings);
+        }
+        await onUploadSuccess?.();
+      } else {
+        setStatus("error");
+        setMessage(result.error ?? "Upload failed. Please try again.");
+      }
+    } catch {
+      setStatus("error");
+      setMessage("Unexpected error. Please try again.");
+    }
+  }
+
+  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    const formData = new FormData(e.currentTarget);
+    await handleUpload(formData);
+  }
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-2.5">
+      {/* File input styled */}
+      <label className="flex items-center gap-2 w-full cursor-pointer group">
+        <div className="flex-1 min-w-0 border border-dashed border-slate-300 group-hover:border-emerald-400 bg-slate-50 group-hover:bg-emerald-50/40 rounded-xl px-3 py-2 transition-all">
+          <span className="text-xs text-slate-400 truncate block">
+            {fileName || "Choose .xlsx or .xls file"}
+          </span>
+        </div>
+        <input
+          type="file"
+          name="file"
+          accept=".xlsx,.xls"
+          onChange={handleFileChange}
+          className="hidden"
+        />
+      </label>
+
+      {/* Submit button */}
+      <button
+        type="submit"
+        disabled={status === "loading" || !fileName}
+        className="w-full flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-700 disabled:bg-slate-200 disabled:text-slate-400 disabled:cursor-not-allowed text-white text-sm font-medium rounded-xl px-4 py-2.5 transition-all duration-200"
+      >
+        {status === "loading" ? (
+          <>
+            <Loader2 className="w-4 h-4 animate-spin" />
+            Uploading…
+          </>
+        ) : (
+          <>
+            <UploadCloud className="w-4 h-4" />
+            Upload Excel
+          </>
+        )}
+      </button>
+
+      {/* Status feedback */}
+      {status === "success" && (
+        <div className="flex items-center gap-2 text-xs text-emerald-700 bg-emerald-50 border border-emerald-100 rounded-lg px-3 py-2">
+          <CheckCircle2 className="w-3.5 h-3.5 flex-shrink-0" />
+          {message}
+        </div>
+      )}
+      {status === "error" && (
+        <div className="flex items-center gap-2 text-xs text-rose-700 bg-rose-50 border border-rose-100 rounded-lg px-3 py-2">
+          <AlertCircle className="w-3.5 h-3.5 flex-shrink-0" />
+          {message}
+        </div>
+      )}
+    </form>
+  );
 }

@@ -1,5 +1,7 @@
 import { prisma } from "@/lib/db";
 
+import bcrypt from "bcryptjs";
+
 import { NextResponse } from "next/server";
 
 export async function POST(
@@ -28,6 +30,7 @@ export async function POST(
     ) {
       return NextResponse.json(
         {
+          success: false,
           error:
             "Missing required fields.",
         },
@@ -49,12 +52,23 @@ export async function POST(
     if (existingUser) {
       return NextResponse.json(
         {
+          success: false,
           error:
             "Email already registered.",
         },
         { status: 400 }
       );
     }
+
+    /* ====================== */
+    /* HASH PASSWORD          */
+    /* ====================== */
+
+    const hashedPassword =
+      await bcrypt.hash(
+        password,
+        10
+      );
 
     /* ====================== */
     /* CREATE HOSPITAL        */
@@ -65,11 +79,17 @@ export async function POST(
         data: {
           hospitalName,
 
-          industry,
+          industry:
+            industry ||
+            "Healthcare",
 
-          numberOfBeds,
+          numberOfBeds:
+            Number(numberOfBeds) ||
+            0,
 
-          builtUpArea,
+          builtUpArea:
+            Number(builtUpArea) ||
+            0,
         },
       });
 
@@ -82,7 +102,8 @@ export async function POST(
         data: {
           email,
 
-          password,
+          password:
+            hashedPassword,
 
           hospitalId:
             hospital.id,
@@ -94,15 +115,23 @@ export async function POST(
     return NextResponse.json({
       success: true,
 
+      message:
+        "Registration successful.",
+
       userId: user.id,
 
-      hospitalId: hospital.id,
+      hospitalId:
+        hospital.id,
     });
   } catch (error) {
-    console.error(error);
+    console.error(
+      "Register API Error:",
+      error
+    );
 
     return NextResponse.json(
       {
+        success: false,
         error:
           "Registration failed.",
       },
@@ -110,4 +139,3 @@ export async function POST(
     );
   }
 }
-
