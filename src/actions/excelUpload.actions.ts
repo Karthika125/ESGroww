@@ -7,7 +7,7 @@ import { prisma } from "@/lib/db";
 import { revalidatePath } from "next/cache";
 
 const HOSPITAL_ID =
-  "cmp2cdhyz0001evczibh2ke4b";
+  "cmp2d6lbg0001gjjez1d6axq9a";
 
 function parseNumber(value: unknown, fallback = 0) {
   const parsed = Number(value);
@@ -207,7 +207,7 @@ export async function uploadWaterExcel(
     for (const row of rows) {
       await prisma.waterData.create({
         data: {
-          hospitalId: "cmp2cdhyz0001evczibh2ke4b",
+          hospitalId: "cmp2d6lbg0001gjjez1d6axq9a",
 
           month: String(row.Month),
 
@@ -226,7 +226,7 @@ export async function uploadWaterExcel(
 
     await prisma.upload.create({
       data: {
-        hospitalId: "cmp2cdhyz0001evczibh2ke4b",
+        hospitalId: "cmp2d6lbg0001gjjez1d6axq9a",
 
         category: "Water",
 
@@ -311,7 +311,7 @@ export async function uploadFuelExcel(
     for (const row of rows) {
       await prisma.fuelData.create({
         data: {
-          hospitalId: "cmp2cdhyz0001evczibh2ke4b",
+          hospitalId: "cmp2d6lbg0001gjjez1d6axq9a",
 
           month: String(row.Month),
 
@@ -326,7 +326,7 @@ export async function uploadFuelExcel(
 
     await prisma.upload.create({
       data: {
-        hospitalId: "cmp2cdhyz0001evczibh2ke4b",
+        hospitalId: "cmp2d6lbg0001gjjez1d6axq9a",
 
         category: "Fuel",
 
@@ -411,7 +411,7 @@ export async function uploadWasteExcel(
     for (const row of rows) {
       await prisma.wasteData.create({
         data: {
-          hospitalId: "cmp2cdhyz0001evczibh2ke4b",
+          hospitalId: "cmp2d6lbg0001gjjez1d6axq9a",
 
           month: String(row.Month),
 
@@ -434,7 +434,7 @@ export async function uploadWasteExcel(
 
     await prisma.upload.create({
       data: {
-        hospitalId: "cmp2cdhyz0001evczibh2ke4b",
+        hospitalId: "cmp2d6lbg0001gjjez1d6axq9a",
 
         category: "Waste",
 
@@ -519,7 +519,7 @@ export async function uploadRefrigerantsExcel(
     for (const row of rows) {
       await prisma.refrigerantData.create({
         data: {
-          hospitalId: "cmp2cdhyz0001evczibh2ke4b",
+          hospitalId: "cmp2d6lbg0001gjjez1d6axq9a",
 
           month: String(row.Month),
 
@@ -538,7 +538,7 @@ export async function uploadRefrigerantsExcel(
 
     await prisma.upload.create({
       data: {
-        hospitalId: "cmp2cdhyz0001evczibh2ke4b",
+        hospitalId: "cmp2d6lbg0001gjjez1d6axq9a",
 
         category: "Refrigerants",
 
@@ -623,7 +623,7 @@ export async function uploadTransportExcel(
     for (const row of rows) {
       await prisma.transportData.create({
         data: {
-          hospitalId: "cmp2cdhyz0001evczibh2ke4b",
+          hospitalId: "cmp2d6lbg0001gjjez1d6axq9a",
 
           month: String(row.Month),
 
@@ -642,7 +642,7 @@ export async function uploadTransportExcel(
 
     await prisma.upload.create({
       data: {
-        hospitalId: "cmp2cdhyz0001evczibh2ke4b",
+        hospitalId: "cmp2d6lbg0001gjjez1d6axq9a",
 
         category: "Transport",
 
