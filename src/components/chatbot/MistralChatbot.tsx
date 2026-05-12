@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Bot, Loader2, RefreshCw, SendHorizonal, Sparkles, UserRound } from "lucide-react";
+import { Bot, ChevronDown, ChevronUp, Loader2, RefreshCw, SendHorizonal, Sparkles, UserRound } from "lucide-react";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -83,6 +83,7 @@ export function MistralChatbot({
   suggestions = DEFAULT_SUGGESTIONS,
   className,
 }: ChatbotProps) {
+  const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState<ChatMessage[]>([
     {
       role: "assistant",
@@ -166,8 +167,32 @@ export function MistralChatbot({
     setDraft("");
   }
 
+  function toggleOpen() {
+    setIsOpen((current) => !current);
+  }
+
+  function handleClose() {
+    setIsOpen(false);
+  }
+
+  if (!isOpen) {
+    return (
+      <div className={cn("fixed bottom-4 right-4 z-50", className)}>
+        <Button
+          type="button"
+          onClick={toggleOpen}
+          className="rounded-full bg-emerald-600 px-4 py-3 text-white shadow-lg shadow-emerald-600/20 hover:bg-emerald-700"
+        >
+          <Bot className="mr-2 size-4" />
+          ESG Assistant
+        </Button>
+      </div>
+    );
+  }
+
   return (
-    <Card className={cn("border-slate-200 bg-gradient-to-br from-white via-slate-50 to-emerald-50/60 shadow-sm", className)}>
+    <div className={cn("fixed bottom-4 right-4 z-50 w-[min(24rem,calc(100vw-2rem))]", className)}>
+      <Card className="border-slate-200 bg-gradient-to-br from-white via-slate-50 to-emerald-50/60 shadow-xl">
       <CardHeader className="border-b border-slate-200/80 pb-4">
         <div className="flex items-start justify-between gap-4">
           <div className="space-y-1">
@@ -180,16 +205,28 @@ export function MistralChatbot({
             <p className="text-sm text-slate-500">{description}</p>
           </div>
 
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            className="text-slate-500 hover:text-slate-900"
-            onClick={handleReset}
-          >
-            <RefreshCw className="mr-2 size-4" />
-            Reset
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="text-slate-500 hover:text-slate-900"
+              onClick={handleReset}
+            >
+              <RefreshCw className="mr-2 size-4" />
+              Reset
+            </Button>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="text-slate-500 hover:text-slate-900"
+              onClick={handleClose}
+            >
+              <ChevronDown className="mr-2 size-4" />
+              Minimize
+            </Button>
+          </div>
         </div>
       </CardHeader>
 
@@ -307,6 +344,15 @@ export function MistralChatbot({
           </div>
         </form>
       </CardContent>
-    </Card>
+      </Card>
+      <Button
+        type="button"
+        onClick={toggleOpen}
+        className="mt-2 w-full rounded-full bg-slate-900 px-4 py-2 text-white shadow-lg hover:bg-slate-800"
+      >
+        <ChevronUp className="mr-2 size-4" />
+        Hide assistant
+      </Button>
+    </div>
   );
 }

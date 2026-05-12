@@ -31,9 +31,7 @@ export default function RootLayout({
         <main className="flex-1 max-w-7xl w-full mx-auto p-4 pb-40 md:p-8 md:pb-44">
           {children}
         </main>
-        <div className="fixed bottom-4 right-4 z-50 w-[min(24rem,calc(100vw-2rem))] print:hidden">
-          <MistralChatbot />
-        </div>
+        <MistralChatbot />
       </body>
     </html>
   );
