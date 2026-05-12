@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import TopNav  from "@/components/TopNav";
+import { MistralChatbot } from "@/components/chatbot/MistralChatbot";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -27,9 +28,10 @@ export default function RootLayout({
     <html lang="en" className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}>
       <body className="min-h-full flex flex-col bg-slate-50">
         <TopNav />
-        <main className="flex-1 max-w-7xl w-full mx-auto p-4 md:p-8">
+        <main className="flex-1 max-w-7xl w-full mx-auto p-4 pb-40 md:p-8 md:pb-44">
           {children}
         </main>
+        <MistralChatbot />
       </body>
     </html>
   );
