@@ -231,13 +231,12 @@ export default function CalculationsPage() {
                 <div className="flex items-start justify-between mb-2">
                   <h3 className="font-semibold text-slate-200">{validation.check}</h3>
                   <span
-                    className={`px-2 py-1 rounded text-xs font-bold ${
-                      validation.status === 'Pass'
+                    className={`px-2 py-1 rounded text-xs font-bold ${validation.status === 'Pass'
                         ? 'bg-emerald-500/20 text-emerald-400'
                         : validation.status === 'Partial'
-                        ? 'bg-amber-500/20 text-amber-400'
-                        : 'bg-red-500/20 text-red-400'
-                    }`}
+                          ? 'bg-amber-500/20 text-amber-400'
+                          : 'bg-red-500/20 text-red-400'
+                      }`}
                   >
                     {validation.status}
                   </span>
@@ -271,13 +270,12 @@ export default function CalculationsPage() {
                 <div className="flex items-center justify-between pt-3 border-t border-slate-700/50">
                   <span className="text-xs text-slate-400">{kpi.benchmark}</span>
                   <span
-                    className={`px-2 py-1 rounded text-xs font-semibold ${
-                      kpi.status === 'Good'
+                    className={`px-2 py-1 rounded text-xs font-semibold ${kpi.status === 'Good'
                         ? 'bg-emerald-500/20 text-emerald-400'
                         : kpi.status === 'Monitor'
-                        ? 'bg-amber-500/20 text-amber-400'
-                        : 'bg-red-500/20 text-red-400'
-                    }`}
+                          ? 'bg-amber-500/20 text-amber-400'
+                          : 'bg-red-500/20 text-red-400'
+                      }`}
                   >
                     {kpi.status}
                   </span>
@@ -338,10 +336,10 @@ export default function CalculationsPage() {
     </div>
   );
 }
-        </div>
+    
 
-        {/* Emission Factors */}
-        <section className="bg-white border border-slate-200 rounded-2xl p-6">
+  {/* Emission Factors */ }
+  < section className = "bg-white border border-slate-200 rounded-2xl p-6" >
           <h2 className="text-2xl font-semibold text-slate-900 mb-6">
             Emission Factors
           </h2>
@@ -399,10 +397,10 @@ export default function CalculationsPage() {
               </tbody>
             </table>
           </div>
-        </section>
+        </section >
 
-        {/* ESG KPI FORMULAS */}
-        <section className="bg-white border border-slate-200 rounded-2xl p-6 space-y-8">
+  {/* ESG KPI FORMULAS */ }
+  < section className = "bg-white border border-slate-200 rounded-2xl p-6 space-y-8" >
           <h2 className="text-2xl font-semibold text-slate-900">
             ESG KPI Formulas
           </h2>
@@ -433,10 +431,10 @@ export default function CalculationsPage() {
               formula="Total Water Consumption ÷ Number of Beds"
             />
           </div>
-        </section>
+        </section >
 
-        {/* ESG READINESS ENGINE */}
-        <section className="bg-white border border-slate-200 rounded-2xl p-6">
+  {/* ESG READINESS ENGINE */ }
+  < section className = "bg-white border border-slate-200 rounded-2xl p-6" >
           <h2 className="text-2xl font-semibold text-slate-900 mb-6">
             ESG Readiness Scoring Logic
           </h2>
@@ -478,10 +476,10 @@ export default function CalculationsPage() {
               </p>
             </div>
           </div>
-        </section>
+        </section >
 
-        {/* Certification Mapping */}
-        <section className="bg-white border border-slate-200 rounded-2xl p-6">
+  {/* Certification Mapping */ }
+  < section className = "bg-white border border-slate-200 rounded-2xl p-6" >
           <h2 className="text-2xl font-semibold text-slate-900 mb-6">
             Certification Mapping
           </h2>
@@ -502,11 +500,9 @@ export default function CalculationsPage() {
               desc="Green healthcare infrastructure sustainability."
             />
           </div>
-        </section>
-      </main>
-    </div>
-  );
-}
+        </section >
+      
+
 
 /* ================================= */
 /* SMALL COMPONENTS                  */
