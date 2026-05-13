@@ -949,5 +949,46 @@ export async function computeAndSaveAssessment() {
             : null,
       },
     },
+
+    // Add percentage metrics needed for KPI calculations
+    percentages: {
+      renewableEnergy:
+        renewablePercentage,
+      waterRecycling:
+        waterRecyclingPercentage,
+      wasteRecycling:
+        wasteDiversionPercentage,
+    },
+
+    // Add per-bed and per-sqft metrics
+    perBedMetrics: {
+      energyPerBed,
+      waterPerBed,
+      wastePerBed,
+    },
+
+    // Hospital info needed for KPI cards
+    orgBeds:
+      hospital.numberOfBeds,
+
+    orgName:
+      hospital.hospitalName,
+
+    // Total values for reference
+    totals: {
+      electricity:
+        totalElectricity,
+      renewable:
+        totalRenewable,
+      water:
+        totalWater,
+      recycledWater:
+        totalRecycledWater,
+      fuel:
+        totalFuel,
+      waste:
+        totalWaste,
+      recyclableWaste,
+    },
   };
 }
