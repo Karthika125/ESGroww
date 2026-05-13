@@ -4,8 +4,8 @@ import UploadWorkspace from "@/components/upload/UploadWorkspace";
 
 export default function UploadPage() {
   return (
-    <div className="flex min-h-0 w-full min-w-0 flex-col bg-[#f4f6f9] text-slate-900">
-      <div className="mx-auto flex w-full min-w-0 max-w-none flex-col gap-2 py-2 sm:py-2.5">
+    <div className="flex h-full w-full min-w-0 flex-col overflow-hidden bg-[#f4f6f9] text-slate-900">
+      <div className="mx-auto flex h-full w-full min-w-0 max-w-none flex-col gap-2 py-2 sm:py-2.5 overflow-hidden">
         <header className="flex shrink-0 flex-wrap items-center gap-x-3 gap-y-1 border-b border-slate-200/90 pb-2">
           <h1 className="text-base font-bold tracking-tight text-slate-900 sm:text-lg">Assesment</h1>
           <p className="hidden min-w-0 flex-1 text-[11px] leading-snug text-slate-600 md:block md:truncate">
@@ -23,7 +23,7 @@ export default function UploadPage() {
 
         <UploadWorkspace />
 
-        <footer className="mt-auto flex shrink-0 flex-wrap items-center justify-between gap-2 border-t border-slate-200/80 pt-2 text-[10px] text-slate-400">
+        <footer className="fixed bottom-0 left-0 right-0 z-50 flex shrink-0 flex-wrap items-center justify-between gap-2 border-t border-slate-200/80 bg-[#f4f6f9] px-4 py-2 text-[10px] text-slate-400">
           <span>© {new Date().getFullYear()} ESGroww</span>
           <span className="text-slate-500">v0.1.0</span>
         </footer>
