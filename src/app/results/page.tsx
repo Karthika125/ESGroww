@@ -247,7 +247,10 @@ export default function ResultsPage() {
       opacity: loaded ? 1 : 0,
       transition: "opacity 0.4s ease",
     }}>
- 
+      <div
+        id="results-report-capture"
+        style={{ display: "flex", flexDirection: "column", flex: 1, minHeight: 0, width: "100%" }}
+      >
       {/* ── Header ── */}
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
         <div>
@@ -263,9 +266,10 @@ export default function ResultsPage() {
             </div>
           </div>
         </div>
-        <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+        <div data-html2canvas-ignore="true" style={{ display: "flex", gap: 8, alignItems: "center" }}>
           <DownloadReportButton
             data={data}
+            captureRootId="results-report-capture"
             label={loaded ? "Download Report" : "Loading report..."}
             className="min-w-[140px] bg-slate-900 text-white hover:bg-slate-800"
             disabled={!loaded}
@@ -585,6 +589,7 @@ export default function ResultsPage() {
           </div>
         </div>
 
+      </div>
       </div>
  
       {/* Footer removed per user request */}

@@ -192,9 +192,9 @@ function CategoryCard({ config, uploadedMonths, readiness, onUploadSuccess, comp
               <Button
                 variant="ghost"
                 size="xs"
-                className="h-6 w-full text-[10px] text-slate-500 hover:bg-slate-100 hover:text-slate-700"
+                className="h-6 w-full text-[10px] text-slate-500 hover:bg-slate-50 hover:text-slate-700"
               >
-                Template
+                Download Template
               </Button>
             </a>
           </div>
