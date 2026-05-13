@@ -8,7 +8,7 @@ import { getUploadProgress } from "@/actions/uploadProgress.actions";
 const MANDATORY_CATEGORIES = ["electricity", "water", "waste"] as const;
 const MIN_MONTHS = 6;
 
-export default function ProceedButton() {
+export default function ProceedButton({ refreshKey = 0 }: { refreshKey?: number }) {
   const router = useRouter();
   const [canProceed, setCanProceed] = useState(false);
   const [missing, setMissing] = useState<string[]>([]);
@@ -26,7 +26,7 @@ export default function ProceedButton() {
       setCanProceed(missingList.length === 0);
     }
     check();
-  }, []);
+  }, [refreshKey]);
 
   if (canProceed) {
     return (

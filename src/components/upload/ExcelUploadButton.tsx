@@ -78,21 +78,26 @@ export default function ExcelUploadButton({ category, onUploadSuccess }: Props) 
     await handleUpload(formData);
   }
 
+  const inputId = `excel-upload-${category}`;
+
   return (
     <form onSubmit={handleSubmit} className="space-y-2.5">
-      {/* File input styled */}
-      <label className="flex items-center gap-2 w-full cursor-pointer group">
-        <div className="flex-1 min-w-0 border border-dashed border-slate-300 group-hover:border-emerald-400 bg-slate-50 group-hover:bg-emerald-50/40 rounded-xl px-3 py-2 transition-all">
-          <span className="text-xs text-slate-400 truncate block">
+      <label
+        htmlFor={inputId}
+        className="group flex w-full cursor-pointer items-center gap-2"
+      >
+        <div className="min-w-0 flex-1 rounded-xl border border-dashed border-slate-300 bg-slate-50 px-3 py-2 transition-all group-hover:border-emerald-400 group-hover:bg-emerald-50/40">
+          <span className="block truncate text-xs text-slate-400">
             {fileName || "Choose .xlsx or .xls file"}
           </span>
         </div>
         <input
+          id={inputId}
           type="file"
           name="file"
           accept=".xlsx,.xls"
           onChange={handleFileChange}
-          className="hidden"
+          className="sr-only"
         />
       </label>
 
