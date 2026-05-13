@@ -120,13 +120,69 @@ interface CategoryCardProps {
   config: CategoryConfig;
   uploadedMonths: number;
   onUploadSuccess: () => void;
+  compact?: boolean;
 }
 
-function CategoryCard({ config, uploadedMonths, onUploadSuccess }: CategoryCardProps) {
+function CategoryCard({ config, uploadedMonths, onUploadSuccess, compact }: CategoryCardProps) {
   const pct = Math.min((uploadedMonths / 12) * 100, 100);
   const style = getStatusStyle(uploadedMonths);
   const label = statusLabel(uploadedMonths);
   const Icon = config.icon;
+
+  if (compact) {
+    return (
+      <Card className="rounded-lg border border-slate-200/90 bg-white shadow-sm transition-shadow hover:shadow-md">
+        <CardContent className="space-y-2 p-2.5 sm:p-3">
+          <div className="flex items-start justify-between gap-1.5">
+            <div className="flex min-w-0 items-start gap-2">
+              <div className={`shrink-0 rounded-md p-1.5 ${config.iconBg}`}>
+                <Icon className={`size-3.5 ${config.iconColor}`} aria-hidden />
+              </div>
+              <div className="min-w-0">
+                <h3 className="text-[11px] font-semibold leading-tight text-slate-900 sm:text-xs">{config.name}</h3>
+                <p className="mt-0.5 line-clamp-2 text-[10px] leading-snug text-slate-500" title={config.desc}>
+                  {config.desc}
+                </p>
+              </div>
+            </div>
+            <span
+              className={`shrink-0 rounded-full border px-1.5 py-0 text-[9px] font-semibold uppercase leading-none sm:text-[10px] ${style.badge}`}
+            >
+              {label}
+            </span>
+          </div>
+
+          <div className="space-y-0.5">
+            <div className="flex items-center justify-between text-[10px]">
+              <span className="text-slate-400">Months</span>
+              <span className={`font-semibold tabular-nums ${style.label}`}>
+                {uploadedMonths}/12
+              </span>
+            </div>
+            <div className="h-1 overflow-hidden rounded-full bg-slate-100">
+              <div
+                className={`h-full rounded-full transition-all duration-300 ${style.bar}`}
+                style={{ width: `${pct}%` }}
+              />
+            </div>
+          </div>
+
+          <div className="space-y-1 pt-0.5">
+            <ExcelUploadButton category={config.key} onUploadSuccess={onUploadSuccess} dense />
+            <a href={config.template} download className="block">
+              <Button
+                variant="ghost"
+                size="xs"
+                className="h-6 w-full text-[10px] text-slate-500 hover:bg-slate-100 hover:text-slate-700"
+              >
+                Template
+              </Button>
+            </a>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <Card className="rounded-2xl border border-slate-200 shadow-sm transition-all duration-200 hover:shadow-md">
@@ -142,9 +198,7 @@ function CategoryCard({ config, uploadedMonths, onUploadSuccess }: CategoryCardP
             </div>
           </div>
 
-          <span
-            className={`flex-shrink-0 rounded-full border px-2 py-0.5 text-xs font-medium ${style.badge}`}
-          >
+          <span className={`flex-shrink-0 rounded-full border px-2 py-0.5 text-xs font-medium ${style.badge}`}>
             {label}
           </span>
         </div>
@@ -200,7 +254,13 @@ function formatGovernanceDate(iso: string | null) {
   });
 }
 
-export default function UploadCategoryGrid({ onDataChanged }: { onDataChanged?: () => void }) {
+export default function UploadCategoryGrid({
+  onDataChanged,
+  compact = false,
+}: {
+  onDataChanged?: () => void;
+  compact?: boolean;
+}) {
   const [payload, setPayload] = useState<UploadProgressPayload | null>(null);
 
   useEffect(() => {
@@ -224,6 +284,115 @@ export default function UploadCategoryGrid({ onDataChanged }: { onDataChanged?: 
   }, [payload]);
 
   const g = payload?.governance;
+
+  if (compact) {
+    return (
+      <div className="flex min-h-0 flex-col gap-2 pr-0.5">
+        <div className="flex shrink-0 flex-wrap items-center justify-between gap-2">
+          <h2 className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">Upload categories</h2>
+          {payload !== null && (
+            <span className="rounded-full border border-slate-200 bg-white px-2 py-0.5 text-[10px] font-medium text-slate-600">
+              {activeCount}/8 active
+            </span>
+          )}
+        </div>
+
+        {/* Bento: 3×2 on wide laptop, 2×3 on md */}
+        <div className="grid shrink-0 grid-cols-2 gap-1.5 min-[1200px]:grid-cols-3">
+          {CATEGORIES.map((cat) => (
+            <CategoryCard
+              key={cat.key}
+              config={cat}
+              uploadedMonths={payload?.[cat.key] ?? 0}
+              onUploadSuccess={afterUpload}
+              compact
+            />
+          ))}
+        </div>
+
+        {/* Governance + Additional: side by side */}
+        <div className="grid shrink-0 grid-cols-1 gap-1.5 sm:grid-cols-2">
+          <Card className="rounded-lg border border-emerald-200/90 bg-emerald-50/50 shadow-sm">
+            <CardContent className="space-y-2 p-2.5 sm:p-3">
+              <div className="flex items-start justify-between gap-1.5">
+                <div className="flex min-w-0 items-start gap-2">
+                  <div className="shrink-0 rounded-md bg-emerald-100 p-1.5">
+                    <ShieldCheck className="size-3.5 text-emerald-800" aria-hidden />
+                  </div>
+                  <div className="min-w-0">
+                    <h3 className="text-[11px] font-semibold text-slate-900 sm:text-xs">Governance</h3>
+                    <p className="mt-0.5 line-clamp-2 text-[10px] leading-snug text-slate-600">
+                      Policies, ESG owner, audit records, compliance register
+                    </p>
+                  </div>
+                </div>
+                {g && (
+                  <span
+                    className={`shrink-0 rounded-full border px-1.5 py-0 text-[9px] font-semibold uppercase sm:text-[10px] ${governanceBadgeClasses(g)}`}
+                  >
+                    {governanceStatusLabel(g)}
+                  </span>
+                )}
+              </div>
+
+              <div className="rounded-md border border-emerald-100/80 bg-white/90 px-2 py-1.5 text-[10px] text-slate-600">
+                {g ? (
+                  <>
+                    <span className="font-medium text-slate-800">
+                      {g.answeredCount}/{g.totalCount} items
+                    </span>
+                    {g.lastUpdated && (
+                      <span className="mt-0.5 block text-slate-500">Saved {formatGovernanceDate(g.lastUpdated)}</span>
+                    )}
+                    {!g.lastUpdated && g.answeredCount === 0 && (
+                      <span className="mt-0.5 block text-slate-500">Not saved yet</span>
+                    )}
+                  </>
+                ) : (
+                  <span>Loading…</span>
+                )}
+              </div>
+
+              <Link
+                href="/upload/governance"
+                className="flex h-7 w-full items-center justify-center rounded-md bg-emerald-600 text-[11px] font-medium text-white hover:bg-emerald-700"
+              >
+                {g?.isComplete ? "Edit questionnaire →" : "Fill questionnaire →"}
+              </Link>
+            </CardContent>
+          </Card>
+
+          <Card className="rounded-lg border border-dashed border-slate-200 bg-slate-50/80 shadow-sm">
+            <CardContent className="space-y-2 p-2.5 sm:p-3">
+              <div className="flex items-start gap-2">
+                <div className="shrink-0 rounded-md bg-white p-1.5 ring-1 ring-slate-100">
+                  <FileText className="size-3.5 text-slate-400" aria-hidden />
+                </div>
+                <div className="min-w-0">
+                  <h3 className="text-[11px] font-semibold text-slate-900 sm:text-xs">Additional data</h3>
+                  <p className="mt-0.5 line-clamp-2 text-[10px] leading-snug text-slate-500">
+                    IAQ reports, certifications, production output
+                  </p>
+                </div>
+              </div>
+              <span className="inline-block rounded-full bg-slate-100 px-1.5 py-0 text-[9px] font-medium text-slate-500 sm:text-[10px]">
+                Optional
+              </span>
+              <Button
+                variant="outline"
+                size="xs"
+                disabled
+                className="h-7 w-full cursor-not-allowed border-slate-200 text-[10px]"
+              >
+                Upload files
+              </Button>
+              <p className="text-[9px] leading-snug text-slate-400">Not enabled in this release.</p>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-5">
@@ -317,9 +486,7 @@ export default function UploadCategoryGrid({ onDataChanged }: { onDataChanged?: 
             <Button variant="outline" size="sm" disabled className="h-9 w-full cursor-not-allowed border-slate-200 text-sm">
               Upload files
             </Button>
-            <p className="text-[11px] leading-snug text-slate-400">
-              Optional uploads are not enabled in this release.
-            </p>
+            <p className="text-[11px] leading-snug text-slate-400">Optional uploads are not enabled in this release.</p>
           </CardContent>
         </Card>
       </div>

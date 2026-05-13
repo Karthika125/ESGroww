@@ -7,25 +7,33 @@ import RecentUploadsTable from "@/components/upload/RecentUploadsTable";
 import UploadCategoryGrid from "@/components/upload/UploadCategoryGrid";
 import UploadOverviewPanel from "@/components/upload/UploadOverviewPanel";
 
+/** Laptop-first dashboard: primary path in one viewport; uploads list scrolls inside panel. */
 export default function UploadWorkspace() {
   const [refreshKey, setRefreshKey] = useState(0);
   const bump = useCallback(() => setRefreshKey((k) => k + 1), []);
 
   return (
-    <>
-      <UploadCategoryGrid onDataChanged={bump} />
+    <div className="grid min-h-0 w-full min-w-0 grid-cols-1 gap-2 lg:grid-cols-12 lg:gap-2.5 lg:max-h-[min(calc(100dvh-13rem),860px)] lg:overflow-hidden">
+      {/* Main bento: categories + governance / additional */}
+      <section className="flex min-h-0 min-w-0 flex-col overflow-y-auto overflow-x-hidden lg:col-span-9 2xl:col-span-9">
+        <UploadCategoryGrid onDataChanged={bump} compact />
+      </section>
 
-      <div className="mt-10 grid gap-8 lg:grid-cols-2 lg:items-start">
-        <UploadOverviewPanel refreshKey={refreshKey} />
-        <RecentUploadsTable refreshKey={refreshKey} limit={10} showViewAllLink={true} />
-      </div>
+      {/* Side rail: overview + recent + proceed */}
+      <aside className="flex min-h-0 min-w-0 flex-col gap-2 overflow-hidden lg:col-span-3 2xl:col-span-3">
+        <UploadOverviewPanel refreshKey={refreshKey} variant="compact" />
 
-      <div className="mt-10 flex flex-col gap-3 border-t border-slate-200/80 pt-8 sm:flex-row sm:items-center sm:justify-between">
-        <p className="text-xs text-slate-400">
-          Electricity, Water, and Waste must each have at least 6 months of data to proceed.
-        </p>
-        <ProceedButton refreshKey={refreshKey} />
-      </div>
-    </>
+        <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
+          <RecentUploadsTable refreshKey={refreshKey} limit={10} showViewAllLink compact />
+        </div>
+
+        <div className="flex shrink-0 flex-col gap-1.5 rounded-lg border border-slate-200 bg-white px-2.5 py-2 shadow-sm sm:flex-row sm:items-center sm:justify-between">
+          <p className="text-[10px] leading-snug text-slate-500">
+            Electricity, Water, Waste: ≥6 months each to proceed.
+          </p>
+          <ProceedButton refreshKey={refreshKey} compact />
+        </div>
+      </aside>
+    </div>
   );
 }

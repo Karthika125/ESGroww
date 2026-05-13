@@ -29,7 +29,7 @@ export default function RootLayout({
     <html lang="en" className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}>
       <body className="min-h-full flex flex-col bg-slate-50">
         <TopNav />
-        <main className="flex-1 max-w-7xl w-full mx-auto p-4 pb-40 md:p-8 md:pb-44">
+        <main className="mx-auto flex w-full min-w-0 max-w-none flex-1 px-3 pb-40 pt-1 sm:px-5 lg:px-8 lg:pb-44 xl:px-10 2xl:px-12">
           {children}
         </main>
         <MistralChatbot />

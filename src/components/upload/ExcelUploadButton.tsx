@@ -14,6 +14,8 @@ import {
 interface Props {
   category: "electricity" | "water" | "fuel" | "waste" | "refrigerants" | "transport";
   onUploadSuccess?: () => void;
+  /** Tighter layout for bento / dashboard cards */
+  dense?: boolean;
 }
 
 type UploadStatus = "idle" | "loading" | "success" | "error";
@@ -27,7 +29,7 @@ const ACTION_MAP = {
   transport: uploadTransportExcel,
 };
 
-export default function ExcelUploadButton({ category, onUploadSuccess }: Props) {
+export default function ExcelUploadButton({ category, onUploadSuccess, dense }: Props) {
   const [status, setStatus] = useState<UploadStatus>("idle");
   const [message, setMessage] = useState("");
   const [fileName, setFileName] = useState("");
@@ -79,6 +81,62 @@ export default function ExcelUploadButton({ category, onUploadSuccess }: Props) 
   }
 
   const inputId = `excel-upload-${category}`;
+
+  if (dense) {
+    return (
+      <form onSubmit={handleSubmit} className="space-y-1">
+        <div className="flex flex-col gap-1 sm:flex-row sm:items-stretch">
+          <label
+            htmlFor={inputId}
+            className="group flex min-w-0 flex-1 cursor-pointer items-center"
+          >
+            <div className="min-w-0 flex-1 rounded-md border border-dashed border-slate-300 bg-slate-50 px-2 py-1 transition-all group-hover:border-emerald-400 group-hover:bg-emerald-50/50">
+              <span className="block truncate text-[10px] text-slate-500">
+                {fileName || ".xlsx / .xls"}
+              </span>
+            </div>
+            <input
+              id={inputId}
+              type="file"
+              name="file"
+              accept=".xlsx,.xls"
+              onChange={handleFileChange}
+              className="sr-only"
+            />
+          </label>
+          <button
+            type="submit"
+            disabled={status === "loading" || !fileName}
+            className="inline-flex h-7 shrink-0 items-center justify-center gap-1 rounded-md bg-emerald-600 px-2.5 text-[11px] font-semibold text-white transition-colors hover:bg-emerald-700 disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-400 sm:min-w-[7.5rem]"
+          >
+            {status === "loading" ? (
+              <>
+                <Loader2 className="size-3.5 animate-spin" />
+                <span className="hidden sm:inline">…</span>
+              </>
+            ) : (
+              <>
+                <UploadCloud className="size-3.5" />
+                Upload
+              </>
+            )}
+          </button>
+        </div>
+        {status === "success" && (
+          <div className="flex items-start gap-1 rounded border border-emerald-100 bg-emerald-50 px-1.5 py-1 text-[10px] text-emerald-800">
+            <CheckCircle2 className="mt-0.5 size-3 shrink-0" />
+            <span className="leading-snug">{message}</span>
+          </div>
+        )}
+        {status === "error" && (
+          <div className="flex items-start gap-1 rounded border border-rose-100 bg-rose-50 px-1.5 py-1 text-[10px] text-rose-800">
+            <AlertCircle className="mt-0.5 size-3 shrink-0" />
+            <span className="leading-snug">{message}</span>
+          </div>
+        )}
+      </form>
+    );
+  }
 
   return (
     <form onSubmit={handleSubmit} className="space-y-2.5">

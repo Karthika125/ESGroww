@@ -4,31 +4,31 @@ import UploadWorkspace from "@/components/upload/UploadWorkspace";
 
 export default function UploadPage() {
   return (
-    <div className="min-h-screen bg-[#f7f9fc]">
-      <div className="mx-auto max-w-6xl px-4 py-8 md:px-6 md:py-10">
-        <div className="mb-8">
-          <span className="mb-3 inline-flex items-center rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-[11px] font-semibold uppercase tracking-wider text-emerald-800">
+    <div className="flex min-h-0 w-full min-w-0 flex-col bg-[#f4f6f9] text-slate-900">
+      <div className="mx-auto flex w-full min-w-0 max-w-none flex-col gap-2 py-2 sm:py-2.5">
+        <header className="flex shrink-0 flex-wrap items-center gap-x-3 gap-y-1 border-b border-slate-200/90 pb-2">
+          <span className="shrink-0 rounded border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-emerald-800">
             Step 1 of 3
           </span>
-          <h1 className="text-3xl font-bold tracking-tight text-slate-900 md:text-4xl">Data load</h1>
-          <p className="mt-2 max-w-2xl text-sm text-slate-600 md:text-base">
-            Upload your operational records and complete the governance questionnaire.
+          <h1 className="text-base font-bold tracking-tight text-slate-900 sm:text-lg">Data load</h1>
+          <p className="hidden min-w-0 flex-1 text-[11px] leading-snug text-slate-600 md:block md:truncate">
+            Upload operational records and complete the governance questionnaire.
           </p>
-        </div>
+        </header>
 
-        <div className="mb-8 flex gap-3 rounded-2xl border border-blue-100 bg-blue-50 px-4 py-3.5 md:px-5">
-          <Info className="mt-0.5 h-5 w-5 flex-shrink-0 text-blue-600" aria-hidden />
-          <p className="text-sm leading-relaxed text-blue-800">
-            Upload monthly data for a <strong>minimum of 6 months</strong> for Electricity, Water, and Waste. We
-            recommend <strong>12 months</strong> for the most accurate assessment and highest confidence score.
+        <div className="flex shrink-0 items-start gap-2 rounded-lg border border-blue-100 bg-blue-50/90 px-2 py-1.5 text-[11px] leading-snug text-blue-900">
+          <Info className="mt-0.5 size-3.5 shrink-0 text-blue-600" aria-hidden />
+          <p>
+            <strong className="font-semibold">6 months minimum</strong> for Electricity, Water, and Waste.{" "}
+            <strong className="font-semibold">12 months</strong> recommended for confidence.
           </p>
         </div>
 
         <UploadWorkspace />
 
-        <footer className="mt-16 flex flex-col gap-2 border-t border-slate-200 pt-8 text-xs text-slate-400 sm:flex-row sm:items-center sm:justify-between">
-          <span>© {new Date().getFullYear()} ESGroww. All rights reserved.</span>
-          <span className="text-slate-500">Version 0.1.0</span>
+        <footer className="mt-auto flex shrink-0 flex-wrap items-center justify-between gap-2 border-t border-slate-200/80 pt-2 text-[10px] text-slate-400">
+          <span>© {new Date().getFullYear()} ESGroww</span>
+          <span className="text-slate-500">v0.1.0</span>
         </footer>
       </div>
     </div>

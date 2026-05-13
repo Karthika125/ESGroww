@@ -8,7 +8,13 @@ import { getUploadProgress } from "@/actions/uploadProgress.actions";
 const MANDATORY_CATEGORIES = ["electricity", "water", "waste"] as const;
 const MIN_MONTHS = 6;
 
-export default function ProceedButton({ refreshKey = 0 }: { refreshKey?: number }) {
+export default function ProceedButton({
+  refreshKey = 0,
+  compact = false,
+}: {
+  refreshKey?: number;
+  compact?: boolean;
+}) {
   const router = useRouter();
   const [canProceed, setCanProceed] = useState(false);
   const [missing, setMissing] = useState<string[]>([]);
@@ -27,6 +33,38 @@ export default function ProceedButton({ refreshKey = 0 }: { refreshKey?: number 
     }
     check();
   }, [refreshKey]);
+
+  if (compact) {
+    if (canProceed) {
+      return (
+        <button
+          type="button"
+          onClick={() => router.push("/summary")}
+          className="inline-flex h-8 shrink-0 items-center gap-1.5 rounded-md bg-emerald-600 px-3 text-[11px] font-semibold text-white shadow-sm transition-colors hover:bg-emerald-700"
+        >
+          Continue
+          <ArrowRight className="size-3.5" aria-hidden />
+        </button>
+      );
+    }
+    return (
+      <div className="flex min-w-0 flex-col items-end gap-1 text-right">
+        <button
+          type="button"
+          disabled
+          className="inline-flex h-8 cursor-not-allowed items-center gap-1.5 rounded-md bg-slate-200 px-3 text-[11px] font-semibold text-slate-400"
+        >
+          <Lock className="size-3.5" aria-hidden />
+          Locked
+        </button>
+        {missing.length > 0 && (
+          <p className="max-w-[14rem] text-[9px] leading-snug text-rose-600">
+            Need ≥6 mo: {missing.map((m) => m.charAt(0).toUpperCase() + m.slice(1)).join(", ")}
+          </p>
+        )}
+      </div>
+    );
+  }
 
   if (canProceed) {
     return (
