@@ -89,9 +89,10 @@ export function calculateRenewablePercentage(
   if (totalElectricityKwh === 0)
     return 0;
 
-  return (
+  return Math.min(
     (renewableKwh /
       totalElectricityKwh) *
+    100,
     100
   );
 }
@@ -107,9 +108,10 @@ export function calculateWaterRecyclingPercentage(
   if (totalWaterKl === 0)
     return 0;
 
-  return (
+  return Math.min(
     (recycledWaterKl /
       totalWaterKl) *
+    100,
     100
   );
 }
@@ -125,9 +127,10 @@ export function calculateWasteDiversionPercentage(
   if (totalWasteKg === 0)
     return 0;
 
-  return (
+  return Math.min(
     (recyclableWasteKg /
       totalWasteKg) *
+    100,
     100
   );
 }

@@ -24,7 +24,7 @@ export default function MetricsPage() {
       .then((res: AssessmentResponse) => {
         if (!mounted) return;
         if (res.success) setData(res.data);
-        else setError("Failed to load assessment");
+        else setError("Failed to load assessment data.");
       })
       .catch((e) => {
         if (!mounted) return;
@@ -44,7 +44,7 @@ export default function MetricsPage() {
     return (
       <PageLayout
         title="Completeness & Confidence"
-        description="Data completeness and confidence breakdowns"
+        description="Data completeness and confidence breakdowns by category"
         loading
       >
         <div />
@@ -56,7 +56,7 @@ export default function MetricsPage() {
     return (
       <PageLayout
         title="Completeness & Confidence"
-        description="Data completeness and confidence breakdowns"
+        description="Data completeness and confidence breakdowns by category"
         error={error ?? "No data available"}
       >
         <div />
@@ -71,7 +71,6 @@ export default function MetricsPage() {
   const months = data.annualizedValues?.monthsUploaded || {};
   const messages = data.metadata?.messages || {};
 
-  // Clamp values to prevent overflow
   const safeCompleteness = Math.min(100, Math.max(0, completeness || 0));
   const safeConfidence = Math.min(100, Math.max(0, confidence || 0));
 
@@ -109,51 +108,85 @@ export default function MetricsPage() {
   return (
     <PageLayout
       title="Completeness & Confidence"
-      description="Data completeness and confidence breakdowns"
+      description="Data completeness and confidence breakdowns by category"
     >
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mb-3">
-        <div className="bg-green-50 border border-green-200 rounded px-2 py-1.5 text-center overflow-hidden">
-          <div className="text-xs text-green-700">Completeness</div>
-          <div className="text-lg font-semibold text-green-900 truncate">{Math.round(safeCompleteness)}%</div>
+      {/* Stat summary row */}
+      <div className="mb-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
+        <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-center">
+          <p className="text-[10px] font-medium uppercase tracking-wide text-emerald-700">
+            Completeness
+          </p>
+          <p className="mt-0.5 text-xl font-bold tabular-nums text-emerald-900">
+            {Math.round(safeCompleteness)}%
+          </p>
         </div>
-        <div className="bg-blue-50 border border-blue-200 rounded px-2 py-1.5 text-center overflow-hidden">
-          <div className="text-xs text-blue-700">Confidence</div>
-          <div className="text-lg font-semibold text-blue-900 truncate">{Math.round(safeConfidence)}%</div>
+        <div className="rounded-lg border border-blue-200 bg-blue-50 px-3 py-2 text-center">
+          <p className="text-[10px] font-medium uppercase tracking-wide text-blue-700">
+            Confidence
+          </p>
+          <p className="mt-0.5 text-xl font-bold tabular-nums text-blue-900">
+            {Math.round(safeConfidence)}%
+          </p>
+        </div>
+        <div className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-center">
+          <p className="text-[10px] font-medium uppercase tracking-wide text-slate-500">
+            Categories
+          </p>
+          <p className="mt-0.5 text-xl font-bold tabular-nums text-slate-900">
+            {categories.length}
+          </p>
+        </div>
+        <div className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-center">
+          <p className="text-[10px] font-medium uppercase tracking-wide text-slate-500">
+            Data points
+          </p>
+          <p className="mt-0.5 text-xl font-bold tabular-nums text-slate-900">
+            {categoryConfidence.length}
+          </p>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 xl:grid-cols-12 gap-3">
-        <section className="xl:col-span-8 bg-white border border-slate-200 rounded-lg shadow-sm overflow-hidden">
-          <div className="bg-slate-900 px-3 py-2.5">
-            <h2 className="text-sm font-semibold text-white">Score Overview</h2>
+      {/* Charts row */}
+      <div className="mb-3 grid grid-cols-1 gap-3 xl:grid-cols-12">
+        <section className="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm xl:col-span-8">
+          <div className="border-b border-slate-100 px-3 py-2">
+            <h2 className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+              Score Overview
+            </h2>
           </div>
-          <div className="p-2.5 grid grid-cols-1 lg:grid-cols-2 gap-2">
-            <div className="rounded-md border border-slate-200 bg-slate-50 p-1.5 overflow-hidden">
+          <div className="grid grid-cols-1 gap-px bg-slate-100 lg:grid-cols-2">
+            <div className="bg-white p-3">
               <OverallMetricsChart categoryScores={categoryScores} />
             </div>
-            <div className="rounded-md border border-slate-200 bg-slate-50 p-1.5 overflow-hidden">
+            <div className="bg-white p-3">
               <CategoryComparisonChart
                 data={categories.map((c) => ({
                   name: c.title,
                   score: Math.min(100, Math.max(0, c.score || 0)),
-                  completeness: Math.min(100, Math.max(0, months[c.monthKey] ? ((months[c.monthKey] / 12) * 100) : 0)),
+                  completeness: Math.min(
+                    100,
+                    Math.max(0, months[c.monthKey] ? (months[c.monthKey] / 12) * 100 : 0)
+                  ),
                 }))}
               />
             </div>
           </div>
         </section>
 
-        <aside className="xl:col-span-4 bg-white border border-slate-200 rounded-lg shadow-sm overflow-hidden">
-          <div className="bg-slate-900 px-3 py-2.5">
-            <h2 className="text-sm font-semibold text-white">Confidence</h2>
+        <aside className="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm xl:col-span-4">
+          <div className="border-b border-slate-100 px-3 py-2">
+            <h2 className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+              Confidence by Category
+            </h2>
           </div>
-          <div className="p-2.5 rounded-md">
+          <div className="p-3">
             <ConfidenceChart data={categoryConfidence} />
           </div>
         </aside>
       </div>
 
-      <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 mt-3 overflow-hidden">
+      {/* Category cards */}
+      <section className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-4">
         {categories.map((c) => (
           <CategoryCard
             key={c.key}

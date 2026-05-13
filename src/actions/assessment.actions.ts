@@ -813,25 +813,13 @@ export async function computeAndSaveAssessment() {
     benchmarkScores,
 
     annualizedValues: {
-      electricity:
-        electricityMonths >= 3
-          ? annualizedElectricity
-          : null,
+      electricity: annualizedElectricity,
 
-      water:
-        waterMonths >= 3
-          ? annualizedWater
-          : null,
+      water: annualizedWater,
 
-      fuel:
-        fuelMonths >= 3
-          ? annualizedFuel
-          : null,
+      fuel: annualizedFuel,
 
-      waste:
-        wasteMonths >= 3
-          ? annualizedWaste
-          : null,
+      waste: annualizedWaste,
 
       monthsUploaded: {
         electricity:

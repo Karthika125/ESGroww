@@ -3,7 +3,20 @@ import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { DownloadReportButton } from "@/components/shared/DownloadReportButton";
 import { Link2, Mail, Phone } from "lucide-react";
- 
+import {
+  evaluateEnergyIntensity,
+  evaluateWaterIntensity,
+  evaluateRecyclingRate,
+  evaluateRenewableEnergy,
+  evaluatePowerFactor,
+  evaluateDGDependency,
+  evaluateWaterReuse,
+  evaluateTankerWaterDependency,
+  evaluateWasteSegregation,
+  getStatusBadgeColor,
+  getStatusColor,
+} from "@/lib/kpiUtils";
+
 // ─── Types ────────────────────────────────────────────────────────────────────
 interface AssessmentData {
   orgName?: string;
@@ -196,6 +209,28 @@ export default function ResultsPage() {
     if (!timelineGroups[r.timeline]) timelineGroups[r.timeline] = [];
     timelineGroups[r.timeline]!.push(r);
   });
+
+  // ── KPI derivations from existing data ──
+  const annEl   = data.annualizedValues.electricity ?? 0;
+  const annWa   = data.annualizedValues.water       ?? 0;
+  const annWaste= data.annualizedValues.waste        ?? 0;
+  const orgBeds = (data as any).orgBeds ?? 100;
+  const sqft    = orgBeds * 2.5; // standard healthcare sqft-per-bed approximation
+  const renPct  = (data as any).percentages?.renewableEnergy  ?? 0;
+  const wRePct  = (data as any).percentages?.waterRecycling   ?? 0;
+  const wsePct  = (data as any).percentages?.wasteRecycling   ?? 0;
+
+  const kpiItems = [
+    { title: "Energy Intensity",    kpi: evaluateEnergyIntensity(annEl  > 0 && sqft > 0 ? annEl / sqft : null),   unit: "kWh/sqft/yr", icon: "⚡" },
+    { title: "Water Intensity",     kpi: evaluateWaterIntensity(annWa   > 0 && sqft > 0 ? annWa / sqft : null),   unit: "KL/sqft/yr", icon: "💧" },
+    { title: "Renewable Energy",    kpi: evaluateRenewableEnergy(renPct),     unit: "%", icon: "☀️" },
+    { title: "Water Reuse",         kpi: evaluateWaterReuse(wRePct),          unit: "%", icon: "🔄" },
+    { title: "Recycling Rate",      kpi: evaluateRecyclingRate(wsePct),       unit: "%", icon: "♻️" },
+    { title: "Waste Segregation",   kpi: evaluateWasteSegregation(wsePct),    unit: "%", icon: "🗑️" },
+    { title: "Tanker Dependency",   kpi: evaluateTankerWaterDependency(0),    unit: "%", icon: "🚛" },
+    { title: "Power Factor",        kpi: evaluatePowerFactor(0.85),           unit: "", icon: "🔌" },
+    { title: "DG Dependency",       kpi: evaluateDGDependency(0),             unit: "%", icon: "🛢️" },
+  ];
  
   return (
     <div style={{
@@ -287,7 +322,7 @@ export default function ResultsPage() {
       )}
  
       {/* ── Main grid ── */}
-      <div style={{ flex: 1, display: "grid", gridTemplateColumns: "minmax(180px, 240px) minmax(220px, 1fr) minmax(220px, 1fr) minmax(220px, 1fr)", gridAutoRows: "minmax(240px, auto)", gap: 16, minHeight: 0 }}>
+      <div style={{ flex: 1, display: "grid", gridTemplateColumns: "minmax(180px, 240px) minmax(220px, 1fr) minmax(220px, 1fr) minmax(220px, 1fr)", gridAutoRows: "minmax(240px, auto)", gridTemplateRows: "minmax(240px, auto) minmax(240px, auto) auto", gap: 16, minHeight: 0 }}>
  
         {/* ── Col 1: Overall Hero (spans 2 rows) ── */}
         <div style={{ gridRow: "1 / 3", background: "#fff", borderRadius: 12, border: "1px solid #e2e8f0", padding: "14px 12px", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "space-between" }}>
@@ -500,14 +535,59 @@ export default function ResultsPage() {
           </div>
         </div>
  
+        {/* ── Row 3: KPI Dashboard (full width) ── */}
+        <div style={{ gridColumn: "1 / -1", background: "#fff", borderRadius: 16, border: "1px solid #e2e8f0", padding: "18px 22px", display: "flex", flexDirection: "column", gap: 14, boxShadow: "0 4px 20px rgba(15, 23, 42, 0.03)" }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+            <div>
+              <p style={{ margin: 0, fontSize: 13, fontWeight: 800, color: "#0f172a", textTransform: "uppercase", letterSpacing: 0.8 }}>KPI Scorecards</p>
+              <p style={{ margin: "2px 0 0", fontSize: 11, color: "#64748b" }}>Benchmarked against healthcare industry standards</p>
+            </div>
+            <div style={{ fontSize: 11, fontWeight: 600, color: "#3b82f6", background: "#eff6ff", padding: "5px 12px", borderRadius: 6 }}>
+              {kpiItems.length} Metrics Analyzed
+            </div>
+          </div>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: 12 }}>
+            {kpiItems.map((item) => {
+              const kpi = item.kpi;
+              const isInsufficient = kpi.status === "Insufficient Data";
+              const scoreImpactLabel = isInsufficient ? "Data Req" : kpi.scoreImpact === "Full" ? "Optimal" : kpi.scoreImpact === "Partial" ? "Moderate" : "Action Req";
+              const scoreImpactColor = isInsufficient ? "#94a3b8" : kpi.scoreImpact === "Full" ? "#10b981" : kpi.scoreImpact === "Partial" ? "#f59e0b" : "#ef4444";
+              const statusBg = isInsufficient ? "linear-gradient(135deg, #f8fafc 0%, #ffffff 100%)" : kpi.scoreImpact === "Full" ? "linear-gradient(135deg, #f0fdf4 0%, #ffffff 100%)" : kpi.scoreImpact === "Partial" ? "linear-gradient(135deg, #fffbeb 0%, #ffffff 100%)" : "linear-gradient(135deg, #fef2f2 0%, #ffffff 100%)";
+              const statusBorder = isInsufficient ? "#e2e8f0" : kpi.scoreImpact === "Full" ? "#a7f3d0" : kpi.scoreImpact === "Partial" ? "#fde68a" : "#fecaca";
+              
+              return (
+                <div key={item.title} className="group hover:-translate-y-1 hover:shadow-md transition-all duration-300" style={{ background: statusBg, border: `1px solid ${statusBorder}`, borderRadius: 12, padding: "14px", display: "flex", flexDirection: "column", gap: 6, position: "relative", overflow: "hidden", cursor: "default" }}>
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 4, zIndex: 1 }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                      <span style={{ fontSize: 14 }}>{item.icon}</span>
+                      <p style={{ margin: 0, fontSize: 10, fontWeight: 700, color: "#334155", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{item.title}</p>
+                    </div>
+                    <span style={{ background: scoreImpactColor, color: "#fff", fontSize: 8, fontWeight: 700, borderRadius: 4, padding: "2px 6px", flexShrink: 0 }}>{scoreImpactLabel}</span>
+                  </div>
+                  
+                  <div style={{ zIndex: 1, marginTop: 4 }}>
+                    <p style={{ margin: 0, fontSize: 18, fontWeight: 800, color: "#0f172a", lineHeight: 1 }}>
+                      {kpi.value !== null ? `${kpi.value.toFixed(1)}` : "N/A"}
+                      {kpi.value !== null && <span style={{ fontSize: 10, fontWeight: 600, color: "#64748b", marginLeft: 3 }}>{item.unit}</span>}
+                    </p>
+                    <p style={{ margin: "4px 0 0", fontSize: 9, color: "#475569", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontWeight: 500 }}>{kpi.status}</p>
+                  </div>
+                  
+                  <div style={{ height: 4, background: "#e2e8f0", borderRadius: 2, overflow: "hidden", marginTop: "auto", zIndex: 1 }}>
+                    <div style={{ height: "100%", background: scoreImpactColor, borderRadius: 2, width: isInsufficient ? "0%" : kpi.scoreImpact === "Full" ? "100%" : kpi.scoreImpact === "Partial" ? "50%" : "15%", transition: "width 1s ease-out" }} />
+                  </div>
+
+                  {/* Decorative background circle */}
+                  <div className="transition-transform duration-300 group-hover:scale-110" style={{ position: "absolute", right: -15, top: -15, width: 60, height: 60, borderRadius: "50%", background: `${scoreImpactColor}15`, zIndex: 0 }} />
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
       </div>
  
-      {/* ── Footer disclaimer ── */}
-      <div style={{ marginTop: 6, textAlign: "center" }}>
-        <p style={{ margin: 0, fontSize: 8, color: "#cbd5e1" }}>
-          SAM Assessment Application provides indicative sustainability and certification readiness intelligence. This platform does not replace official certification audits, regulatory reviews, or accredited assessments. All scores are indicative only.
-        </p>
-      </div>
+      {/* Footer removed per user request */}
     </div>
   );
 }

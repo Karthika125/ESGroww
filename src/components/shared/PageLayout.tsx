@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { AlertCircle } from "lucide-react";
+import { AlertCircle, Loader2 } from "lucide-react";
 
 interface PageLayoutProps {
   title: string;
@@ -18,37 +18,43 @@ export default function PageLayout({
   error = null,
   children,
 }: PageLayoutProps) {
+  const header = (
+    <div className="mb-3 border-b border-slate-200/90 pb-2">
+      <h1 className="text-base font-bold tracking-tight text-slate-900 sm:text-lg">{title}</h1>
+      {description && (
+        <p className="mt-0.5 text-xs leading-snug text-slate-500">{description}</p>
+      )}
+    </div>
+  );
+
   if (loading) {
     return (
-      <main className="max-w-7xl mx-auto px-2 py-2">
-        <h1 className="text-lg font-bold mb-0.5">{title}</h1>
-        {description && <p className="text-[11px] text-slate-600 mb-2">{description}</p>}
-        <div className="flex items-center justify-center min-h-screen">
-          <div className="text-gray-600">Loading...</div>
+      <div className="w-full py-2">
+        {header}
+        <div className="flex items-center justify-center py-16 text-slate-400">
+          <Loader2 className="size-5 animate-spin mr-2" />
+          <span className="text-sm">Loading…</span>
         </div>
-      </main>
+      </div>
     );
   }
 
   if (error) {
     return (
-      <main className="max-w-7xl mx-auto px-2 py-2">
-        <h1 className="text-lg font-bold mb-0.5">{title}</h1>
-        {description && <p className="text-[11px] text-slate-600 mb-2">{description}</p>}
-        <div className="flex items-center gap-2 text-red-600">
-          <AlertCircle size={20} /> {error}
+      <div className="w-full py-2">
+        {header}
+        <div className="flex items-center gap-2 rounded-lg border border-rose-100 bg-rose-50 px-3 py-2.5 text-sm text-rose-700">
+          <AlertCircle className="size-4 shrink-0" />
+          {error}
         </div>
-      </main>
+      </div>
     );
   }
 
   return (
-    <main className="max-w-7xl mx-auto px-2 py-2">
-      <div className="mb-2">
-        <h1 className="text-lg font-bold mb-0.5">{title}</h1>
-        {description && <p className="text-[11px] text-slate-600">{description}</p>}
-      </div>
+    <div className="w-full py-2">
+      {header}
       {children}
-    </main>
+    </div>
   );
 }

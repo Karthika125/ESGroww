@@ -26,9 +26,11 @@ export default function ConfidenceChart({ data }: ConfidenceChartProps) {
   }));
 
   return (
-    <div className="bg-white border border-slate-100 rounded p-2 shadow-sm overflow-hidden">
-      <h3 className="text-sm font-semibold mb-2 truncate">Confidence by Category</h3>
-      <ResponsiveContainer width="100%" height={150}>
+    <div className="overflow-hidden">
+      <p className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+        Confidence by Category
+      </p>
+      <ResponsiveContainer width="100%" height={200}>
         <LineChart data={chartData} margin={{ top: 5, right: 5, left: -20, bottom: 5 }}>
           <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
           <XAxis dataKey="category" stroke="#64748b" tick={{ fontSize: 11 }} interval={0} />
@@ -37,12 +39,12 @@ export default function ConfidenceChart({ data }: ConfidenceChartProps) {
             contentStyle={{
               backgroundColor: "#fff",
               border: "1px solid #cbd5e1",
-              borderRadius: "4px",
+              borderRadius: "6px",
               fontSize: "12px",
             }}
             formatter={(value) => `${value}%`}
           />
-          <Legend wrapperStyle={{ fontSize: "12px" }} />
+          <Legend wrapperStyle={{ fontSize: "11px" }} />
           <Line
             type="monotone"
             dataKey="confidence"

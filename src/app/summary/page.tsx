@@ -12,50 +12,14 @@ export default async function SummaryPage() {
   /* CALCULATIONS              */
   /* ========================= */
 
-  const totalEmissions =
-    data.totals.totalElectricity * 0.82 +
-    data.totals.totalDiesel * 2.68;
+  const environmentalScore = data.scores.environmentalScore;
+  const socialScore        = data.scores.socialScore;
+  const governanceScore    = data.scores.governanceScore;
+  const overallScore       = data.scores.overallScore;
+  const readiness          = data.readinessStage;
 
-  const environmentalScore = Math.min(
-    100,
-    Math.round(100 - totalEmissions / 500)
-  );
-
-  const socialScore =
-    data.percentages.waterRecyclePercentage >
-    40
-      ? 78
-      : 58;
-
-  const governanceScore =
-    data.coverage.electricityMonths >= 10
-      ? 82
-      : 60;
-
-  const overallScore = Math.round(
-    (
-      environmentalScore +
-      socialScore +
-      governanceScore
-    ) / 3
-  );
-
-  const readiness =
-    overallScore >= 80
-      ? "Advanced"
-      : overallScore >= 60
-      ? "Moderate"
-      : "Early Stage";
-
-  const confidence = Math.round(
-    (
-      (data.coverage.electricityMonths +
-        data.coverage.waterMonths +
-        data.coverage.fuelMonths +
-        data.coverage.wasteMonths) /
-      48
-    ) * 100
-  );
+  const confidence    = data.confidence;
+  const totalEmissions = data.totals.totalEmissions;
 
   /* ========================= */
   /* DYNAMIC INSIGHTS          */

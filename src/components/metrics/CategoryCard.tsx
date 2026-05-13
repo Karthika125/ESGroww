@@ -21,60 +21,66 @@ export default function CategoryCard({
 }: CategoryCardProps) {
   const validation = getValidationStatus(monthsUploaded);
   const report = getReportForMonths(monthsUploaded);
-  
-  // Clamp and sanitize values to prevent overflow
+
   const safeScore = clampPercentage(score);
   const safeConfidence = clampPercentage(confidence * 100);
   const completenessWidth = validation.completeness.replace("%", "");
   const clampedWidth = Math.min(100, Math.max(0, parseFloat(completenessWidth)));
 
   return (
-    <article className={`border rounded p-2 shadow-sm overflow-hidden ${validation.color}`}>
-      <div className="flex items-center justify-between mb-1 min-w-0">
-        <h3 className="text-sm font-semibold truncate">{truncateText(title, 15)}</h3>
-        <div className={`text-xs font-semibold px-1.5 py-0.5 rounded flex-shrink-0 ${validation.badgeColor}`}>
+    <article className={`rounded-lg border p-3 shadow-sm overflow-hidden ${validation.color}`}>
+      {/* Header */}
+      <div className="flex items-center justify-between mb-2 min-w-0 gap-2">
+        <h3 className="text-xs font-semibold truncate text-slate-900">{title}</h3>
+        <span className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-semibold ${validation.badgeColor}`}>
           {truncateText(validation.status, 12)}
-        </div>
+        </span>
       </div>
 
-      <div className="space-y-1 text-xs overflow-hidden">
-        {/* Data Completeness */}
+      <div className="space-y-1.5 text-[11px]">
+        {/* Completeness bar */}
         <div>
-          <div className="flex items-center justify-between mb-0.5 min-w-0">
-            <span className="truncate">Completeness</span>
-            <span className="font-semibold flex-shrink-0 ml-1">{validation.completeness}</span>
+          <div className="flex items-center justify-between mb-0.5 text-slate-600">
+            <span>Completeness</span>
+            <span className="font-semibold tabular-nums">{validation.completeness}</span>
           </div>
           <div className="h-1 bg-slate-200 rounded-full overflow-hidden">
-            <div style={{ width: `${clampedWidth}%` }} className="h-1 bg-emerald-500" />
+            <div
+              style={{ width: `${clampedWidth}%` }}
+              className="h-1 rounded-full bg-emerald-500 transition-all duration-500"
+            />
           </div>
         </div>
 
-        {/* Score */}
-        <div className="flex items-center justify-between pt-0.5 min-w-0">
-          <span className="font-semibold truncate">Score</span>
-          <span className="text-slate-600 flex-shrink-0 ml-1">{safeScore}%</span>
+        {/* Score + Confidence row */}
+        <div className="flex items-center justify-between pt-0.5 text-slate-600">
+          <span>Score</span>
+          <span className="font-semibold tabular-nums text-slate-800">{safeScore}%</span>
+        </div>
+        <div className="flex items-center justify-between text-slate-500">
+          <span>Confidence</span>
+          <span className="font-semibold tabular-nums text-slate-700">
+            {Math.round(safeConfidence)}%{confidenceMonths != null ? ` · ${confidenceMonths} mo` : ""}
+          </span>
         </div>
 
-        {/* Confidence Info */}
-        <div className="text-slate-600 truncate">
-          Conf: {Math.round(safeConfidence)}% · Mo: {confidenceMonths ?? "-"}
-        </div>
+        {/* Validation note */}
+        <p className="pt-1.5 border-t border-slate-200/60 text-[10px] leading-snug text-slate-500 line-clamp-2">
+          {truncateText(validation.meaning, 70)}
+        </p>
 
-        {/* Validation Meaning */}
-        <div className="leading-tight pt-1 border-t border-current border-opacity-20 text-slate-700 line-clamp-2">
-          {truncateText(validation.meaning, 60)}
-        </div>
+        {/* Report message */}
+        {report.message && (
+          <p className="text-[10px] leading-snug text-slate-500 line-clamp-2">
+            {truncateText(report.message, 70)}
+          </p>
+        )}
 
-        {/* Report Message */}
-        <div className="font-medium text-current opacity-75 text-slate-700 line-clamp-2">
-          {truncateText(report.message, 60)}
-        </div>
-
-        {/* Custom Message */}
+        {/* Custom message */}
         {message && (
-          <div className="text-current opacity-75 text-slate-700 line-clamp-1">
-            {truncateText(message, 50)}
-          </div>
+          <p className="text-[10px] leading-snug text-slate-400 line-clamp-1">
+            {truncateText(message, 60)}
+          </p>
         )}
       </div>
     </article>

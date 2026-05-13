@@ -31,9 +31,11 @@ export default function OverallMetricsChart({
   }
 
   return (
-    <div className="bg-white border border-slate-100 rounded p-2 shadow-sm overflow-hidden">
-      <h3 className="text-sm font-semibold mb-2 truncate">ESG Category Scores</h3>
-      <ResponsiveContainer width="100%" height={150}>
+    <div className="overflow-hidden">
+      <p className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+        ESG Category Scores
+      </p>
+      <ResponsiveContainer width="100%" height={160}>
         <PieChart>
           <Pie
             data={data}

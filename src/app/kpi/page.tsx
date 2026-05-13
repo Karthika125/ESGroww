@@ -107,47 +107,47 @@ export default function KPIPage() {
           </div>
         </section>
 
-        <aside className="xl:col-span-4 grid grid-rows-2 gap-3 h-full min-h-0">
-          <section className="bg-white border border-slate-200 rounded-lg shadow-sm overflow-hidden h-full flex flex-col min-h-0">
+        <aside className="xl:col-span-4 flex flex-col gap-3 min-h-0">
+          <section className="bg-white border border-slate-200 rounded-lg shadow-sm overflow-hidden flex flex-col min-h-0 shrink-0">
             <div className="bg-slate-900 px-3 py-2.5">
               <h3 className="text-sm font-semibold text-white">Status Summary</h3>
             </div>
-            <div className="p-2 grid grid-cols-3 gap-2 text-xs flex-1">
-              <div className="rounded-md border border-green-200 bg-green-50 px-2 py-2 text-center">
+            <div className="p-3 grid grid-cols-3 gap-3 text-xs">
+              <div className="rounded-md border border-green-200 bg-green-50 p-3 text-center flex flex-col items-center justify-center">
                 <p className="font-semibold text-green-700">Full</p>
-                <p className="text-lg font-bold text-green-900">{statusCount.full}</p>
+                <p className="text-2xl font-bold text-green-900 mt-1">{statusCount.full}</p>
               </div>
-              <div className="rounded-md border border-amber-200 bg-amber-50 px-2 py-2 text-center">
+              <div className="rounded-md border border-amber-200 bg-amber-50 p-3 text-center flex flex-col items-center justify-center">
                 <p className="font-semibold text-amber-700">Partial</p>
-                <p className="text-lg font-bold text-amber-900">{statusCount.partial}</p>
+                <p className="text-2xl font-bold text-amber-900 mt-1">{statusCount.partial}</p>
               </div>
-              <div className="rounded-md border border-red-200 bg-red-50 px-2 py-2 text-center">
+              <div className="rounded-md border border-red-200 bg-red-50 p-3 text-center flex flex-col items-center justify-center">
                 <p className="font-semibold text-red-700">Zero</p>
-                <p className="text-lg font-bold text-red-900">{statusCount.zero}</p>
+                <p className="text-2xl font-bold text-red-900 mt-1">{statusCount.zero}</p>
               </div>
             </div>
           </section>
 
-          <section className="bg-white border border-slate-200 rounded-lg shadow-sm overflow-hidden h-full flex flex-col min-h-0">
+          <section className="bg-white border border-slate-200 rounded-lg shadow-sm overflow-hidden flex flex-col min-h-0 shrink-0">
             <div className="bg-slate-900 px-3 py-2.5">
               <h3 className="text-sm font-semibold text-white">Data Summary</h3>
             </div>
-            <div className="p-2 grid grid-cols-2 gap-2 text-xs flex-1">
-              <div className="rounded-md border border-slate-200 bg-slate-50 px-2 py-2">
-                <p className="text-slate-500">Electricity</p>
-                <p className="font-semibold text-slate-800">{(electricity / 1000).toFixed(1)} MWh</p>
+            <div className="p-3 grid grid-cols-2 gap-3 text-xs">
+              <div className="rounded-md border border-slate-200 bg-slate-50 p-3 flex flex-col justify-center">
+                <p className="text-slate-500 mb-1">Electricity</p>
+                <p className="text-sm font-semibold text-slate-800">{(electricity / 1000).toFixed(1)} MWh</p>
               </div>
-              <div className="rounded-md border border-slate-200 bg-slate-50 px-2 py-2">
-                <p className="text-slate-500">Water</p>
-                <p className="font-semibold text-slate-800">{water.toFixed(0)} KL</p>
+              <div className="rounded-md border border-slate-200 bg-slate-50 p-3 flex flex-col justify-center">
+                <p className="text-slate-500 mb-1">Water</p>
+                <p className="text-sm font-semibold text-slate-800">{water.toFixed(0)} KL</p>
               </div>
-              <div className="rounded-md border border-slate-200 bg-slate-50 px-2 py-2">
-                <p className="text-slate-500">Waste</p>
-                <p className="font-semibold text-slate-800">{(waste / 1000).toFixed(1)} MT</p>
+              <div className="rounded-md border border-slate-200 bg-slate-50 p-3 flex flex-col justify-center">
+                <p className="text-slate-500 mb-1">Waste</p>
+                <p className="text-sm font-semibold text-slate-800">{(waste / 1000).toFixed(1)} MT</p>
               </div>
-              <div className="rounded-md border border-slate-200 bg-slate-50 px-2 py-2">
-                <p className="text-slate-500">Beds / Sqft</p>
-                <p className="font-semibold text-slate-800">{numberOfBeds} / {sqft.toFixed(0)}</p>
+              <div className="rounded-md border border-slate-200 bg-slate-50 p-3 flex flex-col justify-center">
+                <p className="text-slate-500 mb-1">Beds / Sqft</p>
+                <p className="text-sm font-semibold text-slate-800">{numberOfBeds} / {sqft.toFixed(0)}</p>
               </div>
             </div>
           </section>
