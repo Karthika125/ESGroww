@@ -54,7 +54,7 @@ export default function VerticalFloatingMenu() {
   return (
     <>
       {/* Profile (Top-right) — positioned absolute so it scrolls with the page */}
-      <div className="absolute top-8 right-8 z-50">
+      <div className="absolute right-4 top-6 z-50 sm:right-6 sm:top-8 lg:right-8">
         <div className="relative">
           <button
             onClick={() => setIsProfileOpen((p) => !p)}
@@ -62,8 +62,8 @@ export default function VerticalFloatingMenu() {
             aria-expanded={isProfileOpen}
             aria-label="Open menu"
           >
-            <div className="relative flex h-14 w-14 items-center justify-center rounded-full bg-white text-black shadow-2xl">
-              <span className="absolute inset-0 rounded-full border border-white" />
+            <div className="relative flex h-12 w-12 items-center justify-center rounded-full border border-border bg-card text-foreground shadow-lg sm:h-14 sm:w-14">
+              <span className="absolute inset-0 rounded-full border border-border/60" />
 
               <User size={22} />
             </div>
@@ -77,7 +77,7 @@ export default function VerticalFloatingMenu() {
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -6 }}
                 transition={{ duration: 0.18 }}
-                className="absolute left-0 top-full mt-3 z-50 flex flex-col items-start gap-3"
+                className="absolute left-0 top-full z-50 mt-3 flex flex-col items-start gap-2.5"
               >
                 {items.map((item) => {
                   const Icon = item.Icon;
@@ -97,13 +97,13 @@ export default function VerticalFloatingMenu() {
                       animate={{ opacity: 1, y: 0, scale: 1 }}
                       transition={{ delay: 0.03, duration: 0.2 }}
                       whileHover={{ scale: 1.06, y: -2 }}
-                      className="group relative flex h-12 w-12 items-center justify-center overflow-visible rounded-full border border-white/25 bg-white/10 shadow-lg backdrop-blur-md transition-colors duration-300 hover:bg-white"
+                      className="group relative flex h-11 w-11 items-center justify-center overflow-visible rounded-full border border-border bg-card/95 text-foreground shadow-md backdrop-blur-sm transition-colors duration-300 hover:border-primary hover:bg-primary hover:text-primary-foreground sm:h-12 sm:w-12"
                     >
-                      <span className="absolute inset-0 rounded-full bg-white/20 opacity-0 blur-md transition-opacity duration-300 group-hover:opacity-100" />
+                      <span className="absolute inset-0 rounded-full bg-primary/10 opacity-0 blur-md transition-opacity duration-300 group-hover:opacity-100" />
 
-                      <Icon size={16} className="relative z-10 text-black transition-colors duration-300 group-hover:text-white" />
+                      <Icon size={16} className="relative z-10 transition-colors duration-300" />
 
-                      <span className="pointer-events-none absolute right-full mr-3 w-max whitespace-nowrap rounded-md bg-black/80 px-3 py-1.5 text-xs font-medium text-white opacity-0 shadow-lg transition-all duration-200 group-hover:-translate-x-1 group-hover:opacity-100 text-right">
+                      <span className="pointer-events-none absolute right-full mr-2.5 w-max whitespace-nowrap rounded-md bg-foreground px-2.5 py-1 text-xs font-medium text-background opacity-0 shadow-lg transition-all duration-200 group-hover:-translate-x-0.5 group-hover:opacity-100 sm:mr-3 sm:px-3 sm:py-1.5">
                         {item.label}
                       </span>
                     </motion.button>

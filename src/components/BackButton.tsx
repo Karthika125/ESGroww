@@ -28,10 +28,10 @@ export default function BackButton() {
       className="
         group flex items-center gap-1.5
         rounded-md px-2 py-1.5
-        text-slate-500 text-xs font-medium
+        text-xs font-medium text-muted-foreground
         transition-colors duration-150
-        hover:bg-slate-100 hover:text-slate-800
-        focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500
+        hover:bg-muted hover:text-foreground
+        focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring
       "
     >
       <ArrowLeft

@@ -15,7 +15,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 
-import { Button } from "@/components/ui/button";
+import { ActionButton } from "@/components/layout/action-button";
 
 import { Input } from "@/components/ui/input";
 
@@ -94,20 +94,20 @@ export default function ForgotPasswordPage() {
   }
 
   return (
-    <div className="flex w-full min-w-0 flex-1 flex-col items-center justify-center bg-slate-50 px-4 py-10">
-      <Card className="w-full max-w-md border-slate-200 bg-white shadow-md">
+    <div className="flex w-full min-w-0 flex-1 flex-col items-center justify-center bg-background px-4 py-10">
+      <Card className="w-full max-w-md border-border bg-card shadow-md ring-1 ring-foreground/[0.04]">
         <CardHeader className="space-y-2">
-          <div className="flex justify-center mb-2">
-            <div className="p-3 bg-emerald-50 rounded-full border border-emerald-100">
-              <Leaf className="w-8 h-8 text-emerald-600" />
+          <div className="mb-2 flex justify-center">
+            <div className="rounded-full border border-primary/20 bg-primary/10 p-3">
+              <Leaf className="h-8 w-8 text-primary" />
             </div>
           </div>
 
-          <CardTitle className="text-2xl text-center font-bold text-slate-900">
+          <CardTitle className="text-center text-2xl font-bold text-foreground">
             Reset password
           </CardTitle>
 
-          <CardDescription className="text-center text-slate-600 leading-relaxed">
+          <CardDescription className="text-center leading-relaxed text-muted-foreground">
             Enter your registered email address. If an account exists, we will send
             a secure link valid for one hour.
           </CardDescription>
@@ -119,13 +119,13 @@ export default function ForgotPasswordPage() {
             className="space-y-4"
           >
             {error && (
-              <div className="bg-red-50 border border-red-200 text-red-700 rounded-lg px-3 py-2 text-sm">
+              <div className="rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive">
                 {error}
               </div>
             )}
 
             {message && (
-              <div className="bg-emerald-50 border border-emerald-200 text-emerald-900 rounded-lg px-3 py-2 text-sm">
+              <div className="rounded-lg border border-primary/25 bg-primary/10 px-3 py-2 text-sm text-foreground">
                 {message}
               </div>
             )}
@@ -144,40 +144,40 @@ export default function ForgotPasswordPage() {
                   setEmail(e.target.value)
                 }
                 placeholder="you@organization.com"
-                className="focus-visible:ring-emerald-500"
+                className="border-input focus-visible:border-ring focus-visible:ring-ring"
               />
             </div>
 
-            <Button
+            <ActionButton
               type="submit"
               disabled={loading}
-              className="w-full bg-emerald-600 hover:bg-emerald-700"
+              className="h-11 w-full"
             >
               {loading
                 ? "Sending…"
                 : "Send reset link"}
-            </Button>
+            </ActionButton>
           </form>
         </CardContent>
 
-        <CardFooter className="flex flex-col gap-3 border-t border-slate-100">
+        <CardFooter className="flex flex-col gap-3 border-t border-border/80 bg-muted/30">
           <button
             type="button"
             onClick={() =>
               router.push("/login")
             }
-            className="flex items-center justify-center gap-2 text-sm text-slate-600 hover:text-slate-900"
+            className="flex items-center justify-center gap-2 text-sm text-muted-foreground transition hover:text-foreground"
           >
-            <ArrowLeft className="w-4 h-4" />
+            <ArrowLeft className="h-4 w-4" />
 
             Back to log in
           </button>
 
-          <p className="text-sm text-center text-slate-500">
+          <p className="text-center text-sm text-muted-foreground">
             Need an account?{" "}
             <Link
               href="/register"
-              className="text-emerald-700 font-semibold hover:text-emerald-600"
+              className="font-semibold text-primary hover:text-primary/80"
             >
               Register
             </Link>

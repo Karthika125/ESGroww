@@ -6,6 +6,9 @@ import Link from "next/link";
 
 import { useRouter } from "next/navigation";
 
+import { ActionButton } from "@/components/layout/action-button";
+import { PageWrapper } from "@/components/layout/page-wrapper";
+
 import { SECTOR_OPTIONS } from "@/lib/validation";
 
 import { COUNTRY_OPTIONS } from "@/lib/countries";
@@ -246,36 +249,36 @@ export default function RegisterPage() {
   }
 
   return (
-    <div className="flex w-full min-w-0 flex-1 flex-col bg-slate-50 px-4 py-8 sm:py-10">
-      <div className="mx-auto grid w-full max-w-6xl flex-1 grid-cols-1 items-start gap-8 lg:grid-cols-2 lg:gap-12">
-        <aside className="hidden lg:flex flex-col justify-center rounded-2xl border border-slate-200 bg-white p-8 shadow-sm text-slate-700 space-y-6 lg:sticky lg:top-8">
+    <div className="flex min-h-0 w-full min-w-0 flex-1 flex-col bg-background">
+      <PageWrapper maxWidth="wide" className="grid min-h-0 flex-1 grid-cols-1 items-start gap-6 py-6 sm:gap-8 sm:py-8 lg:grid-cols-2 lg:gap-10">
+        <aside className="hidden flex-col justify-center space-y-5 rounded-2xl border border-border bg-card p-7 text-muted-foreground shadow-sm ring-1 ring-foreground/[0.04] lg:sticky lg:top-6 lg:flex lg:max-h-[calc(100dvh-6rem)] lg:overflow-y-auto">
           <div className="flex items-center gap-3">
-            <div className="p-3 rounded-2xl bg-emerald-50 border border-emerald-100">
-              <Leaf className="w-9 h-9 text-emerald-600" />
+            <div className="rounded-2xl border border-primary/20 bg-primary/10 p-3">
+              <Leaf className="h-9 w-9 text-primary" />
             </div>
 
             <div>
-              <p className="text-xs uppercase tracking-[0.2em] text-emerald-700 font-medium">
+              <p className="text-xs font-medium uppercase tracking-[0.2em] text-primary">
                 ESGroww
               </p>
 
-              <h1 className="text-3xl font-semibold tracking-tight leading-tight text-slate-900">
+              <h1 className="text-3xl font-semibold leading-tight tracking-tight text-foreground">
                 Create your organization profile
               </h1>
             </div>
           </div>
 
-          <p className="text-lg text-slate-600 leading-relaxed">
+          <p className="text-lg leading-relaxed text-muted-foreground">
             Registration locks in your{" "}
-            <strong className="text-slate-800">industry / sector</strong> so benchmarks, applicable
+            <strong className="text-foreground">industry / sector</strong> so benchmarks, applicable
             certifications, and governance questions match how your facility
             actually operates — from hospitals and campuses to manufacturing and
             general enterprises.
           </p>
 
-          <ul className="space-y-4 text-sm text-slate-600">
+          <ul className="space-y-3 text-sm text-muted-foreground">
             <li className="flex gap-3">
-              <Sparkles className="w-5 h-5 shrink-0 text-emerald-600 mt-0.5" />
+              <Sparkles className="mt-0.5 h-5 w-5 shrink-0 text-primary" />
 
               <span>
                 After sign-up, you will receive a verification email (24-hour
@@ -285,7 +288,7 @@ export default function RegisterPage() {
             </li>
 
             <li className="flex gap-3">
-              <BarChart3 className="w-5 h-5 shrink-0 text-emerald-600 mt-0.5" />
+              <BarChart3 className="mt-0.5 h-5 w-5 shrink-0 text-primary" />
 
               <span>
                 One account ties your team to a single organization record — the
@@ -295,7 +298,7 @@ export default function RegisterPage() {
             </li>
           </ul>
 
-          <p className="text-xs text-slate-500 leading-relaxed border-t border-slate-200 pt-6">
+          <p className="border-t border-border pt-5 text-xs leading-relaxed text-muted-foreground">
             SAM Assessment Application provides indicative sustainability and
             certification readiness intelligence. This platform does not replace
             official certification audits, regulatory reviews, accredited
@@ -303,29 +306,29 @@ export default function RegisterPage() {
           </p>
         </aside>
 
-        <div className="rounded-2xl border border-slate-200 bg-white shadow-md p-6 sm:p-8 md:p-10">
-          <div className="mb-8 lg:hidden flex items-center gap-3">
-            <div className="p-2 rounded-xl bg-emerald-50 border border-emerald-100">
-              <Leaf className="w-7 h-7 text-emerald-600" />
+        <div className="rounded-2xl border border-border bg-card p-6 shadow-md ring-1 ring-foreground/[0.04] sm:p-8 md:p-9">
+          <div className="mb-6 flex items-center gap-3 lg:hidden">
+            <div className="rounded-xl border border-primary/20 bg-primary/10 p-2">
+              <Leaf className="h-7 w-7 text-primary" />
             </div>
 
             <div>
-              <h2 className="text-2xl font-bold text-slate-900">
+              <h2 className="text-2xl font-bold text-foreground">
                 Create account
               </h2>
 
-              <p className="text-slate-600 text-sm mt-1">
+              <p className="mt-1 text-sm text-muted-foreground">
                 Sustainability readiness intelligence
               </p>
             </div>
           </div>
 
-          <div className="hidden lg:block mb-8">
-            <h2 className="text-2xl font-bold text-slate-900">
+          <div className="mb-6 hidden lg:block">
+            <h2 className="text-2xl font-bold text-foreground">
               Registration
             </h2>
 
-            <p className="text-slate-600 mt-2 leading-relaxed">
+            <p className="mt-2 leading-relaxed text-muted-foreground">
               All fields marked with the flow below are required before you can
               start assessments. Already registered?{" "}
               <button
@@ -333,7 +336,7 @@ export default function RegisterPage() {
                 onClick={() =>
                   router.push("/login")
                 }
-                className="text-emerald-700 font-semibold hover:text-emerald-600"
+                className="font-semibold text-primary hover:text-primary/80"
               >
                 Log in
               </button>
@@ -341,13 +344,13 @@ export default function RegisterPage() {
           </div>
 
           {error && (
-            <div className="mb-6 bg-red-50 border border-red-200 text-red-700 rounded-xl px-4 py-3 text-sm">
+            <div className="mb-5 rounded-xl border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
               {error}
             </div>
           )}
 
           {success && (
-            <div className="mb-6 bg-emerald-50 border border-emerald-200 text-emerald-900 rounded-xl px-4 py-3 text-sm">
+            <div className="mb-5 rounded-xl border border-primary/25 bg-primary/10 px-4 py-3 text-sm text-foreground">
               {success}
             </div>
           )}
@@ -423,7 +426,7 @@ export default function RegisterPage() {
             />
 
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-2">
+              <label className="mb-2 block text-sm font-medium text-foreground">
                 Industry / sector
               </label>
 
@@ -435,10 +438,10 @@ export default function RegisterPage() {
                     e.target.value
                   )
                 }
-                className={`w-full border rounded-xl px-4 py-3 bg-white text-slate-900 ${
+                className={`w-full rounded-xl border bg-background px-4 py-3 text-foreground ${
                   fieldErrors.sectorCode
-                    ? "border-red-400 ring-1 ring-red-200"
-                    : "border-slate-300"
+                    ? "border-destructive ring-1 ring-destructive/20"
+                    : "border-input focus:border-ring focus:ring-2 focus:ring-ring/30"
                 }`}
               >
                 <option value="">
@@ -458,14 +461,14 @@ export default function RegisterPage() {
               </select>
 
               {fieldErrors.sectorCode && (
-                <p className="mt-1 text-xs text-red-600">
+                <p className="mt-1 text-xs text-destructive">
                   {fieldErrors.sectorCode}
                 </p>
               )}
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-2">
+              <label className="mb-2 block text-sm font-medium text-foreground">
                 Country
               </label>
 
@@ -477,10 +480,10 @@ export default function RegisterPage() {
                     e.target.value
                   )
                 }
-                className={`w-full border rounded-xl px-4 py-3 bg-white text-slate-900 ${
+                className={`w-full rounded-xl border bg-background px-4 py-3 text-foreground ${
                   fieldErrors.country
-                    ? "border-red-400 ring-1 ring-red-200"
-                    : "border-slate-300"
+                    ? "border-destructive ring-1 ring-destructive/20"
+                    : "border-input focus:border-ring focus:ring-2 focus:ring-ring/30"
                 }`}
               >
                 {COUNTRY_OPTIONS.map(
@@ -496,7 +499,7 @@ export default function RegisterPage() {
               </select>
 
               {fieldErrors.country && (
-                <p className="mt-1 text-xs text-red-600">
+                <p className="mt-1 text-xs text-destructive">
                   {fieldErrors.country}
                 </p>
               )}
@@ -504,7 +507,7 @@ export default function RegisterPage() {
 
             {isIndia ? (
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-2">
+                <label className="mb-2 block text-sm font-medium text-foreground">
                   State / union territory
                 </label>
 
@@ -516,10 +519,10 @@ export default function RegisterPage() {
                       e.target.value
                     )
                   }
-                  className={`w-full border rounded-xl px-4 py-3 bg-white text-slate-900 ${
+                  className={`w-full rounded-xl border bg-background px-4 py-3 text-foreground ${
                     fieldErrors.state
-                      ? "border-red-400 ring-1 ring-red-200"
-                      : "border-slate-300"
+                      ? "border-destructive ring-1 ring-destructive/20"
+                      : "border-input focus:border-ring focus:ring-2 focus:ring-ring/30"
                   }`}
                 >
                   <option value="">
@@ -539,7 +542,7 @@ export default function RegisterPage() {
                 </select>
 
                 {fieldErrors.state && (
-                  <p className="mt-1 text-xs text-red-600">
+                  <p className="mt-1 text-xs text-destructive">
                     {fieldErrors.state}
                   </p>
                 )}
@@ -559,7 +562,7 @@ export default function RegisterPage() {
             )}
           </div>
 
-          <div className="mt-6 rounded-xl border border-slate-200 bg-slate-50/80 p-4">
+          <div className="mt-5 rounded-xl border border-border bg-muted/50 p-4">
             <div className="flex items-start gap-3">
               <input
                 id="terms"
@@ -571,15 +574,15 @@ export default function RegisterPage() {
                     e.target.checked
                   )
                 }
-                className="mt-1 rounded border-slate-300"
+                className="mt-1 rounded border-input text-primary focus:ring-ring"
               />
 
               <label
                 htmlFor="terms"
-                className="text-sm text-slate-700 leading-relaxed cursor-pointer"
+                className="cursor-pointer text-sm leading-relaxed text-foreground"
               >
                 I accept the{" "}
-                <span className="text-emerald-800 font-medium">
+                <span className="font-medium text-primary">
                   Terms &amp; Privacy Policy
                 </span>{" "}
                 and understand that scores and recommendations on ESGroww are{" "}
@@ -589,34 +592,34 @@ export default function RegisterPage() {
             </div>
 
             {fieldErrors.acceptTerms && (
-              <p className="mt-2 text-xs text-red-600 pl-7">
+              <p className="mt-2 text-xs text-destructive pl-7">
                 {fieldErrors.acceptTerms}
               </p>
             )}
           </div>
 
-          <button
+          <ActionButton
             type="button"
             onClick={handleRegister}
             disabled={loading}
-            className="mt-8 w-full bg-emerald-600 hover:bg-emerald-700 disabled:opacity-60 text-white py-4 rounded-xl font-semibold transition text-base shadow-lg shadow-emerald-900/10"
+            className="mt-6 h-12 w-full text-base shadow-sm"
           >
             {loading
               ? "Creating account…"
               : "Create account"}
-          </button>
+          </ActionButton>
 
-          <p className="mt-6 text-center text-sm text-slate-600 lg:hidden">
+          <p className="mt-5 text-center text-sm text-muted-foreground lg:hidden">
             Already have an account?{" "}
             <Link
               href="/login"
-              className="text-emerald-700 font-semibold hover:text-emerald-600"
+              className="font-semibold text-primary hover:text-primary/80"
             >
               Log in
             </Link>
           </p>
         </div>
-      </div>
+      </PageWrapper>
     </div>
   );
 }
@@ -640,27 +643,23 @@ function InputField({
 }) {
   return (
     <div>
-      <label className="block text-sm font-medium text-slate-700 mb-2">
-        {label}
-      </label>
+      <label className="mb-2 block text-sm font-medium text-foreground">{label}</label>
 
       <input
         type={type}
         value={value}
         autoComplete={autoComplete}
-        onChange={(e) =>
-          onChange(e.target.value)
-        }
+        onChange={(e) => onChange(e.target.value)}
         aria-invalid={Boolean(error)}
-        className={`w-full border rounded-xl px-4 py-3 text-slate-900 placeholder:text-slate-400 ${
+        className={`w-full rounded-xl border bg-background px-4 py-3 text-foreground placeholder:text-muted-foreground ${
           error
-            ? "border-red-400 ring-1 ring-red-200"
-            : "border-slate-300 focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500"
+            ? "border-destructive ring-1 ring-destructive/20"
+            : "border-input focus:border-ring focus:ring-2 focus:ring-ring/30"
         }`}
       />
 
       {error && (
-        <p className="mt-1 text-xs text-red-600">
+        <p className="mt-1 text-xs text-destructive" role="alert">
           {error}
         </p>
       )}

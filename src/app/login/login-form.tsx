@@ -16,6 +16,9 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 
+import { ActionButton } from "@/components/layout/action-button";
+import { FormField } from "@/components/layout/form-field";
+import { PageWrapper } from "@/components/layout/page-wrapper";
 import { Button } from "@/components/ui/button";
 
 import { Input } from "@/components/ui/input";
@@ -210,33 +213,33 @@ export default function LoginForm() {
   }
 
   return (
-    <div className="flex w-full min-w-0 flex-1 flex-col bg-slate-50">
-      <div className="mx-auto grid w-full max-w-6xl flex-1 grid-cols-1 content-center items-stretch gap-8 px-4 py-8 sm:py-10 lg:grid-cols-2 lg:gap-12 lg:py-12">
-        <section className="order-2 hidden flex-col justify-center rounded-2xl border border-slate-200 bg-white p-8 shadow-sm text-slate-700 lg:order-1 lg:flex">
+    <div className="flex w-full min-w-0 flex-1 flex-col bg-background">
+      <PageWrapper maxWidth="wide" className="grid min-h-0 flex-1 grid-cols-1 content-center items-stretch gap-6 py-6 sm:gap-8 sm:py-8 lg:grid-cols-2 lg:gap-10 lg:py-10">
+        <section className="order-2 hidden flex-col justify-center rounded-2xl border border-border bg-card p-7 text-muted-foreground shadow-sm ring-1 ring-foreground/[0.04] lg:order-1 lg:flex">
           <div className="flex items-center gap-3">
-            <div className="rounded-2xl border border-emerald-100 bg-emerald-50 p-3">
-              <Leaf className="h-9 w-9 text-emerald-600" />
+            <div className="rounded-2xl border border-primary/20 bg-primary/10 p-3">
+              <Leaf className="h-9 w-9 text-primary" />
             </div>
 
             <div>
-              <p className="text-xs font-medium uppercase tracking-[0.2em] text-emerald-700">
+              <p className="text-xs font-medium uppercase tracking-[0.2em] text-primary">
                 ESGroww
               </p>
 
-              <h1 className="text-3xl font-semibold tracking-tight text-slate-900">
+              <h1 className="text-3xl font-semibold tracking-tight text-foreground">
                 Sustainability readiness intelligence
               </h1>
             </div>
           </div>
 
-          <p className="mt-6 text-lg leading-relaxed text-slate-600">
+          <p className="mt-5 text-lg leading-relaxed text-muted-foreground">
             Sign in to upload operational data, run validation and annualization,
             and view certification-style readiness across your sector frameworks.
           </p>
 
-          <ul className="mt-6 space-y-4 text-sm text-slate-600">
+          <ul className="mt-5 space-y-3 text-sm text-muted-foreground">
             <li className="flex gap-3">
-              <ShieldCheck className="mt-0.5 h-5 w-5 shrink-0 text-emerald-600" />
+              <ShieldCheck className="mt-0.5 h-5 w-5 shrink-0 text-primary" />
 
               <span>
                 Secure sessions: 60 minutes by default, or 30 days with Remember
@@ -245,7 +248,7 @@ export default function LoginForm() {
             </li>
 
             <li className="flex gap-3">
-              <BarChart3 className="mt-0.5 h-5 w-5 shrink-0 text-emerald-600" />
+              <BarChart3 className="mt-0.5 h-5 w-5 shrink-0 text-primary" />
 
               <span>
                 Benchmarks, emissions, and framework applicability follow the
@@ -256,19 +259,19 @@ export default function LoginForm() {
         </section>
 
         <div className="order-1 flex w-full min-w-0 items-center justify-center lg:order-2">
-          <Card className="w-full max-w-lg border-slate-200 bg-white shadow-md lg:max-w-none">
+          <Card className="w-full max-w-lg border-border bg-card shadow-md ring-1 ring-foreground/[0.04] lg:max-w-none">
             <CardHeader className="space-y-3 pb-2">
               <div className="mb-1 flex justify-center lg:hidden">
-                <div className="rounded-full border border-emerald-100 bg-emerald-50 p-3">
-                  <Leaf className="h-8 w-8 text-emerald-600" />
+                <div className="rounded-full border border-primary/20 bg-primary/10 p-3">
+                  <Leaf className="h-8 w-8 text-primary" />
                 </div>
               </div>
 
-              <CardTitle className="text-center text-2xl font-bold text-slate-900">
+              <CardTitle className="text-center text-2xl font-bold text-foreground">
                 Welcome back
               </CardTitle>
 
-              <CardDescription className="text-center leading-relaxed text-slate-600">
+              <CardDescription className="text-center leading-relaxed text-muted-foreground">
                 Log in to ESGroww — your SAM Assessment–style sustainability
                 readiness workspace.
               </CardDescription>
@@ -280,22 +283,18 @@ export default function LoginForm() {
                 className="space-y-4"
               >
                 {infoBanner && (
-                  <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-900">
+                  <div className="rounded-lg border border-primary/25 bg-primary/10 px-3 py-2 text-sm text-foreground">
                     {infoBanner}
                   </div>
                 )}
 
                 {combinedError && (
-                  <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+                  <div className="rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive">
                     {combinedError}
                   </div>
                 )}
 
-                <div className="space-y-2">
-                  <Label htmlFor="email">
-                    Email address
-                  </Label>
-
+                <FormField id="email" label="Email address">
                   <Input
                     id="email"
                     type="email"
@@ -308,9 +307,9 @@ export default function LoginForm() {
                         e.target.value
                       )
                     }
-                    className="border-slate-200 focus-visible:ring-emerald-500"
+                    className="border-input focus-visible:border-ring focus-visible:ring-ring"
                   />
-                </div>
+                </FormField>
 
                 <div className="space-y-2">
                   <div className="flex items-center justify-between gap-2">
@@ -325,7 +324,7 @@ export default function LoginForm() {
                           "/forgot-password"
                         )
                       }
-                      className="text-sm font-medium text-emerald-700 hover:text-emerald-600"
+                      className="text-sm font-medium text-primary hover:text-primary/80"
                     >
                       Forgot password?
                     </button>
@@ -342,7 +341,7 @@ export default function LoginForm() {
                         e.target.value
                       )
                     }
-                    className="border-slate-200 focus-visible:ring-emerald-500"
+                    className="border-input focus-visible:border-ring focus-visible:ring-ring"
                   />
                 </div>
 
@@ -356,12 +355,12 @@ export default function LoginForm() {
                         e.target.checked
                       )
                     }
-                    className="rounded border-slate-300"
+                    className="rounded border-input text-primary focus:ring-ring"
                   />
 
                   <label
                     htmlFor="remember"
-                    className="cursor-pointer text-sm text-slate-600"
+                    className="cursor-pointer text-sm text-muted-foreground"
                   >
                     Remember me (extends session to 30 days)
                   </label>
@@ -397,26 +396,26 @@ export default function LoginForm() {
                   </div>
                 )}
 
-                <Button
+                <ActionButton
                   type="submit"
                   disabled={loading}
-                  className="w-full bg-emerald-600 py-6 text-base hover:bg-emerald-700"
+                  className="h-11 w-full text-base sm:h-12"
                 >
                   {loading
                     ? "Signing in…"
                     : "Log in"}
-                </Button>
+                </ActionButton>
               </form>
             </CardContent>
 
-            <CardFooter className="flex flex-col gap-2 border-t border-slate-100 p-4">
-              <p className="px-2 text-center text-xs leading-relaxed text-slate-500">
+            <CardFooter className="flex flex-col gap-2 border-t border-border/80 bg-muted/30 p-4">
+              <p className="px-2 text-center text-xs leading-relaxed text-muted-foreground">
                 SAM Assessment Application provides indicative sustainability and
                 certification readiness intelligence only — not a substitute
                 for audits or legal advice.
               </p>
 
-              <p className="text-center text-sm text-slate-600">
+              <p className="text-center text-sm text-muted-foreground">
                 New user?{" "}
                 <button
                   type="button"
@@ -425,7 +424,7 @@ export default function LoginForm() {
                       "/register"
                     )
                   }
-                  className="font-semibold text-emerald-700 transition hover:text-emerald-600"
+                  className="font-semibold text-primary transition hover:text-primary/80"
                 >
                   Create an account
                 </button>
@@ -433,7 +432,7 @@ export default function LoginForm() {
             </CardFooter>
           </Card>
         </div>
-      </div>
+      </PageWrapper>
     </div>
   );
 }

@@ -46,7 +46,7 @@ function buildOverview(data: UploadProgressPayload) {
     notStarted,
     overallPct: Math.min(100, Math.max(0, overallPct)),
     chartData: [
-      { name: "Completed", value: completed, fill: "#10b981" },
+      { name: "Completed", value: completed, fill: "#00673f" },
       { name: "Partial", value: partial, fill: "#f59e0b" },
       { name: "Not started", value: notStarted, fill: "#cbd5e1" },
     ].filter((d) => d.value > 0),
@@ -94,14 +94,14 @@ export default function UploadOverviewPanel({ refreshKey = 0, variant = "default
     return (
       <div
         className={cn(
-          "rounded-lg border border-slate-200 bg-white shadow-sm",
+          "rounded-lg border border-border bg-card shadow-sm",
           variant === "compact" ? "p-2.5" : "p-6"
         )}
       >
-        <h2 className={cn("font-semibold text-slate-900", variant === "compact" ? "text-xs" : "text-lg")}>
+        <h2 className={cn("font-semibold text-foreground", variant === "compact" ? "text-xs" : "text-lg")}>
           Upload overview
         </h2>
-        <p className={cn("text-center text-slate-400", variant === "compact" ? "mt-3 text-[10px]" : "mt-8 text-sm")}>
+        <p className={cn("text-center text-muted-foreground", variant === "compact" ? "mt-3 text-[10px]" : "mt-8 text-sm")}>
           Loading…
         </p>
       </div>
@@ -115,8 +115,8 @@ export default function UploadOverviewPanel({ refreshKey = 0, variant = "default
 
   if (variant === "compact") {
     return (
-      <div className="shrink-0 rounded-lg border border-slate-200 bg-white p-2.5 shadow-sm">
-        <h2 className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">Progress</h2>
+      <div className="shrink-0 rounded-lg border border-border bg-card p-2.5 shadow-sm">
+        <h2 className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Progress</h2>
         <div className="mt-2 flex items-center gap-3">
           <div className="relative h-[88px] w-[88px] shrink-0">
             <ResponsiveContainer width="100%" height="100%">
@@ -138,45 +138,45 @@ export default function UploadOverviewPanel({ refreshKey = 0, variant = "default
               </PieChart>
             </ResponsiveContainer>
             <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center">
-              <span className="text-lg font-bold leading-none text-slate-900">{overallPct}%</span>
-              <span className="text-[9px] font-medium text-slate-500">done</span>
+              <span className="text-lg font-bold leading-none text-foreground">{overallPct}%</span>
+              <span className="text-[9px] font-medium text-muted-foreground">done</span>
             </div>
           </div>
 
           <div className="min-w-0 flex-1 space-y-1.5 text-[10px]">
-            <div className="flex justify-between gap-2 text-slate-600">
+            <div className="flex justify-between gap-2 text-muted-foreground">
               <span>Total</span>
-              <span className="font-semibold text-slate-900">8</span>
+              <span className="font-semibold text-foreground">8</span>
             </div>
             <div className="flex justify-between gap-2">
-              <span className="flex items-center gap-1 text-slate-600">
-                <span className="size-1.5 shrink-0 rounded-full bg-emerald-500" />
+              <span className="flex items-center gap-1 text-muted-foreground">
+                <span className="size-1.5 shrink-0 rounded-full bg-primary" />
                 Done
               </span>
-              <span className="font-semibold tabular-nums text-slate-900">{completed}</span>
+              <span className="font-semibold tabular-nums text-foreground">{completed}</span>
             </div>
             <div className="flex justify-between gap-2">
-              <span className="flex items-center gap-1 text-slate-600">
+              <span className="flex items-center gap-1 text-muted-foreground">
                 <span className="size-1.5 shrink-0 rounded-full bg-amber-500" />
                 Partial
               </span>
-              <span className="font-semibold tabular-nums text-slate-900">{partial}</span>
+              <span className="font-semibold tabular-nums text-foreground">{partial}</span>
             </div>
             <div className="flex justify-between gap-2">
-              <span className="flex items-center gap-1 text-slate-600">
-                <span className="size-1.5 shrink-0 rounded-full bg-slate-300" />
+              <span className="flex items-center gap-1 text-muted-foreground">
+                <span className="size-1.5 shrink-0 rounded-full bg-border" />
                 Empty
               </span>
-              <span className="font-semibold tabular-nums text-slate-900">{notStarted}</span>
+              <span className="font-semibold tabular-nums text-foreground">{notStarted}</span>
             </div>
             <div className="pt-0.5">
-              <div className="mb-0.5 flex justify-between text-[9px] text-slate-500">
+              <div className="mb-0.5 flex justify-between text-[9px] text-muted-foreground">
                 <span>Overall</span>
-                <span className="font-semibold text-slate-700">{overallPct}%</span>
+                <span className="font-semibold text-foreground">{overallPct}%</span>
               </div>
-              <div className="h-1 overflow-hidden rounded-full bg-slate-100">
+              <div className="h-1 overflow-hidden rounded-full bg-muted">
                 <div
-                  className="h-full rounded-full bg-emerald-500 transition-all duration-500"
+                  className="h-full rounded-full bg-primary transition-all duration-500"
                   style={{ width: `${barWidth}%` }}
                 />
               </div>
@@ -203,8 +203,8 @@ export default function UploadOverviewPanel({ refreshKey = 0, variant = "default
   }
 
   return (
-    <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-      <h2 className="text-lg font-semibold text-slate-900">Upload Overview</h2>
+    <div className="rounded-2xl border border-border bg-card p-6 shadow-sm">
+      <h2 className="text-lg font-semibold text-foreground">Upload Overview</h2>
 
       <div className="mt-6 flex flex-col items-center">
         <div className="relative h-[200px] w-full max-w-[220px]">
@@ -227,52 +227,52 @@ export default function UploadOverviewPanel({ refreshKey = 0, variant = "default
             </PieChart>
           </ResponsiveContainer>
           <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center pt-1">
-            <span className="text-3xl font-bold text-slate-900">{overallPct}%</span>
-            <span className="text-xs font-medium text-slate-500">Complete</span>
+            <span className="text-3xl font-bold text-foreground">{overallPct}%</span>
+            <span className="text-xs font-medium text-muted-foreground">Complete</span>
           </div>
         </div>
       </div>
 
       <ul className="mt-6 space-y-2.5 text-sm">
-        <li className="flex justify-between text-slate-600">
+        <li className="flex justify-between text-muted-foreground">
           <span>Total categories</span>
-          <span className="font-semibold text-slate-900">8</span>
+          <span className="font-semibold text-foreground">8</span>
         </li>
         <li className="flex justify-between">
-          <span className="flex items-center gap-2 text-slate-600">
-            <span className="h-2 w-2 rounded-full bg-emerald-500" />
+          <span className="flex items-center gap-2 text-muted-foreground">
+            <span className="h-2 w-2 rounded-full bg-primary" />
             Completed
           </span>
-          <span className="font-semibold text-slate-900">{completed}</span>
+          <span className="font-semibold text-foreground">{completed}</span>
         </li>
         <li className="flex justify-between">
-          <span className="flex items-center gap-2 text-slate-600">
+          <span className="flex items-center gap-2 text-muted-foreground">
             <span className="h-2 w-2 rounded-full bg-amber-500" />
             Partial
           </span>
-          <span className="font-semibold text-slate-900">{partial}</span>
+          <span className="font-semibold text-foreground">{partial}</span>
         </li>
         <li className="flex justify-between">
-          <span className="flex items-center gap-2 text-slate-600">
-            <span className="h-2 w-2 rounded-full bg-slate-300" />
+          <span className="flex items-center gap-2 text-muted-foreground">
+            <span className="h-2 w-2 rounded-full bg-border" />
             Not started
           </span>
-          <span className="font-semibold text-slate-900">{notStarted}</span>
+          <span className="font-semibold text-foreground">{notStarted}</span>
         </li>
-        <li className="flex justify-between border-t border-slate-100 pt-2 text-slate-500">
+        <li className="flex justify-between border-t border-border pt-2 text-muted-foreground">
           <span>Optional</span>
-          <span className="font-medium text-slate-600">Additional data</span>
+          <span className="font-medium text-muted-foreground">Additional data</span>
         </li>
       </ul>
 
       <div className="mt-6">
-        <div className="mb-1.5 flex justify-between text-xs text-slate-500">
+        <div className="mb-1.5 flex justify-between text-xs text-muted-foreground">
           <span>Overall progress</span>
-          <span className="font-semibold text-slate-700">{overallPct}%</span>
+          <span className="font-semibold text-foreground">{overallPct}%</span>
         </div>
-        <div className="h-2 overflow-hidden rounded-full bg-slate-100">
+        <div className="h-2 overflow-hidden rounded-full bg-muted">
           <div
-            className="h-full rounded-full bg-emerald-500 transition-all duration-500"
+            className="h-full rounded-full bg-primary transition-all duration-500"
             style={{ width: `${barWidth}%` }}
           />
         </div>
