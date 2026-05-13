@@ -24,19 +24,19 @@ export default function KPICard({ title, kpi, unit }: KPICardProps) {
         : "text-red-700";
 
   return (
-    <article className={`border rounded p-2.5 shadow-sm ${getStatusColor(kpi.status)}`}>
+    <article className={`border rounded p-2 shadow-sm h-full flex flex-col min-h-0 ${getStatusColor(kpi.status)}`}>
       <div className="flex items-center justify-between mb-1">
-        <h3 className="text-sm font-semibold truncate">{title}</h3>
-        <div className={`text-xs font-semibold px-1.5 py-0.5 rounded flex-shrink-0 ${getStatusBadgeColor(kpi.status)}`}>
+        <h3 className="text-xs font-semibold truncate pr-1">{title}</h3>
+        <div className={`text-[10px] font-semibold px-1.5 py-0.5 rounded flex-shrink-0 ${getStatusBadgeColor(kpi.status)}`}>
           {kpi.status}
         </div>
       </div>
 
-      <div className="space-y-1 text-xs">
+      <div className="space-y-1 text-[11px] flex-1">
         {/* Value Display */}
         <div className="flex items-center justify-between">
           <span className="font-semibold">Current Value</span>
-          <span className="text-current font-bold text-sm">
+          <span className="text-current font-bold text-xs text-right">
             {kpi.value !== null ? `${kpi.value.toFixed(2)} ${unit}` : "N/A"}
           </span>
         </div>
@@ -50,12 +50,12 @@ export default function KPICard({ title, kpi, unit }: KPICardProps) {
         {/* Range */}
         <div className="flex items-center justify-between">
           <span>Range</span>
-          <span className="font-mono">{kpi.range}</span>
+          <span className="font-mono text-[10px]">{kpi.range}</span>
         </div>
 
         {/* Threshold */}
-        <div className="pt-1 border-t border-current border-opacity-20">
-          <div className="text-xs leading-snug">
+        <div className="pt-1 border-t border-current border-opacity-20 mt-auto">
+          <div className="text-[10px] leading-snug">
             <span className="font-semibold">Target: </span>
             {kpi.threshold}
           </div>

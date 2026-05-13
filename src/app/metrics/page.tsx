@@ -5,6 +5,7 @@ import CategoryCard from "@/components/metrics/CategoryCard";
 import OverallMetricsChart from "@/components/metrics/OverallMetricsChart";
 import CategoryComparisonChart from "@/components/metrics/CategoryComparisonChart";
 import ConfidenceChart from "@/components/metrics/ConfidenceChart";
+import PageLayout from "@/components/shared/PageLayout";
 
 type AssessmentResponse = {
   success: boolean;
@@ -41,19 +42,25 @@ export default function MetricsPage() {
 
   if (loading) {
     return (
-      <main className="max-w-4xl mx-auto px-6 py-12">
-        <h1 className="text-2xl font-bold mb-4">Completeness & Confidence</h1>
-        <p className="text-slate-600 mb-6">Loading assessment...</p>
-      </main>
+      <PageLayout
+        title="Completeness & Confidence"
+        description="Data completeness and confidence breakdowns"
+        loading
+      >
+        <div />
+      </PageLayout>
     );
   }
 
   if (error || !data) {
     return (
-      <main className="max-w-4xl mx-auto px-6 py-12">
-        <h1 className="text-2xl font-bold mb-4">Completeness & Confidence</h1>
-        <p className="text-red-600">{error ?? "No data available"}</p>
-      </main>
+      <PageLayout
+        title="Completeness & Confidence"
+        description="Data completeness and confidence breakdowns"
+        error={error ?? "No data available"}
+      >
+        <div />
+      </PageLayout>
     );
   }
 
@@ -100,12 +107,10 @@ export default function MetricsPage() {
   ];
 
   return (
-    <main className="max-w-7xl mx-auto px-3 py-4">
-      <div className="mb-3">
-        <h1 className="text-xl font-bold mb-1">Completeness & Confidence</h1>
-        <p className="text-xs text-slate-600">Data completeness and confidence breakdowns.</p>
-      </div>
-
+    <PageLayout
+      title="Completeness & Confidence"
+      description="Data completeness and confidence breakdowns"
+    >
       <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mb-3">
         <div className="bg-green-50 border border-green-200 rounded px-2 py-1.5 text-center overflow-hidden">
           <div className="text-xs text-green-700">Completeness</div>
@@ -117,19 +122,38 @@ export default function MetricsPage() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-2 mb-3 overflow-hidden">
-        <OverallMetricsChart categoryScores={categoryScores} />
-        <CategoryComparisonChart
-          data={categories.map((c) => ({
-            name: c.title,
-            score: Math.min(100, Math.max(0, c.score || 0)),
-            completeness: Math.min(100, Math.max(0, months[c.monthKey] ? ((months[c.monthKey] / 12) * 100) : 0)),
-          }))}
-        />
-        <ConfidenceChart data={categoryConfidence} />
+      <div className="grid grid-cols-1 xl:grid-cols-12 gap-3">
+        <section className="xl:col-span-8 bg-white border border-slate-200 rounded-lg shadow-sm overflow-hidden">
+          <div className="bg-slate-900 px-3 py-2.5">
+            <h2 className="text-sm font-semibold text-white">Score Overview</h2>
+          </div>
+          <div className="p-2.5 grid grid-cols-1 lg:grid-cols-2 gap-2">
+            <div className="rounded-md border border-slate-200 bg-slate-50 p-1.5 overflow-hidden">
+              <OverallMetricsChart categoryScores={categoryScores} />
+            </div>
+            <div className="rounded-md border border-slate-200 bg-slate-50 p-1.5 overflow-hidden">
+              <CategoryComparisonChart
+                data={categories.map((c) => ({
+                  name: c.title,
+                  score: Math.min(100, Math.max(0, c.score || 0)),
+                  completeness: Math.min(100, Math.max(0, months[c.monthKey] ? ((months[c.monthKey] / 12) * 100) : 0)),
+                }))}
+              />
+            </div>
+          </div>
+        </section>
+
+        <aside className="xl:col-span-4 bg-white border border-slate-200 rounded-lg shadow-sm overflow-hidden">
+          <div className="bg-slate-900 px-3 py-2.5">
+            <h2 className="text-sm font-semibold text-white">Confidence</h2>
+          </div>
+          <div className="p-2.5 rounded-md">
+            <ConfidenceChart data={categoryConfidence} />
+          </div>
+        </aside>
       </div>
 
-      <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 overflow-hidden">
+      <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 mt-3 overflow-hidden">
         {categories.map((c) => (
           <CategoryCard
             key={c.key}
@@ -142,6 +166,6 @@ export default function MetricsPage() {
           />
         ))}
       </section>
-    </main>
+    </PageLayout>
   );
 }

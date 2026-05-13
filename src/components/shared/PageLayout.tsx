@@ -20,9 +20,9 @@ export default function PageLayout({
 }: PageLayoutProps) {
   if (loading) {
     return (
-      <main className="max-w-7xl mx-auto px-3 py-4">
-        <h1 className="text-xl font-bold mb-1">{title}</h1>
-        {description && <p className="text-xs text-slate-600 mb-4">{description}</p>}
+      <main className="max-w-7xl mx-auto px-2 py-2">
+        <h1 className="text-lg font-bold mb-0.5">{title}</h1>
+        {description && <p className="text-[11px] text-slate-600 mb-2">{description}</p>}
         <div className="flex items-center justify-center min-h-screen">
           <div className="text-gray-600">Loading...</div>
         </div>
@@ -32,9 +32,9 @@ export default function PageLayout({
 
   if (error) {
     return (
-      <main className="max-w-7xl mx-auto px-3 py-4">
-        <h1 className="text-xl font-bold mb-1">{title}</h1>
-        {description && <p className="text-xs text-slate-600 mb-4">{description}</p>}
+      <main className="max-w-7xl mx-auto px-2 py-2">
+        <h1 className="text-lg font-bold mb-0.5">{title}</h1>
+        {description && <p className="text-[11px] text-slate-600 mb-2">{description}</p>}
         <div className="flex items-center gap-2 text-red-600">
           <AlertCircle size={20} /> {error}
         </div>
@@ -43,10 +43,10 @@ export default function PageLayout({
   }
 
   return (
-    <main className="max-w-7xl mx-auto px-3 py-4">
-      <div className="mb-3">
-        <h1 className="text-xl font-bold mb-1">{title}</h1>
-        {description && <p className="text-xs text-slate-600">{description}</p>}
+    <main className="max-w-7xl mx-auto px-2 py-2">
+      <div className="mb-2">
+        <h1 className="text-lg font-bold mb-0.5">{title}</h1>
+        {description && <p className="text-[11px] text-slate-600">{description}</p>}
       </div>
       {children}
     </main>

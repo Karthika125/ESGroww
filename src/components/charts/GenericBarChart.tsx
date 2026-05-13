@@ -10,6 +10,7 @@ import {
   Tooltip,
   Legend,
   ResponsiveContainer,
+  Cell,
 } from "recharts";
 
 interface GenericBarChartProps {
@@ -24,7 +25,25 @@ interface GenericBarChartProps {
   yAxisLabel?: string;
   margin?: { top: number; right: number; left: number; bottom: number };
   valueFormatter?: (value: any) => string;
+  compact?: boolean;
+  showLegend?: boolean;
 }
+
+const CustomTooltip = ({ active, payload, label, valueFormatter }: any) => {
+  if (active && payload && payload.length) {
+    return (
+      <div className="bg-white rounded-lg border-2 border-blue-200 shadow-lg p-3">
+        <p className="text-sm font-semibold text-gray-800">{payload[0]?.payload?.["name"] || label}</p>
+        {payload.map((entry: any, index: number) => (
+          <p key={index} className="text-xs font-medium" style={{ color: entry.fill }}>
+            {entry.name}: <span className="font-bold">{valueFormatter(entry.value)}</span>
+          </p>
+        ))}
+      </div>
+    );
+  }
+  return null;
+};
 
 export default function GenericBarChart({
   data,
@@ -32,8 +51,10 @@ export default function GenericBarChart({
   xAxisKey,
   xAxisLabel,
   yAxisLabel,
-  margin = { top: 5, right: 5, left: -20, bottom: 5 },
+  margin = { top: 10, right: 10, left: -10, bottom: 10 },
   valueFormatter = (value) => `${value}%`,
+  compact = false,
+  showLegend = true,
 }: GenericBarChartProps) {
   // Clamp all numeric values to prevent chart overflow
   const safeData = data.map((item) => ({
@@ -49,27 +70,48 @@ export default function GenericBarChart({
   }));
 
   return (
-    <ResponsiveContainer width="100%" height={200}>
+    <ResponsiveContainer width="100%" height={compact ? 210 : 250}>
       <RechartsBarChart data={safeData} margin={margin}>
-        <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-        <XAxis dataKey={xAxisKey} stroke="#64748b" tick={{ fontSize: 11 }} interval={0} />
+        <defs>
+          {dataKeys.map(({ color }, idx) => (
+            <linearGradient key={`gradient-${idx}`} id={`color-${idx}`} x1="0" y1="0" x2="0" y2="1">
+              <stop offset="5%" stopColor={color} stopOpacity={0.9} />
+              <stop offset="95%" stopColor={color} stopOpacity={0.5} />
+            </linearGradient>
+          ))}
+        </defs>
+        <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" vertical={false} />
+        <XAxis
+          dataKey={xAxisKey}
+          stroke="#9ca3af"
+          tick={{ fontSize: compact ? 11 : 12, fontWeight: 500, fill: "#6b7280" }}
+          interval={0}
+          axisLine={{ strokeWidth: 1.5 }}
+        />
         <YAxis
-          stroke="#64748b"
-          tick={{ fontSize: 11 }}
+          stroke="#9ca3af"
+          tick={{ fontSize: compact ? 11 : 12, fill: "#6b7280" }}
           label={yAxisLabel ? { value: yAxisLabel, angle: -90, position: "insideLeft" } : undefined}
+          axisLine={{ strokeWidth: 1.5 }}
         />
-        <Tooltip
-          contentStyle={{
-            backgroundColor: "#fff",
-            border: "1px solid #cbd5e1",
-            borderRadius: "4px",
-            fontSize: "12px",
-          }}
-          formatter={valueFormatter}
-        />
-        <Legend wrapperStyle={{ fontSize: "12px" }} />
-        {dataKeys.map(({ key, label, color }) => (
-          <Bar key={key} dataKey={key} fill={color} name={label} radius={[2, 2, 0, 0]} />
+        <Tooltip content={<CustomTooltip valueFormatter={valueFormatter} />} cursor={{ fill: "rgba(59, 130, 246, 0.05)" }} />
+        {showLegend ? (
+          <Legend
+            wrapperStyle={{ fontSize: compact ? "12px" : "13px", fontWeight: 500, paddingTop: "15px" }}
+            iconType="square"
+            height={30}
+          />
+        ) : null}
+        {dataKeys.map(({ key, label, color }, idx) => (
+          <Bar
+            key={key}
+            dataKey={key}
+            fill={`url(#color-${idx})`}
+            name={label}
+            radius={[8, 8, 0, 0]}
+            animationDuration={800}
+            isAnimationActive={true}
+          />
         ))}
       </RechartsBarChart>
     </ResponsiveContainer>

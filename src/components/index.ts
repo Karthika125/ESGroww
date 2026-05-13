@@ -8,6 +8,7 @@ export { default as PageLayout } from "./PageLayout";
 export { default as GenericBarChart } from "../charts/GenericBarChart";
 export { default as GenericPieChart } from "../charts/GenericPieChart";
 export { default as GenericLineChart } from "../charts/GenericLineChart";
+export { default as GenericSpiderChart } from "../charts/GenericSpiderChart";
 
 // Metrics Components
 export { default as CategoryCard } from "../metrics/CategoryCard";

@@ -17,10 +17,24 @@ interface GenericPieChartProps {
   valueFormatter?: (value: number) => string;
 }
 
+const CustomPieTooltip = ({ active, payload, valueFormatter }: any) => {
+  if (active && payload && payload.length) {
+    return (
+      <div className="bg-white rounded-lg border-2 border-blue-200 shadow-lg p-3">
+        <p className="text-sm font-semibold text-gray-800">{payload[0]?.name}</p>
+        <p className="text-sm font-bold" style={{ color: payload[0]?.fill }}>
+          {valueFormatter(payload[0]?.value)}
+        </p>
+      </div>
+    );
+  }
+  return null;
+};
+
 export default function GenericPieChart({
   data,
-  innerRadius = 40,
-  outerRadius = 60,
+  innerRadius = 50,
+  outerRadius = 80,
   paddingAngle = 2,
   valueFormatter = (value) => `${value}%`,
 }: GenericPieChartProps) {
@@ -33,11 +47,18 @@ export default function GenericPieChart({
     .filter((item) => item.value > 0);
 
   // If all values are zero, show placeholder
-  const chartData = safeData.length > 0 ? safeData : [{ name: "No Data", value: 100, fill: "#e2e8f0" }];
+  const chartData = safeData.length > 0 ? safeData : [{ name: "No Data", value: 100, fill: "#e5e7eb" }];
 
   return (
-    <ResponsiveContainer width="100%" height={200}>
+    <ResponsiveContainer width="100%" height={280}>
       <RechartsPieChart>
+        <defs>
+          {chartData.map((entry, idx) => (
+            <filter key={`filter-${idx}`} id={`shadow-${idx}`}>
+              <feDropShadow dx="0" dy="2" stdDeviation="3" floodOpacity="0.15" />
+            </filter>
+          ))}
+        </defs>
         <Pie
           data={chartData}
           cx="50%"
@@ -46,13 +67,25 @@ export default function GenericPieChart({
           outerRadius={outerRadius}
           paddingAngle={paddingAngle}
           dataKey="value"
+          animationDuration={800}
+          animationEasing="ease-out"
         >
           {chartData.map((entry, index) => (
-            <Cell key={`cell-${index}`} fill={entry.fill} />
+            <Cell
+              key={`cell-${index}`}
+              fill={entry.fill}
+              opacity={0.9}
+              filter={`url(#shadow-${index})`}
+            />
           ))}
         </Pie>
-        <Tooltip formatter={(value) => valueFormatter(value as number)} />
-        <Legend wrapperStyle={{ fontSize: "11px" }} />
+        <Tooltip content={<CustomPieTooltip valueFormatter={valueFormatter} />} />
+        <Legend
+          wrapperStyle={{ fontSize: "13px", fontWeight: 500, paddingTop: "20px" }}
+          iconType="circle"
+          verticalAlign="bottom"
+          height={30}
+        />
       </RechartsPieChart>
     </ResponsiveContainer>
   );

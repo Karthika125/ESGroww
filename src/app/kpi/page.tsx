@@ -67,6 +67,24 @@ export default function KPIPage() {
     dgDependency: evaluateDGDependency(dgDependency),
   };
 
+  const kpiItems = [
+    { title: "Energy Intensity", kpi: kpis.energyIntensity, unit: "kWh/sqft/yr" },
+    { title: "Water Intensity", kpi: kpis.waterIntensity, unit: "KL/sqft/yr" },
+    { title: "Recycling Rate", kpi: kpis.recyclingRate, unit: "%" },
+    { title: "Waste Segregation", kpi: kpis.wasteSegregation, unit: "%" },
+    { title: "Renewable Energy", kpi: kpis.renewableEnergy, unit: "%" },
+    { title: "Tanker Dependency", kpi: kpis.tankerDependency, unit: "%" },
+    { title: "Water Reuse", kpi: kpis.waterReuse, unit: "%" },
+    { title: "Power Factor", kpi: kpis.powerFactor, unit: "" },
+    { title: "DG Dependency", kpi: kpis.dgDependency, unit: "%" },
+  ];
+
+  const statusCount = {
+    full: kpiItems.filter((item) => item.kpi.scoreImpact === "Full").length,
+    partial: kpiItems.filter((item) => item.kpi.scoreImpact === "Partial").length,
+    zero: kpiItems.filter((item) => item.kpi.scoreImpact === "Zero").length,
+  };
+
   return (
     <PageLayout
       title="KPI Dashboard"
@@ -74,43 +92,67 @@ export default function KPIPage() {
       loading={loading}
       error={error}
     >
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-2 mb-4">
-        <KPICard title="Energy Intensity" kpi={kpis.energyIntensity} unit="kWh/sqft/yr" />
-        <KPICard title="Water Intensity" kpi={kpis.waterIntensity} unit="KL/sqft/yr" />
-        <KPICard title="Recycling Rate" kpi={kpis.recyclingRate} unit="%" />
-        <KPICard title="Waste Segregation" kpi={kpis.wasteSegregation} unit="%" />
-        <KPICard title="Renewable Energy" kpi={kpis.renewableEnergy} unit="%" />
-        <KPICard title="Tanker Dependency" kpi={kpis.tankerDependency} unit="%" />
-        <KPICard title="Water Reuse" kpi={kpis.waterReuse} unit="%" />
-        <KPICard title="Power Factor" kpi={kpis.powerFactor} unit="" />
-        <KPICard title="DG Dependency" kpi={kpis.dgDependency} unit="%" />
-      </div>
+      <div className="xl:h-[calc(100vh-5.5rem)] xl:overflow-hidden">
+      <div className="grid grid-cols-1 xl:grid-cols-12 gap-3 h-full">
+        <section className="xl:col-span-8 bg-white border border-slate-200 rounded-lg shadow-sm overflow-hidden h-full flex flex-col min-h-0">
+          <div className="bg-slate-900 px-3 py-2.5">
+            <h2 className="text-sm font-semibold text-white">KPI Scorecards</h2>
+          </div>
+          <div className="p-2 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 flex-1 min-h-0 lg:auto-rows-fr">
+            {kpiItems.map((item) => (
+              <div key={item.title} className="h-full min-h-0">
+                <KPICard title={item.title} kpi={item.kpi} unit={item.unit} />
+              </div>
+            ))}
+          </div>
+        </section>
 
-      {/* Data Summary */}
-      <div className="mt-4 bg-slate-50 border border-slate-200 rounded p-2">
-        <h3 className="text-xs font-semibold mb-2">Data Summary</h3>
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2 text-xs">
-          <div className="text-slate-700">
-            <span className="text-slate-500">Annual Electricity:</span>
-            <div className="font-semibold">{(electricity / 1000).toFixed(1)} MWh</div>
-          </div>
-          <div className="text-slate-700">
-            <span className="text-slate-500">Annual Water:</span>
-            <div className="font-semibold">{water.toFixed(0)} KL</div>
-          </div>
-          <div className="text-slate-700">
-            <span className="text-slate-500">Annual Waste:</span>
-            <div className="font-semibold">{(waste / 1000).toFixed(1)} MT</div>
-          </div>
-          <div className="text-slate-700">
-            <span className="text-slate-500">Beds:</span>
-            <div className="font-semibold">{numberOfBeds}</div>
-          </div>
-          <div className="text-slate-700">
-            <span className="text-slate-500">Sqft:</span>
-            <div className="font-semibold">{sqft.toFixed(0)}</div>
-          </div>
-        </div>
+        <aside className="xl:col-span-4 grid grid-rows-2 gap-3 h-full min-h-0">
+          <section className="bg-white border border-slate-200 rounded-lg shadow-sm overflow-hidden h-full flex flex-col min-h-0">
+            <div className="bg-slate-900 px-3 py-2.5">
+              <h3 className="text-sm font-semibold text-white">Status Summary</h3>
+            </div>
+            <div className="p-2 grid grid-cols-3 gap-2 text-xs flex-1">
+              <div className="rounded-md border border-green-200 bg-green-50 px-2 py-2 text-center">
+                <p className="font-semibold text-green-700">Full</p>
+                <p className="text-lg font-bold text-green-900">{statusCount.full}</p>
+              </div>
+              <div className="rounded-md border border-amber-200 bg-amber-50 px-2 py-2 text-center">
+                <p className="font-semibold text-amber-700">Partial</p>
+                <p className="text-lg font-bold text-amber-900">{statusCount.partial}</p>
+              </div>
+              <div className="rounded-md border border-red-200 bg-red-50 px-2 py-2 text-center">
+                <p className="font-semibold text-red-700">Zero</p>
+                <p className="text-lg font-bold text-red-900">{statusCount.zero}</p>
+              </div>
+            </div>
+          </section>
+
+          <section className="bg-white border border-slate-200 rounded-lg shadow-sm overflow-hidden h-full flex flex-col min-h-0">
+            <div className="bg-slate-900 px-3 py-2.5">
+              <h3 className="text-sm font-semibold text-white">Data Summary</h3>
+            </div>
+            <div className="p-2 grid grid-cols-2 gap-2 text-xs flex-1">
+              <div className="rounded-md border border-slate-200 bg-slate-50 px-2 py-2">
+                <p className="text-slate-500">Electricity</p>
+                <p className="font-semibold text-slate-800">{(electricity / 1000).toFixed(1)} MWh</p>
+              </div>
+              <div className="rounded-md border border-slate-200 bg-slate-50 px-2 py-2">
+                <p className="text-slate-500">Water</p>
+                <p className="font-semibold text-slate-800">{water.toFixed(0)} KL</p>
+              </div>
+              <div className="rounded-md border border-slate-200 bg-slate-50 px-2 py-2">
+                <p className="text-slate-500">Waste</p>
+                <p className="font-semibold text-slate-800">{(waste / 1000).toFixed(1)} MT</p>
+              </div>
+              <div className="rounded-md border border-slate-200 bg-slate-50 px-2 py-2">
+                <p className="text-slate-500">Beds / Sqft</p>
+                <p className="font-semibold text-slate-800">{numberOfBeds} / {sqft.toFixed(0)}</p>
+              </div>
+            </div>
+          </section>
+        </aside>
+      </div>
       </div>
     </PageLayout>
   );

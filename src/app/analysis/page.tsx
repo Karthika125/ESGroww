@@ -2,10 +2,9 @@
 
 import React from "react";
 import { useFetchAssessment } from "@/hooks/useFetchAssessment";
-import { Zap, Droplets, Leaf, RotateCcw } from "lucide-react";
+import { Zap, Droplets, Leaf, RotateCcw, Radar } from "lucide-react";
 import PageLayout from "@/components/shared/PageLayout";
-import BenchmarkComparisonSection from "@/components/shared/BenchmarkComparisonSection";
-import GenericBarChart from "@/components/charts/GenericBarChart";
+import GenericSpiderChart from "@/components/charts/GenericSpiderChart";
 
 export default function AnalysisPage() {
   const { data, loading, error } = useFetchAssessment();
@@ -58,168 +57,299 @@ export default function AnalysisPage() {
     { min: 0, max: 40, label: "Needs Attention (<40%)", color: "orange" as const },
   ];
 
-  // Prepare chart data
-  const energyComparisonData = [
+  const metricSnapshotSections = [
     {
-      name: "Energy Intensity",
-      current: Math.min(energyIntensity, 35),
-      efficient: 15,
-      acceptable: 22,
+      key: "energy",
+      label: "Energy",
+      icon: Zap,
+      toneClass: "text-blue-500",
+      accentClass: "border-blue-200 bg-blue-50",
+      value: energyIntensity.toFixed(2),
+      unit: "kWh/sqft/year",
+      status: getEnergyStatus(),
+      benchmark: "Target < 15",
+      note: energyIntensity < 15 ? "Efficient" : energyIntensity <= 22 ? "Borderline" : "High",
+      score: energyIntensity < 15 ? 88 : energyIntensity <= 22 ? 68 : 42,
     },
-  ];
-
-  const waterComparisonData = [
     {
-      name: "Water Intensity",
-      current: Math.min(waterIntensity, 0.5),
-      efficient: 0.2,
-      acceptable: 0.35,
+      key: "water",
+      label: "Water",
+      icon: Droplets,
+      toneClass: "text-cyan-500",
+      accentClass: "border-cyan-200 bg-cyan-50",
+      value: waterIntensity.toFixed(3),
+      unit: "KL/sqft/year",
+      status: getWaterStatus(),
+      benchmark: "Target < 0.20",
+      note: waterIntensity < 0.2 ? "Efficient" : waterIntensity <= 0.35 ? "Borderline" : "High",
+      score: waterIntensity < 0.2 ? 88 : waterIntensity <= 0.35 ? 68 : 42,
     },
-  ];
+    {
+      key: "renewable",
+      label: "Renewable",
+      icon: Leaf,
+      toneClass: "text-green-500",
+      accentClass: "border-green-200 bg-green-50",
+      value: `${renewableEnergy.toFixed(1)}%`,
+      unit: "of total energy",
+      status: getRenewableStatus(),
+      benchmark: "Target >= 10%",
+      note: renewableEnergy >= 10 ? "Good" : renewableEnergy >= 1 ? "Building" : "Low",
+      score: renewableEnergy >= 10 ? 84 : renewableEnergy >= 1 ? 60 : 24,
+    },
+    {
+      key: "recycling",
+      label: "Waste",
+      icon: RotateCcw,
+      toneClass: "text-purple-500",
+      accentClass: "border-purple-200 bg-purple-50",
+      value: `${recyclingRate.toFixed(1)}%`,
+      unit: "of waste recycled",
+      status: getRecyclingStatus(),
+      benchmark: "Target >= 60%",
+      note: recyclingRate >= 60 ? "Good" : recyclingRate >= 40 ? "Borderline" : "Low",
+      score: recyclingRate >= 60 ? 84 : recyclingRate >= 40 ? 60 : 24,
+    },
+  ] as const;
 
-  const renewableComparisonData = [
-    { name: "Renewable Energy", current: renewableEnergy, benchmark: 10 },
-  ];
-
-  const recyclingComparisonData = [
-    { name: "Recycling Rate", current: recyclingRate, benchmark: 60 },
+  // Spider chart data - normalized to 0-100 scale for comparison
+  const spiderChartData = [
+    {
+      name: "Energy Efficiency",
+      current: energyIntensity < 15 ? 100 : energyIntensity <= 22 ? 60 : Math.max(0, 100 - (energyIntensity - 22) * 2),
+      benchmark: 80,
+    },
+    {
+      name: "Water Efficiency",
+      current: waterIntensity < 0.2 ? 100 : waterIntensity <= 0.35 ? 60 : Math.max(0, 100 - (waterIntensity - 0.35) * 100),
+      benchmark: 80,
+    },
+    {
+      name: "Renewable Energy",
+      current: Math.min(renewableEnergy * 10, 100),
+      benchmark: 80,
+    },
+    {
+      name: "Waste Recycling",
+      current: Math.min(recyclingRate, 100),
+      benchmark: 80,
+    },
   ];
 
   // Status helpers
-  const getEnergyStatus = () => {
+  function getEnergyStatus() {
     if (energyIntensity < 15) return "good";
     if (energyIntensity <= 22) return "acceptable";
     return "warning";
-  };
+  }
 
-  const getWaterStatus = () => {
+  function getWaterStatus() {
     if (waterIntensity < 0.2) return "good";
     if (waterIntensity <= 0.35) return "acceptable";
     return "warning";
-  };
+  }
 
-  const getRenewableStatus = () => {
+  function getRenewableStatus() {
     if (renewableEnergy >= 10) return "good";
     if (renewableEnergy >= 1) return "acceptable";
     return "warning";
-  };
+  }
 
-  const getRecyclingStatus = () => {
+  function getRecyclingStatus() {
     if (recyclingRate >= 60) return "good";
     if (recyclingRate >= 40) return "acceptable";
     return "warning";
+  }
+
+  const statusLabel = (status: string) => {
+    if (status === "good") return "Good";
+    if (status === "acceptable") return "Watch";
+    return "Needs work";
+  };
+
+  const statusTone = (status: string) => {
+    if (status === "good") return "text-green-700 bg-green-50 border-green-200";
+    if (status === "acceptable") return "text-amber-700 bg-amber-50 border-amber-200";
+    return "text-red-700 bg-red-50 border-red-200";
   };
 
   return (
     <PageLayout
-      title="Metrics Analysis & Benchmark Comparison"
-      description="Detailed comparison of key ESG metrics against hospital industry benchmarks"
+      title="ESG Metrics Analysis"
+      description="Comprehensive analysis of your hospital's environmental, social, and governance performance against industry benchmarks"
       loading={loading}
       error={error}
     >
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        {/* Energy Intensity Section */}
-        <BenchmarkComparisonSection
-          title="Energy Intensity"
-          icon={Zap}
-          currentValue={energyIntensity}
-          unit="kWh/sqft/year"
-          benchmarkRanges={energyBenchmarks}
-        >
-          <GenericBarChart
-            data={energyComparisonData}
-            dataKeys={[
-              { key: "current", label: "Current", color: "#f59e0b" },
-              { key: "efficient", label: "Efficient Threshold", color: "#10b981" },
-              { key: "acceptable", label: "Acceptable Ceiling", color: "#8b5cf6" },
-            ]}
-            xAxisKey="name"
-            yAxisLabel="kWh/sqft/year"
-            valueFormatter={(value) => `${value.toFixed(2)}`}
-          />
-        </BenchmarkComparisonSection>
+      {/* Quick Stats Overview */}
+      <div className="mb-3">
+        <div className="flex items-center justify-between mb-1">
+          <div>
+            <h2 className="text-base font-bold text-gray-900">Performance Overview</h2>
+          </div>
+        </div>
+        <div className="grid grid-cols-2 xl:grid-cols-4 gap-2">
+          <div className="group bg-white border border-blue-200 rounded-lg p-2.5 shadow-sm hover:shadow-md transition-all duration-300 cursor-default">
+            <div className="flex items-start justify-between mb-2">
+              <div>
+                <p className="text-[11px] font-bold text-blue-600 uppercase tracking-widest">Energy</p>
+                <p className="text-xl font-bold text-gray-900 mt-1">{energyIntensity.toFixed(2)}</p>
+                <p className="text-[11px] text-gray-500 mt-0.5">kWh/sqft/year</p>
+              </div>
+              <div className="text-blue-200 opacity-70 group-hover:opacity-100 transition-opacity">
+                <Zap size={24} strokeWidth={1.5} />
+              </div>
+            </div>
+            <div className="pt-2 border-t border-blue-100 flex items-center gap-2">
+              <span className={`inline-block w-2 h-2 rounded-full ${getEnergyStatus() === 'good' ? 'bg-green-500' : getEnergyStatus() === 'acceptable' ? 'bg-amber-500' : 'bg-red-500'}`}></span>
+              <p className={`text-[11px] font-semibold ${getEnergyStatus() === 'good' ? 'text-green-600' : getEnergyStatus() === 'acceptable' ? 'text-amber-600' : 'text-red-600'}`}>{getEnergyStatus() === 'good' ? 'Good' : getEnergyStatus() === 'acceptable' ? 'Watch' : 'Needs work'}</p>
+            </div>
+          </div>
 
-        {/* Water Intensity Section */}
-        <BenchmarkComparisonSection
-          title="Water Intensity"
-          icon={Droplets}
-          currentValue={waterIntensity}
-          unit="KL/sqft/year"
-          benchmarkRanges={waterBenchmarks}
-        >
-          <GenericBarChart
-            data={waterComparisonData}
-            dataKeys={[
-              { key: "current", label: "Current", color: "#3b82f6" },
-              { key: "efficient", label: "Efficient Threshold", color: "#10b981" },
-              { key: "acceptable", label: "Acceptable Ceiling", color: "#8b5cf6" },
-            ]}
-            xAxisKey="name"
-            yAxisLabel="KL/sqft/year"
-            valueFormatter={(value) => `${value.toFixed(3)}`}
-          />
-        </BenchmarkComparisonSection>
+          <div className="group bg-white border border-cyan-200 rounded-lg p-2.5 shadow-sm hover:shadow-md transition-all duration-300 cursor-default">
+            <div className="flex items-start justify-between mb-2">
+              <div>
+                <p className="text-[11px] font-bold text-cyan-600 uppercase tracking-widest">Water</p>
+                <p className="text-xl font-bold text-gray-900 mt-1">{waterIntensity.toFixed(3)}</p>
+                <p className="text-[11px] text-gray-500 mt-0.5">KL/sqft/year</p>
+              </div>
+              <div className="text-cyan-200 opacity-70 group-hover:opacity-100 transition-opacity">
+                <Droplets size={24} strokeWidth={1.5} />
+              </div>
+            </div>
+            <div className="pt-2 border-t border-cyan-100 flex items-center gap-2">
+              <span className={`inline-block w-2 h-2 rounded-full ${getWaterStatus() === 'good' ? 'bg-green-500' : getWaterStatus() === 'acceptable' ? 'bg-amber-500' : 'bg-red-500'}`}></span>
+              <p className={`text-[11px] font-semibold ${getWaterStatus() === 'good' ? 'text-green-600' : getWaterStatus() === 'acceptable' ? 'text-amber-600' : 'text-red-600'}`}>{getWaterStatus() === 'good' ? 'Good' : getWaterStatus() === 'acceptable' ? 'Watch' : 'Needs work'}</p>
+            </div>
+          </div>
 
-        {/* Renewable Energy Section */}
-        <BenchmarkComparisonSection
-          title="Renewable Energy %"
-          icon={Leaf}
-          currentValue={renewableEnergy}
-          unit="% of total energy"
-          benchmarkRanges={renewableBenchmarks}
-        >
-          <GenericBarChart
-            data={renewableComparisonData}
-            dataKeys={[
-              { key: "current", label: "Current %", color: "#10b981" },
-              { key: "benchmark", label: "Efficient Benchmark", color: "#8b5cf6" },
-            ]}
-            xAxisKey="name"
-            yAxisLabel="Percentage (%)"
-            valueFormatter={(value) => `${value.toFixed(1)}%`}
-          />
-        </BenchmarkComparisonSection>
+          <div className="group bg-white border border-green-200 rounded-lg p-2.5 shadow-sm hover:shadow-md transition-all duration-300 cursor-default">
+            <div className="flex items-start justify-between mb-2">
+              <div>
+                <p className="text-[11px] font-bold text-green-600 uppercase tracking-widest">Renewable</p>
+                <p className="text-xl font-bold text-gray-900 mt-1">{renewableEnergy.toFixed(1)}%</p>
+                <p className="text-[11px] text-gray-500 mt-0.5">of total energy</p>
+              </div>
+              <div className="text-green-200 opacity-70 group-hover:opacity-100 transition-opacity">
+                <Leaf size={24} strokeWidth={1.5} />
+              </div>
+            </div>
+            <div className="pt-2 border-t border-green-100 flex items-center gap-2">
+              <span className={`inline-block w-2 h-2 rounded-full ${getRenewableStatus() === 'good' ? 'bg-green-500' : getRenewableStatus() === 'acceptable' ? 'bg-amber-500' : 'bg-red-500'}`}></span>
+              <p className={`text-[11px] font-semibold ${getRenewableStatus() === 'good' ? 'text-green-600' : getRenewableStatus() === 'acceptable' ? 'text-amber-600' : 'text-red-600'}`}>{getRenewableStatus() === 'good' ? 'Good' : getRenewableStatus() === 'acceptable' ? 'Watch' : 'Needs work'}</p>
+            </div>
+          </div>
 
-        {/* Recycling Rate Section */}
-        <BenchmarkComparisonSection
-          title="Recycling Rate %"
-          icon={RotateCcw}
-          currentValue={recyclingRate}
-          unit="% of waste recycled"
-          benchmarkRanges={recyclingBenchmarks}
-        >
-          <GenericBarChart
-            data={recyclingComparisonData}
-            dataKeys={[
-              { key: "current", label: "Current %", color: "#a855f7" },
-              { key: "benchmark", label: "Efficient Benchmark", color: "#10b981" },
-            ]}
-            xAxisKey="name"
-            yAxisLabel="Percentage (%)"
-            valueFormatter={(value) => `${value.toFixed(1)}%`}
-          />
-        </BenchmarkComparisonSection>
+          <div className="group bg-white border border-purple-200 rounded-lg p-2.5 shadow-sm hover:shadow-md transition-all duration-300 cursor-default">
+            <div className="flex items-start justify-between mb-2">
+              <div>
+                <p className="text-[11px] font-bold text-purple-600 uppercase tracking-widest">Recycling</p>
+                <p className="text-xl font-bold text-gray-900 mt-1">{recyclingRate.toFixed(1)}%</p>
+                <p className="text-[11px] text-gray-500 mt-0.5">of waste recycled</p>
+              </div>
+              <div className="text-purple-200 opacity-70 group-hover:opacity-100 transition-opacity">
+                <RotateCcw size={24} strokeWidth={1.5} />
+              </div>
+            </div>
+            <div className="pt-2 border-t border-purple-100 flex items-center gap-2">
+              <span className={`inline-block w-2 h-2 rounded-full ${getRecyclingStatus() === 'good' ? 'bg-green-500' : getRecyclingStatus() === 'acceptable' ? 'bg-amber-500' : 'bg-red-500'}`}></span>
+              <p className={`text-[11px] font-semibold ${getRecyclingStatus() === 'good' ? 'text-green-600' : getRecyclingStatus() === 'acceptable' ? 'text-amber-600' : 'text-red-600'}`}>{getRecyclingStatus() === 'good' ? 'Good' : getRecyclingStatus() === 'acceptable' ? 'Watch' : 'Needs work'}</p>
+            </div>
+          </div>
+        </div>
       </div>
 
-      {/* Summary Section */}
-      <div className="mt-4 border rounded-lg p-4 bg-slate-50">
-        <h3 className="text-sm font-bold text-gray-900 mb-3">Summary</h3>
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 text-xs">
-          <div className="bg-white rounded p-2 border border-gray-200">
-            <div className="text-gray-600">Energy Intensity</div>
-            <div className="font-bold text-sm mt-1">{energyIntensity.toFixed(2)} kWh/sqft/yr</div>
+      {/* ESG Performance Overview - Spider Chart */}
+      <div className="grid grid-cols-1 xl:grid-cols-12 gap-3">
+        <div className="xl:col-span-8 bg-white rounded-xl border border-gray-200 shadow-md overflow-hidden">
+          <div className="bg-gradient-to-r from-indigo-600 to-purple-600 px-3 py-2.5 flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2">
+              <Radar className="text-white" size={20} />
+              <h2 className="text-base font-bold text-white">ESG Radar</h2>
+            </div>
+            <div className="flex items-center gap-2 text-[11px] text-indigo-100">
+              <span className="inline-flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-blue-300" />You</span>
+              <span className="inline-flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-orange-300" />Benchmark</span>
+            </div>
           </div>
-          <div className="bg-white rounded p-2 border border-gray-200">
-            <div className="text-gray-600">Water Intensity</div>
-            <div className="font-bold text-sm mt-1">{waterIntensity.toFixed(3)} KL/sqft/yr</div>
+          <div className="px-2 pt-1 pb-2">
+            <GenericSpiderChart
+              data={spiderChartData}
+              dataKeys={[
+                { key: "current", label: "Your Performance", color: "#3b82f6", fillOpacity: 0.5 },
+                { key: "benchmark", label: "Industry Benchmark", color: "#f97316", fillOpacity: 0.3 },
+              ]}
+              angleAxisKey="name"
+              valueFormatter={(value) => `${value.toFixed(0)}`}
+              compact
+              showScaleReference={false}
+            />
+            <div className="mt-2 grid grid-cols-2 sm:grid-cols-4 gap-2">
+              {metricSnapshotSections.map((metric) => (
+                <div key={metric.key} className={`rounded-lg border px-2.5 py-2 ${metric.accentClass}`}>
+                  <div className="flex items-center justify-between gap-2">
+                    <p className="text-[11px] font-bold text-gray-700 uppercase tracking-widest">{metric.label}</p>
+                    <metric.icon size={14} className={metric.toneClass} />
+                  </div>
+                  <div className="mt-1 flex items-end justify-between gap-2">
+                    <p className="text-sm font-bold text-gray-900">{metric.value}</p>
+                    <span className={`rounded-full border px-2 py-0.5 text-[10px] font-semibold ${statusTone(metric.status)}`}>
+                      {statusLabel(metric.status)}
+                    </span>
+                  </div>
+                  <div className="mt-1 h-1.5 rounded-full bg-white/70 overflow-hidden border border-white/80">
+                    <div className="h-full rounded-full bg-slate-900/70" style={{ width: `${metric.score}%` }} />
+                  </div>
+                  <p className="mt-1 text-[11px] text-gray-500">{metric.unit}</p>
+                </div>
+              ))}
+            </div>
           </div>
-          <div className="bg-white rounded p-2 border border-gray-200">
-            <div className="text-gray-600">Renewable Energy</div>
-            <div className="font-bold text-sm mt-1">{renewableEnergy.toFixed(1)}%</div>
+        </div>
+
+        <div className="xl:col-span-4 flex flex-col gap-3">
+          <div className="bg-white rounded-xl border border-gray-200 shadow-md overflow-hidden">
+            <div className="bg-slate-900 px-3 py-2.5">
+              <h2 className="text-base font-bold text-white">At a Glance</h2>
+            </div>
+            <div className="grid grid-cols-2 gap-2 p-2.5">
+              {metricSnapshotSections.map((metric) => (
+                <div key={metric.key} className={`rounded-lg border px-2.5 py-2 ${metric.accentClass}`}>
+                  <div className="flex items-center justify-between gap-2">
+                    <p className="text-[11px] font-bold uppercase tracking-widest">{metric.label}</p>
+                    <span className="text-[10px] font-semibold">{metric.note}</span>
+                  </div>
+                  <p className="mt-1 text-sm font-bold text-gray-900">{metric.value}</p>
+                  <div className="mt-1 h-1.5 rounded-full bg-white/80 overflow-hidden border border-white/70">
+                    <div className="h-full rounded-full bg-slate-900/65" style={{ width: `${metric.score}%` }} />
+                  </div>
+                  <p className="mt-0.5 text-[11px] text-gray-600">{metric.benchmark}</p>
+                </div>
+              ))}
+            </div>
           </div>
-          <div className="bg-white rounded p-2 border border-gray-200">
-            <div className="text-gray-600">Recycling Rate</div>
-            <div className="font-bold text-sm mt-1">{recyclingRate.toFixed(1)}%</div>
+
+          <div className="bg-white rounded-xl border border-gray-200 shadow-md overflow-hidden flex-1">
+            <div className="bg-slate-900 px-3 py-2.5">
+              <h2 className="text-base font-bold text-white">Insights</h2>
+            </div>
+            <div className="p-3 space-y-2 text-[11px]">
+              <div className="rounded-lg bg-blue-50 px-2.5 py-2">
+                <p className="font-semibold text-blue-700">Energy</p>
+                <p className="text-gray-700 mt-0.5">{energyIntensity < 15 ? "Keep current setup." : "Improve HVAC and insulation."}</p>
+              </div>
+              <div className="rounded-lg bg-cyan-50 px-2.5 py-2">
+                <p className="font-semibold text-cyan-700">Water</p>
+                <p className="text-gray-700 mt-0.5">{waterIntensity < 0.35 ? "Maintain water controls." : "Add reuse and leak checks."}</p>
+              </div>
+              <div className="rounded-lg bg-green-50 px-2.5 py-2">
+                <p className="font-semibold text-green-700">Renewable</p>
+                <p className="text-gray-700 mt-0.5">{renewableEnergy >= 10 ? "Maintain momentum." : "Expand green energy sources."}</p>
+              </div>
+              <div className="rounded-lg bg-purple-50 px-2.5 py-2">
+                <p className="font-semibold text-purple-700">Waste</p>
+                <p className="text-gray-700 mt-0.5">{recyclingRate >= 60 ? "Continue waste reduction." : "Tighten segregation and recycling."}</p>
+              </div>
+            </div>
           </div>
         </div>
       </div>
