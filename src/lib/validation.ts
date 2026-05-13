@@ -56,7 +56,7 @@ export const SECTOR_OPTIONS = [
   {
     code: "GEN",
     label:
-      "General Organization",
+      "General (all other organizations)",
   },
 ];
 

@@ -17,6 +17,15 @@ export async function POST(
   request: NextRequest
 ) {
   try {
+    const clientIp =
+      request.headers
+        .get("x-forwarded-for")
+        ?.split(",")[0]
+        ?.trim() ||
+      request.headers.get(
+        "x-real-ip"
+      ) ||
+      null;
 
     const body =
       await request.json();
@@ -96,7 +105,9 @@ export async function POST(
       return NextResponse.json(
         {
           error:
-            "Please verify your email before logging in.",
+            "Please verify your email before logging in. Use \"Resend verification email\" if you did not receive the link.",
+
+          requiresVerification: true,
         },
         {
           status: 403,
@@ -190,6 +201,9 @@ export async function POST(
 
         lastLoginAt:
           new Date(),
+
+        lastLoginIp:
+          clientIp,
 
         rememberMeEnabled:
           rememberMe || false,

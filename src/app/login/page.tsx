@@ -1,223 +1,23 @@
-"use client";
+import { Suspense } from "react";
 
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import LoginForm from "./login-form";
 
-import { Button } from "@/components/ui/button";
-
-import { Input } from "@/components/ui/input";
-
-import { Label } from "@/components/ui/label";
-
-import { useRouter } from "next/navigation";
-
-import { Leaf } from "lucide-react";
-
-import { useState } from "react";
-
-export default function Login() {
-  const router = useRouter();
-
-  const [email, setEmail] =
-    useState("");
-
-  const [password, setPassword] =
-    useState("");
-
-  const [rememberMe, setRememberMe] =
-    useState(false);
-
-  const [loading, setLoading] =
-    useState(false);
-
-  const [error, setError] =
-    useState("");
-
-  const handleLogin = async (
-    e: React.FormEvent
-  ) => {
-    e.preventDefault();
-
-    setError("");
-
-    setLoading(true);
-
-    try {
-      const response = await fetch(
-        "/api/login",
-        {
-          method: "POST",
-
-          headers: {
-            "Content-Type":
-              "application/json",
-          },
-
-          body: JSON.stringify({
-            email,
-            password,
-            rememberMe,
-          }),
-        }
-      );
-
-      const data =
-        await response.json();
-
-      if (!response.ok) {
-        setError(
-          data.error ||
-            "Login failed"
-        );
-
-        setLoading(false);
-
-        return;
-      }
-
-      router.push("/upload");
-    } catch (err) {
-      setError(
-        "Something went wrong. Please try again."
-      );
-    }
-
-    setLoading(false);
-  };
-
+function LoginFallback() {
   return (
-    <div className="flex items-center justify-center min-h-screen bg-slate-50 px-6">
-      <Card className="w-full max-w-md shadow-lg border-emerald-100">
-        <CardHeader className="space-y-3">
-          <div className="flex justify-center mb-2">
-            <div className="p-3 bg-emerald-50 rounded-full">
-              <Leaf className="w-8 h-8 text-emerald-600" />
-            </div>
-          </div>
+    <div className="flex w-full min-w-0 flex-1 flex-col bg-slate-50">
+      <div className="mx-auto w-full max-w-6xl flex-1 px-4 py-10">
+        <div className="mx-auto h-96 max-w-lg animate-pulse rounded-2xl border border-slate-200 bg-white lg:max-w-none" />
+      </div>
+    </div>
+  );
+}
 
-          <CardTitle className="text-2xl text-center font-bold text-slate-900">
-            Sign in to ESGroww
-          </CardTitle>
-
-          <CardDescription className="text-center text-slate-500">
-            Enterprise Sustainability Readiness Platform
-          </CardDescription>
-        </CardHeader>
-
-        <CardContent>
-          <form
-            onSubmit={handleLogin}
-            className="space-y-4"
-          >
-            {error && (
-              <div className="bg-red-50 border border-red-200 text-red-600 rounded-lg px-3 py-2 text-sm">
-                {error}
-              </div>
-            )}
-
-            <div className="space-y-2">
-              <Label htmlFor="email">
-                Work Email
-              </Label>
-
-              <Input
-                id="email"
-                type="email"
-                placeholder="name@company.com"
-                required
-                value={email}
-                onChange={(e) =>
-                  setEmail(
-                    e.target.value
-                  )
-                }
-                className="focus-visible:ring-emerald-500"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <Label htmlFor="password">
-                  Password
-                </Label>
-
-                <button
-                  type="button"
-                  onClick={() =>
-                    router.push(
-                      "/forgot-password"
-                    )
-                  }
-                  className="text-sm text-emerald-600 hover:text-emerald-500"
-                >
-                  Forgot password?
-                </button>
-              </div>
-
-              <Input
-                id="password"
-                type="password"
-                required
-                value={password}
-                onChange={(e) =>
-                  setPassword(
-                    e.target.value
-                  )
-                }
-                className="focus-visible:ring-emerald-500"
-              />
-            </div>
-
-            <div className="flex items-center gap-3">
-              <input
-                type="checkbox"
-                checked={rememberMe}
-                onChange={(e) =>
-                  setRememberMe(
-                    e.target.checked
-                  )
-                }
-              />
-
-              <p className="text-sm text-slate-600">
-                Remember me for 30 days
-              </p>
-            </div>
-
-            <Button
-              type="submit"
-              disabled={loading}
-              className="w-full bg-emerald-600 hover:bg-emerald-700"
-            >
-              {loading
-                ? "Signing In..."
-                : "Sign In"}
-            </Button>
-          </form>
-        </CardContent>
-
-        <CardFooter className="flex justify-center border-t p-4 mt-2">
-          <p className="text-sm text-slate-500">
-            Don't have an account?{" "}
-            <button
-              onClick={() =>
-                router.push(
-                  "/register"
-                )
-              }
-              className="text-emerald-600 font-medium hover:text-emerald-700 transition"
-            >
-              Register
-            </button>
-          </p>
-        </CardFooter>
-      </Card>
+export default function LoginPage() {
+  return (
+    <div className="flex w-full min-w-0 flex-1 flex-col">
+      <Suspense fallback={<LoginFallback />}>
+        <LoginForm />
+      </Suspense>
     </div>
   );
 }

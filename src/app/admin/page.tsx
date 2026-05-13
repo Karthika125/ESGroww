@@ -232,18 +232,18 @@ function StatCard({
   };
 
   return (
-    <div className={`bg-gradient-to-br ${colorClasses[color as keyof typeof colorClasses]} rounded-2xl border p-6 backdrop-blur-sm transition-all duration-300 hover:shadow-lg`}>
+    <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm transition-all duration-300 hover:shadow-lg">
       <div className="flex items-start justify-between mb-4">
-        <div className={`p-3 rounded-lg bg-slate-800/50 ${iconColorClasses[color as keyof typeof iconColorClasses]}`}>
+        <div className={`p-3 rounded-lg bg-slate-100 ${iconColorClasses[color as keyof typeof iconColorClasses]}`}>
           {icon}
         </div>
-        {trend && <span className="text-xs font-semibold text-emerald-400 bg-emerald-500/10 px-2 py-1 rounded-full">{trend}</span>}
+        {trend && <span className="text-xs font-semibold text-emerald-700 bg-emerald-100 px-2 py-1 rounded-full">{trend}</span>}
       </div>
 
-      <p className="text-sm text-slate-400 mb-2">{title}</p>
+      <p className="text-sm text-slate-500 mb-2">{title}</p>
 
       <div className="flex items-end justify-between">
-        <h2 className="text-4xl font-bold text-slate-100">{value}</h2>
+        <h2 className="text-4xl font-bold text-slate-900">{value}</h2>
         {statusBadge}
       </div>
 
@@ -288,26 +288,26 @@ function AdminNavCard({
   return (
     <Link
       href={href}
-      className={`group bg-gradient-to-br from-slate-800/60 to-slate-800/30 rounded-2xl border border-slate-700/50 p-8 backdrop-blur-sm transition-all duration-300 hover:shadow-2xl ${hoverClasses[color as keyof typeof hoverClasses]}`}
+      className={`group bg-white rounded-2xl border border-slate-200 p-8 transition-all duration-300 hover:shadow-2xl ${hoverClasses[color as keyof typeof hoverClasses]}`}
     >
       <div className="flex items-start justify-between mb-4">
-        <div className="p-3 rounded-lg bg-slate-700/50 group-hover:bg-slate-700 transition-colors">
+        <div className="p-3 rounded-lg bg-slate-100 transition-colors">
           <div className={iconColorClasses[color as keyof typeof iconColorClasses]}>{icon}</div>
         </div>
-        <span className="text-xs font-semibold text-slate-400 bg-slate-700/30 px-3 py-1 rounded-full">
+        <span className="text-xs font-semibold text-slate-700 bg-slate-100 px-3 py-1 rounded-full">
           {stats}
         </span>
       </div>
 
-      <h3 className="text-xl font-bold text-slate-100 mb-2 group-hover:text-slate-50 transition-colors">
+      <h3 className="text-xl font-bold text-slate-900 mb-2 transition-colors">
         {title}
       </h3>
 
-      <p className="text-sm text-slate-400 mb-6 leading-relaxed">
+      <p className="text-sm text-slate-600 mb-6 leading-relaxed">
         {description}
       </p>
 
-      <div className="flex items-center gap-2 text-sm font-medium text-slate-300 group-hover:text-slate-100 transition-colors">
+      <div className="flex items-center gap-2 text-sm font-medium text-slate-500 transition-colors">
         <span>Access Module</span>
         <span className="group-hover:translate-x-1 transition-transform">→</span>
       </div>

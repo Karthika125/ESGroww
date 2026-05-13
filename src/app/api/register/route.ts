@@ -86,6 +86,36 @@ export async function POST(
       );
     }
 
+    const trimmedName =
+      String(fullName).trim();
+
+    const trimmedOrg =
+      String(organizationName).trim();
+
+    if (trimmedName.length < 2) {
+      return NextResponse.json(
+        {
+          error:
+            "Full name must be at least 2 characters.",
+        },
+        {
+          status: 400,
+        }
+      );
+    }
+
+    if (trimmedOrg.length < 2) {
+      return NextResponse.json(
+        {
+          error:
+            "Organization name must be at least 2 characters.",
+        },
+        {
+          status: 400,
+        }
+      );
+    }
+
     // PASSWORD MATCH
 
     if (
@@ -154,7 +184,7 @@ export async function POST(
       return NextResponse.json(
         {
           error:
-            "An account with this email already exists.",
+            "An account with this email already exists. Please log in or use a different email.",
         },
         {
           status: 400,
@@ -182,16 +212,16 @@ export async function POST(
       await prisma.hospital.create({
         data: {
           hospitalName:
-            organizationName,
+            trimmedOrg,
 
           sectorCode,
 
           industry:
             sectorExists.label,
 
-          country,
+          country: String(country).trim(),
 
-          state,
+          state: String(state).trim(),
 
           accountStatus:
             "Pending Verification",
@@ -200,39 +230,71 @@ export async function POST(
 
     // CREATE USER
 
-    await prisma.user.create({
-      data: {
-        fullName,
+    const user =
+      await prisma.user.create({
+        data: {
+          fullName: trimmedName,
 
+          email,
+
+          password:
+            hashedPassword,
+
+          hospitalId:
+            hospital.id,
+
+          emailVerified: false,
+
+          emailVerificationToken:
+            verificationToken,
+
+          emailVerificationExpiry:
+            verificationExpiry,
+        },
+      });
+
+    try {
+      await sendVerificationEmail({
         email,
 
-        password:
-          hashedPassword,
-
-        hospitalId:
-          hospital.id,
-
-        emailVerified: false,
-
-        emailVerificationToken:
+        token:
           verificationToken,
+      });
+    } catch (mailErr) {
+      await prisma.user.delete({
+        where: {
+          id: user.id,
+        },
+      });
 
-        emailVerificationExpiry:
-          verificationExpiry,
-      },
-    });
+      await prisma.hospital.delete({
+        where: {
+          id: hospital.id,
+        },
+      });
 
-    await sendVerificationEmail({
-      email,
-      token:
-        verificationToken,
-    });
+      console.error(mailErr);
+
+      const message =
+        mailErr instanceof Error
+          ? mailErr.message
+          : "Could not send verification email.";
+
+      return NextResponse.json(
+        {
+          error: message,
+        },
+        {
+          status: 502,
+        }
+      );
+    }
 
     return NextResponse.json({
       success: true,
 
       message:
-        "Registration successful. Please verify your email.",
+        "Registration successful. We sent a verification link to your email — please confirm within 24 hours.",
     });
   } catch (error) {
     console.error(error);

@@ -87,20 +87,20 @@ export default function HospitalsPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-8">
+    <div className="min-h-screen bg-slate-50 p-8">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="mb-8 flex items-center justify-between">
           <div>
             <Link
               href="/admin"
-              className="inline-flex items-center gap-2 text-slate-400 hover:text-slate-200 transition-colors mb-4"
+              className="inline-flex items-center gap-2 text-slate-600 hover:text-slate-900 transition-colors mb-4"
             >
               <ArrowLeft className="w-4 h-4" />
               Back to Dashboard
             </Link>
-            <h1 className="text-4xl font-bold text-slate-100">Organizations</h1>
-            <p className="text-slate-400 mt-2">Manage hospitals and facilities across all sectors</p>
+            <h1 className="text-4xl font-bold text-slate-900">Organizations</h1>
+            <p className="text-slate-600 mt-2">Manage hospitals and facilities across all sectors</p>
           </div>
           <button className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-3 rounded-lg font-medium transition-colors">
             <Plus className="w-4 h-4" />
@@ -117,13 +117,13 @@ export default function HospitalsPage() {
               placeholder="Search by name or sector..."
               value={search}
               onChange={e => setSearch(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 bg-slate-800/50 border border-slate-700/50 rounded-lg text-slate-200 placeholder-slate-500 focus:outline-none focus:border-emerald-500/50 transition-colors"
+              className="w-full pl-10 pr-4 py-2 bg-white border border-slate-200 rounded-lg text-slate-900 placeholder-slate-400 focus:outline-none focus:border-emerald-500 transition-colors"
             />
           </div>
           <select
             value={statusFilter}
             onChange={e => setStatusFilter(e.target.value)}
-            className="px-4 py-2 bg-slate-800/50 border border-slate-700/50 rounded-lg text-slate-200 focus:outline-none focus:border-emerald-500/50 transition-colors"
+            className="px-4 py-2 bg-white border border-slate-200 rounded-lg text-slate-900 focus:outline-none focus:border-emerald-500 transition-colors"
           >
             <option value="all">All Status</option>
             <option value="Active">Active</option>
@@ -158,24 +158,24 @@ export default function HospitalsPage() {
             {filteredHospitals.map(hospital => (
               <div
                 key={hospital.id}
-                className="bg-gradient-to-r from-slate-800/50 to-slate-800/30 rounded-xl border border-slate-700/50 p-6 hover:border-slate-600/50 transition-all duration-300 hover:shadow-lg"
+                className="bg-white rounded-xl border border-slate-200 p-6 shadow-sm transition-all duration-300 hover:shadow-lg"
               >
                 <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 mb-4">
                   {/* Left Column: Name and Status */}
                   <div className="lg:col-span-2">
                     <div className="flex items-start gap-3 mb-3">
-                      <h3 className="text-lg font-semibold text-slate-100">{hospital.hospitalName}</h3>
+                      <h3 className="text-lg font-semibold text-slate-900">{hospital.hospitalName}</h3>
                       <span className={`px-3 py-1 rounded-full text-xs font-semibold border ${getStatusColor(hospital.accountStatus)}`}>
                         {hospital.accountStatus}
                       </span>
                     </div>
-                    <div className="flex flex-wrap gap-4 text-sm text-slate-400">
-                      <span className="flex items-center gap-1">
-                        <Building2 className="w-4 h-4" />
+                    <div className="flex flex-wrap gap-4 text-sm text-slate-600">
+                      <span className="flex items-center gap-1 text-slate-600">
+                        <Building2 className="w-4 h-4 text-slate-500" />
                         {getSectorLabel(hospital.sectorCode)}
                       </span>
-                      <span className="flex items-center gap-1">
-                        <MapPin className="w-4 h-4" />
+                      <span className="flex items-center gap-1 text-slate-600">
+                        <MapPin className="w-4 h-4 text-slate-500" />
                         {hospital.state}, {hospital.country}
                       </span>
                     </div>
@@ -183,40 +183,40 @@ export default function HospitalsPage() {
 
                   {/* Middle Column: Key Metrics */}
                   <div className="grid grid-cols-2 gap-4">
-                    <div className="bg-slate-700/30 rounded-lg p-3">
+                    <div className="bg-slate-50 rounded-lg p-3 border border-slate-200">
                       <p className="text-xs text-slate-500 mb-1">ESG Score</p>
-                      <p className="text-xl font-bold text-emerald-400">
+                      <p className="text-xl font-bold text-emerald-600">
                         {hospital.esgScores[0]?.overallScore?.toFixed(0) || '-'}%
                       </p>
                     </div>
-                    <div className="bg-slate-700/30 rounded-lg p-3">
+                    <div className="bg-slate-50 rounded-lg p-3 border border-slate-200">
                       <p className="text-xs text-slate-500 mb-1">Uploads</p>
-                      <p className="text-xl font-bold text-cyan-400">{hospital._count.uploads}</p>
+                      <p className="text-xl font-bold text-cyan-600">{hospital._count.uploads}</p>
                     </div>
                   </div>
 
                   {/* Right Column: Infrastructure */}
                   <div className="grid grid-cols-3 gap-3 text-xs">
-                    <div className="bg-slate-700/30 rounded-lg p-2 text-center">
+                    <div className="bg-slate-50 rounded-lg p-2 text-center border border-slate-200">
                       <p className="text-slate-500 mb-1">Built-up Area</p>
-                      <p className="font-semibold text-slate-200">{hospital.builtUpArea.toLocaleString()} sqft</p>
+                      <p className="font-semibold text-slate-900">{hospital.builtUpArea.toLocaleString()} sqft</p>
                     </div>
-                    <div className="bg-slate-700/30 rounded-lg p-2 text-center">
+                    <div className="bg-slate-50 rounded-lg p-2 text-center border border-slate-200">
                       <p className="text-slate-500 mb-1">Beds</p>
-                      <p className="font-semibold text-slate-200">{hospital.numberOfBeds}</p>
+                      <p className="font-semibold text-slate-900">{hospital.numberOfBeds}</p>
                     </div>
-                    <div className="bg-slate-700/30 rounded-lg p-2 text-center">
+                    <div className="bg-slate-50 rounded-lg p-2 text-center border border-slate-200">
                       <p className="text-slate-500 mb-1">Employees</p>
-                      <p className="font-semibold text-slate-200">{hospital.numberOfEmployees}</p>
+                      <p className="font-semibold text-slate-900">{hospital.numberOfEmployees}</p>
                     </div>
                   </div>
                 </div>
 
                 {/* Detailed Info Row */}
-                <div className="grid grid-cols-4 gap-4 text-xs border-t border-slate-700/50 pt-4">
+                <div className="grid grid-cols-4 gap-4 text-xs border-t border-slate-200/80 pt-4">
                   <div>
                     <p className="text-slate-500 mb-1">Daily Occupancy</p>
-                    <p className="font-semibold text-slate-200">{hospital.averageDailyOccupancy}%</p>
+                    <p className="font-semibold text-slate-900">{hospital.averageDailyOccupancy}%</p>
                   </div>
                   <div>
                     <p className="text-slate-500 mb-1">Operating Hours</p>
