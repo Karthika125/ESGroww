@@ -375,34 +375,259 @@ gapAnalysis,
 readinessStage,
 },
 });
+// ─────────────────────────────────────────────
+// CATEGORY CONFIDENCE
+// ─────────────────────────────────────────────
+
+const categoryConfidence = [
+{
+category: "Energy",
+months: electricityMonths,
+confidence:
+calculateConfidenceScore(
+electricityMonths
+),
+},
+
+{
+category: "Water",
+months: waterMonths,
+confidence:
+calculateConfidenceScore(
+waterMonths
+),
+},
+
+{
+category: "Fuel",
+months: fuelMonths,
+confidence:
+calculateConfidenceScore(
+fuelMonths
+),
+},
+
+{
+category: "Waste",
+months: wasteMonths,
+confidence:
+calculateConfidenceScore(
+wasteMonths
+),
+},
+];
+
+// ─────────────────────────────────────────────
+// CERTIFICATION ARRAY FORMAT
+// ─────────────────────────────────────────────
+
+const certificationReadinessArray =
+Object.entries(
+certificationReadiness
+).map(([name, ready]) => {
+
+const score =
+ready ? 75 : 35;
+
 return {
+name,
+
+score,
+
+status: ready
+? "Certification Possible"
+: "Not Ready",
+};
+});
+
+// ─────────────────────────────────────────────
+// FINAL RESPONSE
+// ─────────────────────────────────────────────
+
+return {
+
+/* ───────────────────────────── */
+/* BASIC INFO                    */
+/* ───────────────────────────── */
+
 overallScore,
+
 readinessStage,
+
 completeness:
 overallCompleteness,
-confidence: confidenceScore,
+
+confidence:
+confidenceScore,
+
 totalEmissions,
+
+orgName:
+hospital.hospitalName,
+
+sector:
+hospital.industry,
+
 benchmarkScores,
-certificationReadiness,
-gapAnalysis,
+
+/* ───────────────────────────── */
+/* ANNUALIZED VALUES             */
+/* ───────────────────────────── */
+
 annualizedValues: {
+
 electricity:
-annualizedElectricity,
-water: annualizedWater,
-fuel: annualizedFuel,
-waste: annualizedWaste,
+electricityMonths >= 3
+? annualizedElectricity
+: null,
+
+water:
+waterMonths >= 3
+? annualizedWater
+: null,
+
+fuel:
+fuelMonths >= 3
+? annualizedFuel
+: null,
+
+waste:
+wasteMonths >= 3
+? annualizedWaste
+: null,
+
+monthsUploaded: {
+
+electricity:
+electricityMonths,
+
+water:
+waterMonths,
+
+fuel:
+fuelMonths,
+
+waste:
+wasteMonths,
 },
-categoryScores,
-regulatoryReadiness,
+},
+
+/* ───────────────────────────── */
+/* CATEGORY SCORES               */
+/* ───────────────────────────── */
+
+categoryScores: {
+
+energy:
+electricityMonths >= 3
+? categoryScores.energy
+: 0,
+
+water:
+waterMonths >= 3
+? categoryScores.water
+: 0,
+
+waste:
+wasteMonths >= 3
+? categoryScores.waste
+: 0,
+
+governance:
+categoryScores.governance,
+},
+
+/* ───────────────────────────── */
+/* CATEGORY CONFIDENCE           */
+/* ───────────────────────────── */
+
+categoryConfidence,
+
+/* ───────────────────────────── */
+/* CERTIFICATION READINESS       */
+/* ───────────────────────────── */
+
+certificationReadiness:
+certificationReadinessArray,
+
+/* ───────────────────────────── */
+/* GAP ANALYSIS                  */
+/* ───────────────────────────── */
+
+gapAnalysis,
+
 strengths,
+
 gaps,
+
+/* ───────────────────────────── */
+/* REGULATORY READINESS          */
+/* ───────────────────────────── */
+
+regulatoryReadiness,
+
+/* ───────────────────────────── */
+/* ROADMAP                       */
+/* ───────────────────────────── */
+
 roadmap,
+
+/* ───────────────────────────── */
+/* EMISSIONS                     */
+/* ───────────────────────────── */
+
 emissions: {
-scope1: dieselEmissions + transportEmissions + refrigerantEmissions,
-scope2: scope2Emissions,
+
+scope1:
+dieselEmissions +
+transportEmissions +
+refrigerantEmissions,
+
+scope2:
+scope2Emissions,
+
 scope3: 0,
 },
-orgName: hospital.hospitalName,
-sector: hospital.industry,
+
+/* ───────────────────────────── */
+/* BRD METADATA                  */
+/* ───────────────────────────── */
+
+metadata: {
+
+dataAvailability: {
+
+electricity:
+electricityMonths > 0,
+
+water:
+waterMonths > 0,
+
+fuel:
+fuelMonths > 0,
+
+waste:
+wasteMonths > 0,
+},
+
+insufficientData: {
+
+electricity:
+electricityMonths > 0 &&
+electricityMonths < 3,
+
+water:
+waterMonths > 0 &&
+waterMonths < 3,
+
+fuel:
+fuelMonths > 0 &&
+fuelMonths < 3,
+
+waste:
+wasteMonths > 0 &&
+wasteMonths < 3,
+},
+},
 };
 }

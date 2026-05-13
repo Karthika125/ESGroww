@@ -8,24 +8,38 @@ datasource db {
 }
 
 model Hospital {
-  id              String   @id @default(cuid())
-  hospitalName    String
-  industry        String   @default("Healthcare")
-  builtUpArea     Float    @default(0)
-  numberOfBeds    Int      @default(0)
-  createdAt       DateTime @default(now())
+  id                      String   @id @default(cuid())
+  hospitalName            String
+  sectorCode              String   @default("HOSP")  // HOSP, BLDG, MFGR, etc
+  accountStatus           String   @default("Pending Verification")  // Pending Verification, Active, Locked
+  industry                String   @default("Healthcare")
+  country                 String   @default("India")
+  state                   String   @default("")
+  builtUpArea             Float    @default(0)  // in sqft
+  numberOfBeds            Int      @default(0)
+  numberOfEmployees       Int      @default(0)  // FTE
+  averageDailyOccupancy   Int      @default(0)
+  operatingHours          Float    @default(24)  // hours per day
+  numberOfFloors          Int      @default(0)
+  yearEstablished         Int      @default(2020)
+  createdAt               DateTime @default(now())
+  updatedAt               DateTime @updatedAt
 
-  users           User[]
-  electricityData ElectricityData[]
-  waterData       WaterData[]
-  fuelData        FuelData[]
-  wasteData       WasteData[]
-  refrigerantData RefrigerantData[]
-  transportData   TransportData[]
-  uploads         Upload[]
-  esgScores       ESGScore[]
-  governanceData  GovernanceData?
-  assessmentHistory AssessmentHistory[]
+  users                   User[]
+  electricityData         ElectricityData[]
+  waterData               WaterData[]
+  fuelData                FuelData[]
+  wasteData               WasteData[]
+  refrigerantData         RefrigerantData[]
+  transportData           TransportData[]
+  uploads                 Upload[]
+  esgScores               ESGScore[]
+  governanceData          GovernanceData?
+  assessmentHistory       AssessmentHistory[]
+  validationResults       ValidationResult[]
+  certificationScores     CertificationScore[]
+  calculatedMetrics       CalculatedMetric[]
+  emissionsSummary        EmissionsSummary[]
 }
 
 model User {
@@ -153,4 +167,97 @@ model AssessmentHistory {
   readinessStage   String?
   hospital         Hospital @relation(fields: [hospitalId], references: [id])
   @@index([hospitalId])
-}
+}
+
+// NEW MODELS FOR BRD COMPLIANCE
+
+model ValidationResult {
+  id              String   @id @default(cuid())
+  hospitalId      String
+  hospital        Hospital @relation(fields: [hospitalId], references: [id])
+  category        String   // electricity, water, waste, fuel, refrigerant
+  checkType       String   // negative_value, missing_months, spike_detection, duplicate_entry, unit_consistency, cross_category
+  status          String   // Pass, Partial, Fail
+  affectedMonth   String?  // month affected
+  affectedYear    Int?
+  notes           String?
+  createdAt       DateTime @default(now())
+}
+
+model CertificationScore {
+  id                String   @id @default(cuid())
+  hospitalId        String
+  hospital          Hospital @relation(fields: [hospitalId], references: [id])
+  certificationName String   // IGBC Healthcare, LEED, NABH, ISO 14001, WELL, BRSR, GRI, etc
+  readinessPercent  Float
+  statusLabel       String   // Not Ready, Foundational, Certification Possible, Strong Readiness, Advanced
+  majorGap          String?
+  recommendedTimeline String? // <3M, 3-6M, 6-12M, 12-18M, 12+M
+  prerequisitesMetJson Json? // Track which prerequisites are met
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+}
+
+model CalculatedMetric {
+  id                String   @id @default(cuid())
+  hospitalId        String
+  hospital          Hospital @relation(fields: [hospitalId], references: [id])
+  metricName        String   // Energy Intensity, Water Intensity, Renewable %, etc
+  rawValue          Float?
+  annualizedValue   Float?
+  unit              String
+  confidenceModifier Float @default(1.0)
+  benchmarkStatus   String? // Within, Slightly Below, Above, Insufficient Data
+  createdAt         DateTime @default(now())
+}
+
+model EmissionsSummary {
+  id              String   @id @default(cuid())
+  hospitalId      String
+  hospital        Hospital @relation(fields: [hospitalId], references: [id])
+  scope           String   // Scope 1, Scope 2, Scope 3
+  source          String   // Diesel, PNG, Electricity, Waste, etc
+  kgCO2e          Float
+  tCO2e           Float
+  factorUsed      String?
+  createdAt       DateTime @default(now())
+}
+
+model CertificationApplicability {
+  id                String @id @default(cuid())
+  sectorCode        String // HOSP, BLDG, MFGR, etc
+  certificationName String
+  importanceLevel   String // Mandatory, Highly Recommended, Optional
+  @@unique([sectorCode, certificationName])
+}
+
+model BenchmarkMaster {
+  id                String @id @default(cuid())
+  sectorCode        String
+  metricName        String // Energy Intensity, Water Intensity, etc
+  efficientMax      Float
+  acceptableMin     Float
+  acceptableMax     Float
+  unit              String
+  @@unique([sectorCode, metricName])
+}
+
+model EmissionFactor {
+  id                String @id @default(cuid())
+  sourceType        String // Diesel, PNG, Electricity, Waste, etc
+  region            String @default("India")
+  factorValue       Float
+  unit              String // kgCO2e/unit
+  overrideAllowed   Boolean @default(true)
+  createdAt         DateTime @default(now())
+  @@unique([sourceType, region])
+}
+
+model ConfidenceThreshold {
+  id                String @id @default(cuid())
+  monthsMin         Int
+  monthsMax         Int
+  modifier          Float
+  confidenceLabel   String // High, Medium, Low, Insufficient
+  @@unique([monthsMin, monthsMax])
+}
