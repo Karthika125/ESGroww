@@ -177,7 +177,9 @@ export default function ResultsPage() {
  
   const catScores = data.categoryScores ?? { energy: 0, water: 0, waste: 0, governance: 0 };
   const emis = data.emissions ?? { scope1: 0, scope2: 0, scope3: 0 };
-  const certEntries = Object.entries(data.certificationReadiness);
+  const certEntries = Array.isArray(data.certificationReadiness)
+  ? data.certificationReadiness
+  : [];
   const score = Math.round(data.overallScore);
   const color = stageColor(score);
  
@@ -328,16 +330,16 @@ export default function ResultsPage() {
         <div style={{ background: "#fff", borderRadius: 12, border: "1px solid #e2e8f0", padding: "12px 14px", overflow: "hidden", display: "flex", flexDirection: "column" }}>
           <p style={{ margin: "0 0 8px", fontSize: 10, fontWeight: 700, color: "#0f172a", textTransform: "uppercase", letterSpacing: 0.8 }}>Certification Readiness</p>
           <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 5, overflow: "hidden" }}>
-            {certEntries.map(([cert, val]) => {
-              const s = certScore(val);
+            {certEntries.map((cert) => {
+              const s = cert.score;
               const c = stageColor(s);
               const lbl = stageLabel(s);
               return (
-                <div key={cert} style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                  <div style={{ flex: "0 0 90px", fontSize: 10, fontWeight: 600, color: "#334155", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{formatCertName(cert)}</div>
+                <div key={cert.name} style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                  <div style={{ flex: "0 0 90px", fontSize: 10, fontWeight: 600, color: "#334155", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{formatCertName(cert.name)}</div>
                   <div style={{ flex: 1 }}><Bar value={s} color={c} /></div>
                   <div style={{ flex: "0 0 24px", fontSize: 10, fontWeight: 700, color: c, textAlign: "right" }}>{s}</div>
-                  <div style={{ flex: "0 0 68px", background: `${c}18`, color: c, fontSize: 8, fontWeight: 700, borderRadius: 4, padding: "2px 5px", textAlign: "center" }}>{lbl}</div>
+                  <div style={{ flex: "0 0 68px", background: `${c}18`, color: c, fontSize: 8, fontWeight: 700, borderRadius: 4, padding: "2px 5px", textAlign: "center" }}>{cert.status}</div>
                 </div>
               );
             })}
@@ -455,12 +457,12 @@ export default function ResultsPage() {
             <p style={{ margin: 0, fontSize: 9, fontWeight: 700, color: "#64748b", textTransform: "uppercase", marginBottom: 4 }}>Certification Pathway</p>
             <div style={{ display: "flex", alignItems: "center", gap: 4, flexWrap: "wrap" }}>
               {certEntries
-                .sort((a, b) => certScore(b[1]) - certScore(a[1]))
+                .sort((a, b) => b.score - a.score)
                 .slice(0, 4)
-                .map(([cert, val], idx) => (
-                  <div key={cert} style={{ display: "flex", alignItems: "center", gap: 4 }}>
-                    <div style={{ background: `${stageColor(certScore(val))}15`, border: `1px solid ${stageColor(certScore(val))}40`, borderRadius: 6, padding: "3px 7px", fontSize: 9, fontWeight: 700, color: stageColor(certScore(val)) }}>
-                      {idx + 1}. {formatCertName(cert)}
+                .map((cert, idx) => (
+                  <div key={cert.name} style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                    <div style={{ background: `${stageColor(cert.score)}15`, border: `1px solid ${stageColor(cert.score)}40`, borderRadius: 6, padding: "3px 7px", fontSize: 9, fontWeight: 700, color: stageColor(cert.score) }}>
+                      {idx + 1}. {formatCertName(cert.name)}
                     </div>
                     {idx < 3 && <span style={{ color: "#cbd5e1", fontSize: 10 }}>→</span>}
                   </div>
@@ -493,7 +495,7 @@ export default function ResultsPage() {
           </div>
           <div style={{ marginTop: 8, background: "#eff6ff", border: "1px solid #bfdbfe", borderRadius: 8, padding: "7px 10px" }}>
             <p style={{ margin: 0, fontSize: 8, color: "#1e40af", fontWeight: 600, lineHeight: 1.4 }}>
-              <strong>Executive Summary:</strong> {data.orgName} demonstrates {score >= 75 ? "strong" : score >= 60 ? "moderate" : "foundational"} sustainability fundamentals. Strong potential for {certEntries.filter(([, v]) => certScore(v) >= 60).map(([k]) => k).slice(0, 2).join(", ")}. Priority: renewable energy integration and governance formalization.
+              <strong>Executive Summary:</strong> {data.orgName} demonstrates {score >= 75 ? "strong" : score >= 60 ? "moderate" : "foundational"} sustainability fundamentals. Strong potential for {certEntries.filter((c) => c.score >= 60).map((c) => c.name).slice(0, 2).join(", ")}. Priority: renewable energy integration and governance formalization.
             </p>
           </div>
         </div>
