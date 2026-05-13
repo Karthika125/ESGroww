@@ -2,6 +2,7 @@ import TopNav from "@/components/TopNav";
 import UploadCategoryGrid from "@/components/upload/UploadCategoryGrid";
 import RecentUploadsTable from "@/components/upload/RecentUploadsTable";
 import ProceedButton from "@/components/upload/ProceedButton";
+import VerticalFloatingMenu from "@/components/ui/VerticalFloatingMenu";
 
 export default function UploadPage() {
   return (
@@ -46,6 +47,7 @@ export default function UploadPage() {
           <ProceedButton />
         </div>
       </main>
+      <VerticalFloatingMenu />
     </div>
   );
 }
