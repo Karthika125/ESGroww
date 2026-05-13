@@ -21,6 +21,13 @@ calculateBenchmarkScores,
 calculateCertificationReadiness,
 calculateGapAnalysis,
 determineReadinessStage,
+calculateEnergyPerBed,
+calculateWaterPerBed,
+calculateWastePerBed,
+calculateCategoryScores,
+calculateRegulatoryReadiness,
+identifyStrengthsAndGaps,
+generatePriorityRoadmap,
 } from "@/lib/esgCalculations";
 export async function computeAndSaveAssessment() {
 const user =
@@ -230,6 +237,21 @@ calculateWasteDiversionPercentage(
 recyclableWaste,
 totalWaste
 );
+
+// Calculate per-bed metrics
+const energyPerBed = calculateEnergyPerBed(
+annualizedElectricity,
+hospital.numberOfBeds
+);
+const waterPerBed = calculateWaterPerBed(
+annualizedWater,
+hospital.numberOfBeds
+);
+const wastePerBed = calculateWastePerBed(
+annualizedWaste,
+hospital.numberOfBeds
+);
+
 const overallScore =
 calculateESGReadinessScore({
 renewablePercentage,
@@ -250,6 +272,9 @@ industry: hospital.industry,
 renewablePercentage,
 waterRecyclingPercentage,
 wasteDiversionPercentage,
+energyPerBed,
+waterPerBed,
+wastePerBed,
 });
 const certificationReadiness =
 calculateCertificationReadiness({
@@ -258,6 +283,9 @@ waterRecyclingPercentage,
 wasteDiversionPercentage,
 governanceScore:
 governanceCompleteness,
+completeness: overallCompleteness,
+confidence: confidenceScore,
+benchmarkScores,
 });
 const gapAnalysis =
 calculateGapAnalysis(
@@ -281,6 +309,52 @@ certificationReady:
 Object.values(
 certificationReadiness
 ).some(Boolean),
+});
+
+// Calculate category scores based on metrics
+const categoryScores = calculateCategoryScores({
+renewablePercentage,
+waterRecyclingPercentage,
+wasteDiversionPercentage,
+governanceScore: governanceCompleteness,
+benchmarkScores,
+electricityCompleteness,
+waterCompleteness,
+wasteCompleteness,
+});
+
+// Calculate regulatory readiness
+const regulatoryReadiness = calculateRegulatoryReadiness({
+renewablePercentage,
+waterRecyclingPercentage,
+wasteDiversionPercentage,
+governanceScore: governanceCompleteness,
+completeness: overallCompleteness,
+confidence: confidenceScore,
+benchmarkScores,
+});
+
+// Identify strengths and gaps
+const { strengths, gaps } = identifyStrengthsAndGaps({
+renewablePercentage,
+waterRecyclingPercentage,
+wasteDiversionPercentage,
+governanceScore: governanceCompleteness,
+completeness: overallCompleteness,
+benchmarkScores,
+electricityCompleteness,
+waterCompleteness,
+wasteCompleteness,
+});
+
+// Generate priority action roadmap
+const roadmap = generatePriorityRoadmap({
+renewablePercentage,
+waterRecyclingPercentage,
+wasteDiversionPercentage,
+governanceScore: governanceCompleteness,
+completeness: overallCompleteness,
+benchmarkScores,
 });
 await prisma.assessmentHistory.create({
 data: {
@@ -318,5 +392,17 @@ water: annualizedWater,
 fuel: annualizedFuel,
 waste: annualizedWaste,
 },
+categoryScores,
+regulatoryReadiness,
+strengths,
+gaps,
+roadmap,
+emissions: {
+scope1: dieselEmissions + transportEmissions + refrigerantEmissions,
+scope2: scope2Emissions,
+scope3: 0,
+},
+orgName: hospital.hospitalName,
+sector: hospital.industry,
 };
 }
