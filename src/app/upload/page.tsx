@@ -9,17 +9,8 @@ export default function UploadPage() {
         <header className="flex shrink-0 flex-wrap items-center gap-x-3 gap-y-1 border-b border-slate-200/90 pb-2">
           <span className="shrink-0 rounded border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-emerald-800">
             Step 1 of 3
-<<<<<<< HEAD
-          </div>
-          <h1 className="text-3xl font-bold text-slate-900">Assessment</h1>
-          <p className="text-slate-500 mt-1.5 text-sm">
-=======
           </span>
-          <h1 className="text-3xl font-bold tracking-tight text-slate-900 md:text-4xl">Data load</h1>
-          <p className="mt-2 max-w-2xl text-sm text-slate-600 md:text-base">
->>>>>>> 4f9e5deab7fbeced0c9cb9c135f70ca03a4e4e46
-            Upload your operational records and complete the governance questionnaire.
-          <h1 className="text-base font-bold tracking-tight text-slate-900 sm:text-lg">Data load</h1>
+          <h1 className="text-base font-bold tracking-tight text-slate-900 sm:text-lg">Assessment Progress</h1>
           <p className="hidden min-w-0 flex-1 text-[11px] leading-snug text-slate-600 md:block md:truncate">
             Upload operational records and complete the governance questionnaire.
           </p>
