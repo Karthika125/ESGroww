@@ -43,9 +43,29 @@ const riskColor: Record<string, string> = {
 const sevColor: Record<string, string> = {
   High: "#dc2626", Medium: "#ea580c", Low: "#ca8a04",
 };
+
+const formatCertName = (name: string): string => {
+  // Format certification names for display
+  const nameMap: Record<string, string> = {
+    ISO14001: "ISO 14001",
+    ISO50001: "ISO 50001",
+    NABH: "NABH",
+    IGBC: "IGBC Healthcare",
+    LEED: "LEED",
+    WELL: "WELL",
+    BRSR: "BRSR",
+    GRI: "GRI",
+    CDP: "CDP",
+  };
+  return nameMap[name] || name;
+};
  
-const certScore = (v: boolean | number): number =>
-  typeof v === "number" ? v : v ? 80 : 25;
+const certScore = (v: boolean | number): number => {
+  if (typeof v === "number") return v;
+  // For boolean values from API, convert to score
+  // True (ready) = 70-80, False (not ready) = 40-50
+  return v ? 75 : 45;
+};
  
 // ─── Gauge SVG ────────────────────────────────────────────────────────────────
 function Gauge({ value, size = 88 }: { value: number; size?: number }) {
@@ -114,43 +134,21 @@ function Radar({ scores }: { scores: { label: string; value: number }[] }) {
  
 // ─── Mock fallback data ────────────────────────────────────────────────────────
 const MOCK: AssessmentData = {
-  orgName: "Sunrise Multispeciality Hospital",
-  sector: "Hospital / Healthcare",
-  overallScore: 66,
-  readinessStage: "Certification Possible",
-  completeness: 89.6,
-  confidence: 0.91,
-  totalEmissions: 127.85,
-  annualizedValues: { electricity: 150857, water: 4800, fuel: 1200, waste: 18000 },
-  certificationReadiness: { "IGBC Healthcare": 65, "ISO 14001": 72, "NABH": 58, "WELL": 48, "BRSR": 61 },
-  categoryScores: { energy: 46.5, water: 68, waste: 74, governance: 55 },
-  emissions: { scope1: 6.43, scope2: 108.62, scope3: 12.80 },
-  strengths: [
-    "Structured utility tracking — consistent electricity data available.",
-    "Strong waste segregation and tracking — fully implemented at source.",
-    "Governance accountability established — ESG owner designated.",
-    "Water treatment infrastructure in place — STP operational.",
-  ],
-  gaps: [
-    { text: "No renewable energy integration — weakens IGBC/LEED/WELL scores.", severity: "High" },
-    { text: "No centralized energy monitoring system — impacts energy governance.", severity: "High" },
-    { text: "No sustainability governance owner — ESG accountability gap.", severity: "High" },
-    { text: "Low LED conversion maturity — electricity efficiency below target.", severity: "Medium" },
-    { text: "Limited water reuse practices — freshwater dependency is high.", severity: "Medium" },
-  ],
-  regulatoryReadiness: [
-    { regulation: "BRSR (SEBI)", readiness: 61, risk: "Medium" },
-    { regulation: "BMW Rules 2016", readiness: 74, risk: "Medium" },
-    { regulation: "Hazardous Waste Rules", readiness: 80, risk: "Low" },
-    { regulation: "Energy Conservation Act", readiness: 45, risk: "Medium-High" },
-  ],
-  roadmap: [
-    { action: "Appoint ESG governance owner", timeline: "Immediate", impact: "Prerequisite for ISO 14001 & BRSR" },
-    { action: "Formalize sustainability policy", timeline: "Immediate", impact: "+20 governance score pts" },
-    { action: "Increase LED coverage > 80%", timeline: "0–3 Months", impact: "8–15% electricity reduction" },
-    { action: "Implement EMS/BMS monitoring", timeline: "3–6 Months", impact: "Improves IGBC energy score" },
-    { action: "Install rooftop solar / REC", timeline: "6–12 Months", impact: "20–35% Scope 2 reduction" },
-  ],
+  orgName: "Loading...",
+  sector: "Healthcare",
+  overallScore: 0,
+  readinessStage: "Loading...",
+  completeness: 0,
+  confidence: 0,
+  totalEmissions: 0,
+  annualizedValues: { electricity: 0, water: 0, fuel: 0, waste: 0 },
+  certificationReadiness: {},
+  categoryScores: { energy: 0, water: 0, waste: 0, governance: 0 },
+  emissions: { scope1: 0, scope2: 0, scope3: 0 },
+  strengths: [],
+  gaps: [],
+  regulatoryReadiness: [],
+  roadmap: [],
 };
  
 // ─── Main Page ─────────────────────────────────────────────────────────────────
@@ -161,10 +159,16 @@ export default function ResultsPage() {
   useEffect(() => {
     fetch("/api/assessment", { cache: "no-store" })
       .then(r => r.json())
-      .then(r => { if (r?.data) setData({ ...MOCK, ...r.data }); })
-      .catch(() => {})
+      .then(r => { 
+        if (r?.data) {
+          setData(r.data);
+        }
+      })
+      .catch(err => {
+        console.error("Failed to fetch assessment:", err);
+      })
       .finally(() => setLoaded(true));
-    setTimeout(() => setLoaded(true), 400);
+    setTimeout(() => setLoaded(true), 800);
   }, []);
  
   const catScores = data.categoryScores ?? { energy: 0, water: 0, waste: 0, governance: 0 };
@@ -277,7 +281,7 @@ export default function ResultsPage() {
               const lbl = stageLabel(s);
               return (
                 <div key={cert} style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                  <div style={{ flex: "0 0 90px", fontSize: 10, fontWeight: 600, color: "#334155", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{cert}</div>
+                  <div style={{ flex: "0 0 90px", fontSize: 10, fontWeight: 600, color: "#334155", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{formatCertName(cert)}</div>
                   <div style={{ flex: 1 }}><Bar value={s} color={c} /></div>
                   <div style={{ flex: "0 0 24px", fontSize: 10, fontWeight: 700, color: c, textAlign: "right" }}>{s}</div>
                   <div style={{ flex: "0 0 68px", background: `${c}18`, color: c, fontSize: 8, fontWeight: 700, borderRadius: 4, padding: "2px 5px", textAlign: "center" }}>{lbl}</div>
@@ -403,7 +407,7 @@ export default function ResultsPage() {
                 .map(([cert, val], idx) => (
                   <div key={cert} style={{ display: "flex", alignItems: "center", gap: 4 }}>
                     <div style={{ background: `${stageColor(certScore(val))}15`, border: `1px solid ${stageColor(certScore(val))}40`, borderRadius: 6, padding: "3px 7px", fontSize: 9, fontWeight: 700, color: stageColor(certScore(val)) }}>
-                      {idx + 1}. {cert}
+                      {idx + 1}. {formatCertName(cert)}
                     </div>
                     {idx < 3 && <span style={{ color: "#cbd5e1", fontSize: 10 }}>→</span>}
                   </div>

@@ -485,4 +485,423 @@ export function determineReadinessStage(params: {
   return "Basic";
 }
 
+/* ========================================= */
+/* CATEGORY SCORES CALCULATION               */
+/* ========================================= */
+
+/**
+ * Calculate individual category scores based on metrics.
+ * Scores are based on renewable %, water recycling %, waste diversion %, and governance.
+ */
+export function calculateCategoryScores(params: {
+  renewablePercentage: number;
+  waterRecyclingPercentage: number;
+  wasteDiversionPercentage: number;
+  governanceScore: number;
+  benchmarkScores: Record<string, number>;
+  electricityCompleteness: number;
+  waterCompleteness: number;
+  wasteCompleteness: number;
+}): Record<string, number> {
+  const {
+    renewablePercentage,
+    waterRecyclingPercentage,
+    wasteDiversionPercentage,
+    governanceScore,
+    benchmarkScores,
+    electricityCompleteness,
+    waterCompleteness,
+    wasteCompleteness,
+  } = params;
+
+  // Energy score: based on renewable % and energy intensity
+  const energyScore = Math.round(
+    (renewablePercentage * 0.6 +
+      Math.min(benchmarkScores.energyIntensityScore ?? 50, 100) * 0.4) *
+      (electricityCompleteness / 100)
+  );
+
+  // Water score: based on recycling % and completeness
+  const waterScore = Math.round(
+    waterRecyclingPercentage * (waterCompleteness / 100)
+  );
+
+  // Waste score: based on diversion % and completeness
+  const wasteScore = Math.round(
+    wasteDiversionPercentage * (wasteCompleteness / 100)
+  );
+
+  // Governance score
+  const governance = Math.round(governanceScore);
+
+  return {
+    energy: Math.min(energyScore, 100),
+    water: Math.min(waterScore, 100),
+    waste: Math.min(wasteScore, 100),
+    governance: Math.min(governance, 100),
+  };
+}
+
+/* ========================================= */
+/* REGULATORY READINESS CALCULATION          */
+/* ========================================= */
+
+/**
+ * Calculate regulatory readiness for major Indian regulations.
+ */
+export function calculateRegulatoryReadiness(params: {
+  renewablePercentage: number;
+  waterRecyclingPercentage: number;
+  wasteDiversionPercentage: number;
+  governanceScore: number;
+  completeness: number;
+  confidence: number;
+  benchmarkScores: Record<string, number>;
+}): {
+  regulation: string;
+  readiness: number;
+  risk: "Low" | "Medium" | "Medium-High" | "High";
+}[] {
+  const {
+    renewablePercentage,
+    waterRecyclingPercentage,
+    wasteDiversionPercentage,
+    governanceScore,
+    completeness,
+    confidence,
+    benchmarkScores,
+  } = params;
+
+  const regulations = [];
+
+  // BRSR (Business Responsibility and Sustainability Reporting) - SEBI
+  const brsrReadiness = Math.round(
+    Math.min(
+      completeness * 0.4 +
+        governanceScore * 0.3 +
+        renewablePercentage * 0.3,
+      100
+    )
+  );
+  const brsrRisk: "Low" | "Medium" | "Medium-High" | "High" =
+    brsrReadiness >= 75
+      ? "Low"
+      : brsrReadiness >= 60
+      ? "Medium"
+      : "Medium-High";
+  regulations.push({
+    regulation: "BRSR (SEBI)",
+    readiness: brsrReadiness,
+    risk: brsrRisk,
+  });
+
+  // BMW (Biomedical Waste) Rules 2016
+  const bmwReadiness = Math.round(
+    Math.min(completeness * 0.5 + governanceScore * 0.5, 100)
+  );
+  const bmwRisk: "Low" | "Medium" | "Medium-High" | "High" =
+    bmwReadiness >= 80
+      ? "Low"
+      : bmwReadiness >= 70
+      ? "Medium"
+      : bmwReadiness >= 50
+      ? "Medium-High"
+      : "High";
+  regulations.push({
+    regulation: "BMW Rules 2016",
+    readiness: bmwReadiness,
+    risk: bmwRisk,
+  });
+
+  // Hazardous Waste Rules 2016
+  const hazardousReadiness = Math.round(
+    Math.min(completeness * 0.6 + governanceScore * 0.4, 100)
+  );
+  const hazardousRisk: "Low" | "Medium" | "Medium-High" | "High" =
+    hazardousReadiness >= 75
+      ? "Low"
+      : hazardousReadiness >= 60
+      ? "Medium"
+      : "Medium-High";
+  regulations.push({
+    regulation: "Hazardous Waste Rules",
+    readiness: hazardousReadiness,
+    risk: hazardousRisk,
+  });
+
+  // Energy Conservation Act 2001
+  const energyReadiness = Math.round(
+    Math.min(
+      renewablePercentage * 0.4 +
+        benchmarkScores.energyIntensityScore * 0.3 +
+        governanceScore * 0.3,
+      100
+    )
+  );
+  const energyRisk: "Low" | "Medium" | "Medium-High" | "High" =
+    energyReadiness >= 75
+      ? "Low"
+      : energyReadiness >= 60
+      ? "Medium"
+      : energyReadiness >= 45
+      ? "Medium-High"
+      : "High";
+  regulations.push({
+    regulation: "Energy Conservation Act",
+    readiness: energyReadiness,
+    risk: energyRisk,
+  });
+
+  // Water Management Act (for water recycling)
+  const waterReadiness = Math.round(
+    Math.min(waterRecyclingPercentage * 1.5 + completeness * 0.2, 100)
+  );
+  const waterRisk: "Low" | "Medium" | "Medium-High" | "High" =
+    waterReadiness >= 70
+      ? "Low"
+      : waterReadiness >= 50
+      ? "Medium"
+      : "Medium-High";
+  regulations.push({
+    regulation: "Water Management Act",
+    readiness: waterReadiness,
+    risk: waterRisk,
+  });
+
+  return regulations;
+}
+
+/* ========================================= */
+/* STRENGTHS & GAPS IDENTIFICATION           */
+/* ========================================= */
+
+/**
+ * Identify strengths and critical gaps from calculated metrics.
+ */
+export function identifyStrengthsAndGaps(params: {
+  renewablePercentage: number;
+  waterRecyclingPercentage: number;
+  wasteDiversionPercentage: number;
+  governanceScore: number;
+  completeness: number;
+  benchmarkScores: Record<string, number>;
+  electricityCompleteness: number;
+  waterCompleteness: number;
+  wasteCompleteness: number;
+}): {
+  strengths: string[];
+  gaps: { text: string; severity: "High" | "Medium" | "Low" }[];
+} {
+  const {
+    renewablePercentage,
+    waterRecyclingPercentage,
+    wasteDiversionPercentage,
+    governanceScore,
+    completeness,
+    benchmarkScores,
+    electricityCompleteness,
+    waterCompleteness,
+    wasteCompleteness,
+  } = params;
+
+  const strengths: string[] = [];
+  const gaps: { text: string; severity: "High" | "Medium" | "Low" }[] = [];
+
+  // Identify Strengths
+  if (electricityCompleteness >= 75) {
+    strengths.push(
+      "Strong electricity data tracking — consistent monthly data available."
+    );
+  }
+  if (waterCompleteness >= 75) {
+    strengths.push("Comprehensive water management data — well-documented usage.");
+  }
+  if (wasteCompleteness >= 75) {
+    strengths.push(
+      "Strong waste segregation and tracking — fully implemented at source."
+    );
+  }
+  if (governanceScore >= 70) {
+    strengths.push(
+      "Governance accountability established — ESG owner designated."
+    );
+  }
+  if (completeness >= 80) {
+    strengths.push(
+      "High data completeness — 80%+ of ESG metrics tracked consistently."
+    );
+  }
+  if (waterRecyclingPercentage >= 30) {
+    strengths.push(
+      "Water treatment infrastructure in place — recycling systems operational."
+    );
+  }
+  if (wasteDiversionPercentage >= 40) {
+    strengths.push(
+      "Effective waste management — 40%+ diversion from landfill achieved."
+    );
+  }
+
+  // Identify Gaps
+  if (renewablePercentage < 25) {
+    gaps.push({
+      text: "No or minimal renewable energy integration — weakens multiple certifications.",
+      severity: "High",
+    });
+  }
+  if (benchmarkScores.energyIntensityScore < 60) {
+    gaps.push({
+      text: "Energy consumption above benchmark — implement efficiency upgrades.",
+      severity: "High",
+    });
+  }
+  if (governanceScore < 60) {
+    gaps.push({
+      text: "Limited ESG governance maturity — establish formal policies.",
+      severity: "High",
+    });
+  }
+  if (waterRecyclingPercentage < 15) {
+    gaps.push({
+      text: "Low water reuse practices — fresh water dependency is high.",
+      severity: "Medium",
+    });
+  }
+  if (wasteDiversionPercentage < 30) {
+    gaps.push({
+      text: "Below-benchmark waste diversion — improve segregation and recycling.",
+      severity: "Medium",
+    });
+  }
+  if (completeness < 70) {
+    gaps.push({
+      text: "Incomplete ESG data — insufficient months of data uploaded.",
+      severity: "Medium",
+    });
+  }
+
+  // Ensure we have at least a few items if none were found
+  if (strengths.length === 0) {
+    strengths.push("Data tracking initiated — foundation for improvement.");
+  }
+  if (gaps.length === 0) {
+    gaps.push({
+      text: "Continue monitoring metrics to maintain performance.",
+      severity: "Low",
+    });
+  }
+
+  return { strengths: strengths.slice(0, 4), gaps: gaps.slice(0, 4) };
+}
+
+/* ========================================= */
+/* PRIORITY ACTION ROADMAP                   */
+/* ========================================= */
+
+/**
+ * Generate priority action roadmap based on current metrics.
+ */
+export function generatePriorityRoadmap(params: {
+  renewablePercentage: number;
+  waterRecyclingPercentage: number;
+  wasteDiversionPercentage: number;
+  governanceScore: number;
+  completeness: number;
+  benchmarkScores: Record<string, number>;
+}): { action: string; timeline: string; impact: string }[] {
+  const {
+    renewablePercentage,
+    waterRecyclingPercentage,
+    wasteDiversionPercentage,
+    governanceScore,
+    completeness,
+    benchmarkScores,
+  } = params;
+
+  const roadmap: { action: string; timeline: string; impact: string }[] = [];
+
+  // Immediate priority: Governance
+  if (governanceScore < 70) {
+    roadmap.push({
+      action: "Formalize ESG policy and governance framework",
+      timeline: "Immediate",
+      impact: "Prerequisite for all certification pathways",
+    });
+  }
+
+  // Immediate priority: Complete data tracking
+  if (completeness < 80) {
+    roadmap.push({
+      action: "Achieve 100% monthly ESG data entry",
+      timeline: "Immediate",
+      impact: "Improves confidence in all assessments",
+    });
+  }
+
+  // Short-term: Energy efficiency
+  if (benchmarkScores.energyIntensityScore < 70) {
+    roadmap.push({
+      action: "Implement LED conversion program (80%+ coverage)",
+      timeline: "0–3 Months",
+      impact: "8–15% electricity consumption reduction",
+    });
+  }
+
+  // Short-term: Renewable energy planning
+  if (renewablePercentage < 30) {
+    roadmap.push({
+      action: "Develop renewable energy procurement plan",
+      timeline: "0–3 Months",
+      impact: "Improves IGBC and CDP readiness scores",
+    });
+  }
+
+  // Medium-term: Water management
+  if (waterRecyclingPercentage < 25) {
+    roadmap.push({
+      action: "Expand water recycling system capacity",
+      timeline: "3–6 Months",
+      impact: "Reduce freshwater consumption by 15–20%",
+    });
+  }
+
+  // Medium-term: Energy management systems
+  if (benchmarkScores.energyIntensityScore < 80) {
+    roadmap.push({
+      action: "Install centralized EMS/BMS monitoring",
+      timeline: "3–6 Months",
+      impact: "Real-time energy tracking and optimization",
+    });
+  }
+
+  // Long-term: Renewable energy deployment
+  if (renewablePercentage < 40) {
+    roadmap.push({
+      action: "Install rooftop solar or procure RECs",
+      timeline: "6–12 Months",
+      impact: "20–35% Scope 2 emissions reduction",
+    });
+  }
+
+  // Long-term: Advanced waste management
+  if (wasteDiversionPercentage < 50) {
+    roadmap.push({
+      action: "Establish waste-to-energy or advanced recycling",
+      timeline: "6–12 Months",
+      impact: "60%+ waste diversion from landfill",
+    });
+  }
+
+  // Ensure we always have at least 5 items
+  if (roadmap.length < 5) {
+    roadmap.push({
+      action: "Pursue advanced certifications (ISO 14001, NABH)",
+      timeline: "12+ Months",
+      impact: "Market differentiation and brand value",
+    });
+  }
+
+  return roadmap.slice(0, 5);
+}
+
 // End of additional engine functions
