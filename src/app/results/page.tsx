@@ -1,5 +1,8 @@
 "use client";
 import { useEffect, useState } from "react";
+import { Button } from "@/components/ui/button";
+import { DownloadReportButton } from "@/components/shared/DownloadReportButton";
+import { Link2, Mail, Phone } from "lucide-react";
  
 // ─── Types ────────────────────────────────────────────────────────────────────
 interface AssessmentData {
@@ -69,7 +72,7 @@ const certScore = (v: boolean | number): number => {
  
 // ─── Gauge SVG ────────────────────────────────────────────────────────────────
 function Gauge({ value, size = 88 }: { value: number; size?: number }) {
-  const r = 34; const cx = 44; const cy = 44;
+  const r = 34; const cx = 44;
   const circ = Math.PI * r;
   const offset = circ - (value / 100) * circ;
   const color = stageColor(value);
@@ -155,6 +158,7 @@ const MOCK: AssessmentData = {
 export default function ResultsPage() {
   const [data, setData] = useState<AssessmentData>(MOCK);
   const [loaded, setLoaded] = useState(false);
+  const [consultationOpen, setConsultationOpen] = useState(false);
  
   useEffect(() => {
     fetch("/api/assessment", { cache: "no-store" })
@@ -195,12 +199,13 @@ export default function ResultsPage() {
     <div style={{
       fontFamily: "'DM Sans', 'Segoe UI', sans-serif",
       background: "#f8fafc",
-      height: "100vh",
-      width: "100vw",
-      overflow: "hidden",
+      minHeight: "100vh",
+      width: "100%",
+      overflowY: "auto",
+      overflowX: "hidden",
       display: "flex",
       flexDirection: "column",
-      padding: "10px 14px 8px",
+      padding: "10px 14px 20px",
       boxSizing: "border-box",
       opacity: loaded ? 1 : 0,
       transition: "opacity 0.4s ease",
@@ -221,18 +226,66 @@ export default function ResultsPage() {
             </div>
           </div>
         </div>
-        <div style={{ display: "flex", gap: 6 }}>
-          <button style={{ padding: "5px 12px", fontSize: 11, fontWeight: 600, background: "#0f172a", color: "#fff", border: "none", borderRadius: 6, cursor: "pointer" }}>
-            ↓ Download Report
-          </button>
-          <button style={{ padding: "5px 12px", fontSize: 11, fontWeight: 600, background: "#f1f5f9", color: "#475569", border: "1px solid #e2e8f0", borderRadius: 6, cursor: "pointer" }}>
+        <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+          <DownloadReportButton
+            data={data}
+            label={loaded ? "Download Report" : "Loading report..."}
+            className="min-w-[140px] bg-slate-900 text-white hover:bg-slate-800"
+            disabled={!loaded}
+          />
+          <Button
+            variant="outline"
+            className="min-w-[140px] border-slate-200 text-slate-700 hover:bg-slate-100"
+            onClick={() => setConsultationOpen((prev) => !prev)}
+          >
             Book Consultation
-          </button>
+          </Button>
         </div>
       </div>
  
+      {consultationOpen && (
+        <div style={{ marginBottom: 8, borderRadius: 14, background: "#ffffff", border: "1px solid #e2e8f0", padding: 16, boxShadow: "0 8px 30px rgba(15, 23, 42, 0.08)" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12, marginBottom: 14 }}>
+            <div>
+              <p style={{ margin: 0, fontSize: 12, fontWeight: 700, color: "#10b981", textTransform: "uppercase", letterSpacing: "0.1em" }}>
+                Consultation Request
+              </p>
+              <h2 style={{ margin: "8px 0 0", fontSize: 18, fontWeight: 800, color: "#0f172a" }}>
+                Book your ESG consultation with SAM Corporate
+              </h2>
+            </div>
+            <Button variant="ghost" size="sm" onClick={() => setConsultationOpen(false)}>
+              Close
+            </Button>
+          </div>
+          <p style={{ margin: 0, fontSize: 13, lineHeight: 1.7, color: "#475569" }}>
+            Get a personalized review of your ESG assessment, customized action plans, and expert guidance to accelerate sustainability readiness. Share your details and we will connect you with our specialist team.
+          </p>
+          <div style={{ display: "grid", gap: 8, marginTop: 16, gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))" }}>
+            <div style={{ padding: 14, borderRadius: 14, background: "#f8fafc", border: "1px solid #e2e8f0" }}>
+              <p style={{ margin: 0, fontSize: 12, fontWeight: 700, color: "#0f172a" }}>Email</p>
+              <p style={{ margin: "8px 0 0", fontSize: 14, color: "#475569" }}><Mail className="inline-block" style={{ marginRight: 8, verticalAlign: "middle" }} /> hello@samcorporate.com</p>
+            </div>
+            <div style={{ padding: 14, borderRadius: 14, background: "#f8fafc", border: "1px solid #e2e8f0" }}>
+              <p style={{ margin: 0, fontSize: 12, fontWeight: 700, color: "#0f172a" }}>Phone</p>
+              <p style={{ margin: "8px 0 0", fontSize: 14, color: "#475569" }}><Phone className="inline-block" style={{ marginRight: 8, verticalAlign: "middle" }} /> +91 22 1234 5678</p>
+            </div>
+            <div style={{ padding: 14, borderRadius: 14, background: "#f8fafc", border: "1px solid #e2e8f0" }}>
+              <p style={{ margin: 0, fontSize: 12, fontWeight: 700, color: "#0f172a" }}>Connect</p>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 8 }}>
+                <a href="https://www.linkedin.com/company/sam-corporate/posts/?feedView=all" target="_blank" rel="noreferrer" style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "8px 10px", borderRadius: 10, background: "#eef2ff", color: "#4338ca", textDecoration: "none", fontSize: 13 }}><Link2 size={16} /> LinkedIn</a>
+                <a href="https://www.facebook.com/samcorporate/" target="_blank" rel="noreferrer" style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "8px 10px", borderRadius: 10, background: "#f8fafc", color: "#1f2937", textDecoration: "none", fontSize: 13 }}><Link2 size={16} /> Facebook</a>
+                <a href="https://x.com/SamCorporate" target="_blank" rel="noreferrer" style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "8px 10px", borderRadius: 10, background: "#f8fafc", color: "#0f172a", textDecoration: "none", fontSize: 13 }}><Link2 size={16} /> X</a>
+                <a href="https://www.instagram.com/samcorporate/" target="_blank" rel="noreferrer" style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "8px 10px", borderRadius: 10, background: "#fff7ed", color: "#c2410c", textDecoration: "none", fontSize: 13 }}><Link2 size={16} /> Instagram</a>
+                <a href="https://www.youtube.com/channel/UCPSzEWs8GN8RIG5lzHbjCAg" target="_blank" rel="noreferrer" style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "8px 10px", borderRadius: 10, background: "#f8fafc", color: "#dc2626", textDecoration: "none", fontSize: 13 }}><Link2 size={16} /> YouTube</a>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+ 
       {/* ── Main grid ── */}
-      <div style={{ flex: 1, display: "grid", gridTemplateColumns: "180px 1fr 1fr 1fr", gridTemplateRows: "1fr 1fr", gap: 8, minHeight: 0 }}>
+      <div style={{ flex: 1, display: "grid", gridTemplateColumns: "minmax(180px, 240px) minmax(220px, 1fr) minmax(220px, 1fr) minmax(220px, 1fr)", gridAutoRows: "minmax(240px, auto)", gap: 16, minHeight: 0 }}>
  
         {/* ── Col 1: Overall Hero (spans 2 rows) ── */}
         <div style={{ gridRow: "1 / 3", background: "#fff", borderRadius: 12, border: "1px solid #e2e8f0", padding: "14px 12px", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "space-between" }}>

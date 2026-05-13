@@ -1,4 +1,5 @@
 import { getSummaryData } from "@/actions/summary.actions";
+import { GoToResultsButton } from "@/components/shared/GoToResultsButton";
 
 type DriverType =
   | "positive"
@@ -201,6 +202,10 @@ export default async function SummaryPage() {
                 analytics, carbon intelligence,
                 and ESG scoring insights.
               </p>
+
+              <div className="mt-4">
+                <GoToResultsButton />
+              </div>
 
             </div>
 
