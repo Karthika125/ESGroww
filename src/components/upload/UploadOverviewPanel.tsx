@@ -59,21 +59,37 @@ type Props = {
 
 export default function UploadOverviewPanel({ refreshKey = 0, variant = "default" }: Props) {
   const [payload, setPayload] = useState<UploadProgressPayload | null>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     let cancelled = false;
+    setLoading(true);
     (async () => {
       const data = await getUploadProgress();
-      if (!cancelled) setPayload(data);
+      if (!cancelled) {
+        setPayload(data);
+        setLoading(false);
+      }
     })();
     return () => {
       cancelled = true;
     };
   }, [refreshKey]);
 
-  const overview = useMemo(() => (payload ? buildOverview(payload) : null), [payload]);
+  // Build overview from real data, or fall back to a zero-state if null
+  const overview = useMemo(() => {
+    if (payload) return buildOverview(payload);
+    // Zero-state: no data yet
+    return {
+      completed: 0,
+      partial: 0,
+      notStarted: 7,
+      overallPct: 0,
+      chartData: [] as { name: string; value: number; fill: string }[],
+    };
+  }, [payload]);
 
-  if (!overview || !payload) {
+  if (loading) {
     return (
       <div
         className={cn(
