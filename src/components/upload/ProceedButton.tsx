@@ -4,9 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowRight, Lock } from "lucide-react";
 import { getUploadProgress } from "@/actions/uploadProgress.actions";
-
-const MANDATORY_CATEGORIES = ["electricity", "water", "waste"] as const;
-const MIN_MONTHS = 6;
+import { BRD_MIN_MONTHS_FOR_READINESS_GATE } from "@/lib/upload/brdConstants";
 
 export default function ProceedButton({
   refreshKey = 0,
@@ -24,12 +22,8 @@ export default function ProceedButton({
       const data = await getUploadProgress();
       if (!data) return;
 
-      const missingList = MANDATORY_CATEGORIES.filter(
-        (cat) => (data[cat] ?? 0) < MIN_MONTHS
-      );
-
-      setMissing(missingList);
-      setCanProceed(missingList.length === 0);
+      setMissing(data.readiness.mandatoryGaps.map((g) => g.category));
+      setCanProceed(data.readiness.overallReadinessUnlocked);
     }
     check();
   }, [refreshKey]);
@@ -58,8 +52,9 @@ export default function ProceedButton({
           Locked
         </button>
         {missing.length > 0 && (
-          <p className="max-w-[14rem] text-[9px] leading-snug text-rose-600">
-            Need ≥6 mo: {missing.map((m) => m.charAt(0).toUpperCase() + m.slice(1)).join(", ")}
+          <p className="max-w-[14rem] text-[9px] leading-snug text-slate-500">
+            Readiness locked · need {BRD_MIN_MONTHS_FOR_READINESS_GATE} distinct mo:{" "}
+            {missing.map((m) => m.charAt(0).toUpperCase() + m.slice(1)).join(", ")}
           </p>
         )}
       </div>
@@ -88,8 +83,9 @@ export default function ProceedButton({
         Continue to Summary
       </button>
       {missing.length > 0 && (
-        <p className="text-xs text-rose-500">
-          Need ≥6 months for: {missing.map((m) => m.charAt(0).toUpperCase() + m.slice(1)).join(", ")}
+        <p className="text-xs text-slate-500">
+          Readiness locked — need {BRD_MIN_MONTHS_FOR_READINESS_GATE} distinct months each for:{" "}
+          {missing.map((m) => m.charAt(0).toUpperCase() + m.slice(1)).join(", ")}
         </p>
       )}
     </div>

@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { Zap, Droplets, Fuel, Trash2, Snowflake, Truck, ShieldCheck, FileText } from "lucide-react";
 
-import { getUploadProgress, type UploadProgressPayload } from "@/actions/uploadProgress.actions";
+import { getUploadProgress, type CategoryReadinessSlice, type UploadProgressPayload } from "@/actions/uploadProgress.actions";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import ExcelUploadButton from "./ExcelUploadButton";
@@ -21,11 +21,21 @@ interface CategoryConfig {
   template: string;
 }
 
-function getStatusStyle(uploaded: number): {
+function getStatusStyle(
+  uploaded: number,
+  readiness?: CategoryReadinessSlice
+): {
   bar: string;
   label: string;
   badge: string;
 } {
+  if (readiness && uploaded > 0 && !readiness.readinessUnlocked) {
+    return {
+      bar: "bg-slate-300",
+      label: "text-slate-500",
+      badge: "border-slate-200 bg-slate-100 text-slate-600",
+    };
+  }
   if (uploaded === 12)
     return {
       bar: "bg-emerald-500",
@@ -51,8 +61,11 @@ function getStatusStyle(uploaded: number): {
   };
 }
 
-function statusLabel(uploaded: number): string {
+function statusLabel(uploaded: number, readiness?: CategoryReadinessSlice): string {
   if (uploaded === 12) return "Complete";
+  if (readiness && uploaded > 0 && !readiness.readinessUnlocked) {
+    return `${uploaded}/${readiness.minReadinessMonths} mo`;
+  }
   if (uploaded >= 6) return "Partial";
   if (uploaded >= 3) return "Low data";
   if (uploaded > 0) return "Insufficient";
@@ -119,14 +132,15 @@ const CATEGORIES: CategoryConfig[] = [
 interface CategoryCardProps {
   config: CategoryConfig;
   uploadedMonths: number;
+  readiness?: CategoryReadinessSlice;
   onUploadSuccess: () => void;
   compact?: boolean;
 }
 
-function CategoryCard({ config, uploadedMonths, onUploadSuccess, compact }: CategoryCardProps) {
+function CategoryCard({ config, uploadedMonths, readiness, onUploadSuccess, compact }: CategoryCardProps) {
   const pct = Math.min((uploadedMonths / 12) * 100, 100);
-  const style = getStatusStyle(uploadedMonths);
-  const label = statusLabel(uploadedMonths);
+  const style = getStatusStyle(uploadedMonths, readiness);
+  const label = statusLabel(uploadedMonths, readiness);
   const Icon = config.icon;
 
   if (compact) {
@@ -159,6 +173,11 @@ function CategoryCard({ config, uploadedMonths, onUploadSuccess, compact }: Cate
                 {uploadedMonths}/12
               </span>
             </div>
+            {readiness && (
+              <p className="text-[9px] leading-tight text-slate-400">
+                Readiness: {readiness.distinctMonths}/{readiness.minReadinessMonths} · {readiness.confidenceLabel}
+              </p>
+            )}
             <div className="h-1 overflow-hidden rounded-full bg-slate-100">
               <div
                 className={`h-full rounded-full transition-all duration-300 ${style.bar}`}
@@ -304,6 +323,7 @@ export default function UploadCategoryGrid({
               key={cat.key}
               config={cat}
               uploadedMonths={payload?.[cat.key] ?? 0}
+              readiness={payload?.readiness?.categories[cat.key]}
               onUploadSuccess={afterUpload}
               compact
             />
@@ -411,6 +431,7 @@ export default function UploadCategoryGrid({
             key={cat.key}
             config={cat}
             uploadedMonths={payload?.[cat.key] ?? 0}
+            readiness={payload?.readiness?.categories[cat.key]}
             onUploadSuccess={afterUpload}
           />
         ))}

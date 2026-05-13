@@ -12,19 +12,30 @@ const MONTH_NAMES = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Se
 type UploadRow = {
   id: string;
   fileUrl: string;
+  sourceFile?: string | null;
   category: string;
   month: string;
   year: number;
   createdAt: Date | string;
   status?: string;
+  rowCount?: number | null;
+  version?: number | null;
+  uploadBatch?: {
+    batchVersion: number;
+    resolutionStrategy: string | null;
+    isSuperseded: boolean;
+    distinctMonthCount: number | null;
+    rowCount: number | null;
+  } | null;
 };
 
-function getFileName(fileUrl: string): string {
+function getFileName(fileUrl: string, sourceFile?: string | null): string {
+  const raw = sourceFile || fileUrl;
   try {
-    const parts = fileUrl.split(/[/\\]/);
-    return parts[parts.length - 1] || fileUrl;
+    const parts = raw.split(/[/\\]/);
+    return parts[parts.length - 1] || raw;
   } catch {
-    return fileUrl;
+    return raw;
   }
 }
 
@@ -117,6 +128,9 @@ export default function RecentUploadsTable({
   }, [limit, refreshKey]);
 
   const monthLabel = (month: number | string, year: number | string) => {
+    if (typeof month === "string" && Number.isNaN(Number(month))) {
+      return `${month} ${year}`;
+    }
     const m = Number(month);
     const name = MONTH_NAMES[m - 1] ?? `M${month}`;
     return `${name} ${year}`;
@@ -179,9 +193,9 @@ export default function RecentUploadsTable({
                       "truncate font-medium text-slate-800",
                       compact ? "text-[10px]" : "max-w-[200px]"
                     )}
-                    title={getFileName(row.fileUrl)}
+                    title={getFileName(row.fileUrl, row.sourceFile)}
                   >
-                    {getFileName(row.fileUrl)}
+                    {getFileName(row.fileUrl, row.sourceFile)}
                   </span>
                 </div>
               </td>
@@ -200,7 +214,13 @@ export default function RecentUploadsTable({
                   compact ? "px-1 py-1" : "hidden px-5 py-3.5 md:table-cell"
                 )}
               >
-                {monthLabel(row.month, row.year)}
+                {row.uploadBatch?.distinctMonthCount != null ? (
+                  <span title="Distinct months in batch">
+                    Batch {row.uploadBatch.batchVersion} · {row.uploadBatch.distinctMonthCount} mo
+                  </span>
+                ) : (
+                  monthLabel(row.month, row.year)
+                )}
               </td>
               <td
                 className={cn(
@@ -246,7 +266,7 @@ export default function RecentUploadsTable({
                       </div>
                       <div>
                         <dt className="text-slate-400">File</dt>
-                        <dd className="break-all">{getFileName(row.fileUrl)}</dd>
+                        <dd className="break-all">{getFileName(row.fileUrl, row.sourceFile)}</dd>
                       </div>
                       <div>
                         <dt className="text-slate-400">Category</dt>

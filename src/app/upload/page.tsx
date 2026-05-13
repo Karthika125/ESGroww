@@ -1,6 +1,7 @@
 import { Info } from "lucide-react";
 
 import UploadWorkspace from "@/components/upload/UploadWorkspace";
+import { BRD_MIN_MONTHS_FOR_READINESS_GATE } from "@/lib/upload/brdConstants";
 
 export default function UploadPage() {
   return (
@@ -16,8 +17,9 @@ export default function UploadPage() {
         <div className="flex shrink-0 items-start gap-2 rounded-lg border border-blue-100 bg-blue-50/90 px-2 py-1.5 text-[11px] leading-snug text-blue-900">
           <Info className="mt-0.5 size-3.5 shrink-0 text-blue-600" aria-hidden />
           <p>
-            <strong className="font-semibold">6 months minimum</strong> for Electricity, Water, and Waste.{" "}
-            <strong className="font-semibold">12 months</strong> recommended for confidence.
+            <strong className="font-semibold">Incremental uploads</strong> are always accepted when valid. Readiness for summary unlocks
+            at <strong>{BRD_MIN_MONTHS_FOR_READINESS_GATE} distinct months</strong> each for Electricity, Water, and Waste.{" "}
+            <strong className="font-semibold">12 months</strong> recommended for maximum confidence.
           </p>
         </div>
 

@@ -30,6 +30,18 @@ import {
   identifyStrengthsAndGaps,
   generatePriorityRoadmap,
 } from "@/lib/esgCalculations";
+import {
+  BRD_MIN_MONTHS_FOR_ANNUALIZATION,
+  BRD_MIN_MONTHS_FOR_READINESS_GATE,
+} from "@/lib/upload/brdConstants";
+
+function distinctOperationalMonths<T extends { month: string; year: number }>(rows: T[]): number {
+  return new Set(rows.map((r) => `${r.year}|${r.month}`)).size;
+}
+
+function annualizationDenominator(distinctMonths: number): number {
+  return distinctMonths >= BRD_MIN_MONTHS_FOR_ANNUALIZATION ? distinctMonths : 0;
+}
 
 export async function computeAndSaveAssessment() {
   const user = await getCurrentUser();
@@ -149,17 +161,22 @@ export async function computeAndSaveAssessment() {
   // MONTH COUNTS
   // ─────────────────────────────────────────────
 
-  const electricityMonths =
-    electricityData.length;
+  const electricityMonths = distinctOperationalMonths(electricityData);
 
-  const waterMonths =
-    waterData.length;
+  const waterMonths = distinctOperationalMonths(waterData);
 
-  const fuelMonths =
-    fuelData.length;
+  const fuelMonths = distinctOperationalMonths(fuelData);
 
-  const wasteMonths =
-    wasteData.length;
+  const wasteMonths = distinctOperationalMonths(wasteData);
+
+  const transportDistinctMonths = distinctOperationalMonths(transportData);
+
+  const refrigerantDistinctMonths = distinctOperationalMonths(refrigerantData);
+
+  const readinessEligible =
+    electricityMonths >= BRD_MIN_MONTHS_FOR_READINESS_GATE &&
+    waterMonths >= BRD_MIN_MONTHS_FOR_READINESS_GATE &&
+    wasteMonths >= BRD_MIN_MONTHS_FOR_READINESS_GATE;
 
   // ─────────────────────────────────────────────
   // COMPLETENESS
@@ -227,29 +244,16 @@ export async function computeAndSaveAssessment() {
   // ANNUALIZATION
   // ─────────────────────────────────────────────
 
-  const annualizedElectricity =
-    annualizeElectricity(
-      totalElectricity,
-      electricityMonths
-    );
+  const annualizedElectricity = annualizeElectricity(
+    totalElectricity,
+    annualizationDenominator(electricityMonths)
+  );
 
-  const annualizedWater =
-    annualizeWater(
-      totalWater,
-      waterMonths
-    );
+  const annualizedWater = annualizeWater(totalWater, annualizationDenominator(waterMonths));
 
-  const annualizedFuel =
-    annualizeFuel(
-      totalFuel,
-      fuelMonths
-    );
+  const annualizedFuel = annualizeFuel(totalFuel, annualizationDenominator(fuelMonths));
 
-  const annualizedWaste =
-    annualizeWaste(
-      totalWaste,
-      wasteMonths
-    );
+  const annualizedWaste = annualizeWaste(totalWaste, annualizationDenominator(wasteMonths));
 
   // ─────────────────────────────────────────────
   // EMISSIONS
@@ -411,15 +415,15 @@ export async function computeAndSaveAssessment() {
   // READINESS STAGE
   // ─────────────────────────────────────────────
 
-  const readinessStage =
-    determineReadinessStage({
-      completeness:
-        overallCompleteness,
-      confidence:
-        confidenceScore,
-      certificationReady:
-        overallScore >= 70,
-    });
+  let readinessStage = determineReadinessStage({
+    completeness: overallCompleteness,
+    confidence: confidenceScore,
+    certificationReady: overallScore >= 70,
+  });
+
+  if (!readinessEligible) {
+    readinessStage = "Operational data lock (months)";
+  }
 
   // ─────────────────────────────────────────────
   // REGULATORY READINESS
@@ -822,30 +826,28 @@ export async function computeAndSaveAssessment() {
       waste: annualizedWaste,
 
       monthsUploaded: {
-        electricity:
-          electricityMonths,
-
+        electricity: electricityMonths,
         water: waterMonths,
-
         fuel: fuelMonths,
-
         waste: wasteMonths,
+        transport: transportDistinctMonths,
+        refrigerants: refrigerantDistinctMonths,
       },
     },
 
     categoryScores: {
       energy:
-        electricityMonths >= 3
+        electricityMonths >= BRD_MIN_MONTHS_FOR_ANNUALIZATION
           ? categoryScores.energy
           : 0,
 
       water:
-        waterMonths >= 3
+        waterMonths >= BRD_MIN_MONTHS_FOR_ANNUALIZATION
           ? categoryScores.water
           : 0,
 
       waste:
-        wasteMonths >= 3
+        wasteMonths >= BRD_MIN_MONTHS_FOR_ANNUALIZATION
           ? categoryScores.waste
           : 0,
 
@@ -881,59 +883,64 @@ export async function computeAndSaveAssessment() {
     },
 
     metadata: {
-      minimumRequiredMonths: 3,
+      minimumRequiredMonths: BRD_MIN_MONTHS_FOR_ANNUALIZATION,
+      minimumAnnualizationMonths: BRD_MIN_MONTHS_FOR_ANNUALIZATION,
+      minimumReadinessMonths: BRD_MIN_MONTHS_FOR_READINESS_GATE,
+      readinessEligible,
 
       dataAvailability: {
-        electricity:
-          electricityMonths > 0,
-
-        water:
-          waterMonths > 0,
-
-        fuel:
-          fuelMonths > 0,
-
-        waste:
-          wasteMonths > 0,
+        electricity: electricityMonths > 0,
+        water: waterMonths > 0,
+        fuel: fuelMonths > 0,
+        waste: wasteMonths > 0,
       },
 
       insufficientData: {
         electricity:
-          electricityMonths > 0 &&
-          electricityMonths < 3,
+          electricityMonths > 0 && electricityMonths < BRD_MIN_MONTHS_FOR_ANNUALIZATION,
+        water: waterMonths > 0 && waterMonths < BRD_MIN_MONTHS_FOR_ANNUALIZATION,
+        fuel: fuelMonths > 0 && fuelMonths < BRD_MIN_MONTHS_FOR_ANNUALIZATION,
+        waste: wasteMonths > 0 && wasteMonths < BRD_MIN_MONTHS_FOR_ANNUALIZATION,
+      },
 
-        water:
-          waterMonths > 0 &&
-          waterMonths < 3,
-
-        fuel:
-          fuelMonths > 0 &&
-          fuelMonths < 3,
-
-        waste:
-          wasteMonths > 0 &&
-          wasteMonths < 3,
+      insufficientReadiness: {
+        electricity:
+          electricityMonths > 0 && electricityMonths < BRD_MIN_MONTHS_FOR_READINESS_GATE,
+        water: waterMonths > 0 && waterMonths < BRD_MIN_MONTHS_FOR_READINESS_GATE,
+        waste: wasteMonths > 0 && wasteMonths < BRD_MIN_MONTHS_FOR_READINESS_GATE,
       },
 
       messages: {
         electricity:
-          electricityMonths < 3
-            ? `Minimum 3 months required. Only ${electricityMonths} month(s) uploaded.`
+          electricityMonths < BRD_MIN_MONTHS_FOR_ANNUALIZATION
+            ? `Minimum ${BRD_MIN_MONTHS_FOR_ANNUALIZATION} distinct months required for annualization. ${electricityMonths} uploaded.`
             : null,
-
         water:
-          waterMonths < 3
-            ? `Minimum 3 months required. Only ${waterMonths} month(s) uploaded.`
+          waterMonths < BRD_MIN_MONTHS_FOR_ANNUALIZATION
+            ? `Minimum ${BRD_MIN_MONTHS_FOR_ANNUALIZATION} distinct months required for annualization. ${waterMonths} uploaded.`
             : null,
-
         fuel:
-          fuelMonths < 3
-            ? `Minimum 3 months required. Only ${fuelMonths} month(s) uploaded.`
+          fuelMonths < BRD_MIN_MONTHS_FOR_ANNUALIZATION
+            ? `Minimum ${BRD_MIN_MONTHS_FOR_ANNUALIZATION} distinct months required for annualization. ${fuelMonths} uploaded.`
             : null,
-
         waste:
-          wasteMonths < 3
-            ? `Minimum 3 months required. Only ${wasteMonths} month(s) uploaded.`
+          wasteMonths < BRD_MIN_MONTHS_FOR_ANNUALIZATION
+            ? `Minimum ${BRD_MIN_MONTHS_FOR_ANNUALIZATION} distinct months required for annualization. ${wasteMonths} uploaded.`
+            : null,
+      },
+
+      readinessMessages: {
+        electricity:
+          electricityMonths < BRD_MIN_MONTHS_FOR_READINESS_GATE
+            ? `${electricityMonths} distinct month(s) uploaded. Minimum ${BRD_MIN_MONTHS_FOR_READINESS_GATE} required for readiness unlock.`
+            : null,
+        water:
+          waterMonths < BRD_MIN_MONTHS_FOR_READINESS_GATE
+            ? `${waterMonths} distinct month(s) uploaded. Minimum ${BRD_MIN_MONTHS_FOR_READINESS_GATE} required for readiness unlock.`
+            : null,
+        waste:
+          wasteMonths < BRD_MIN_MONTHS_FOR_READINESS_GATE
+            ? `${wasteMonths} distinct month(s) uploaded. Minimum ${BRD_MIN_MONTHS_FOR_READINESS_GATE} required for readiness unlock.`
             : null,
       },
     },

@@ -281,11 +281,26 @@ export function calculateOverallCompleteness({
 export function calculateConfidenceScore(
   monthsUploaded: number
 ): number {
+  if (monthsUploaded <= 0) return 0;
+  if (monthsUploaded === 1) return 0.18;
+  if (monthsUploaded === 2) return 0.34;
   if (monthsUploaded >= 12) return 1.0;
   if (monthsUploaded >= 9) return 0.95;
   if (monthsUploaded >= 6) return 0.85;
   if (monthsUploaded >= 3) return 0.7;
   return 0;
+}
+
+/**
+ * Human-readable confidence tier for UI (aligned with dynamic month coverage).
+ */
+export function calculateConfidenceLabel(confidence: number): string {
+  if (!Number.isFinite(confidence) || confidence <= 0) return "Insufficient data";
+  if (confidence < 0.35) return "Low";
+  if (confidence < 0.6) return "Emerging";
+  if (confidence < 0.8) return "Medium";
+  if (confidence < 0.95) return "High";
+  return "Very high";
 }
 
 /* ========================================= */

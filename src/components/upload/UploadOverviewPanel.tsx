@@ -5,6 +5,7 @@ import { Check } from "lucide-react";
 import { Cell, Pie, PieChart, ResponsiveContainer } from "recharts";
 
 import { getUploadProgress, type UploadProgressPayload } from "@/actions/uploadProgress.actions";
+import { BRD_MIN_MONTHS_FOR_READINESS_GATE } from "@/lib/upload/brdConstants";
 import { cn } from "@/lib/utils";
 
 const MONTH_KEYS = ["electricity", "water", "fuel", "waste", "refrigerants", "transport"] as const;
@@ -186,7 +187,15 @@ export default function UploadOverviewPanel({ refreshKey = 0, variant = "default
         <div className="mt-2 flex gap-1.5 rounded-md border border-blue-100 bg-blue-50/90 px-2 py-1.5 text-[10px] leading-snug text-blue-900">
           <Check className="mt-0.5 size-3 shrink-0 text-blue-600" aria-hidden />
           <p>
-            <span className="font-medium">Gate:</span> Electricity, Water, Waste ≥6 months to continue.
+            <span className="font-medium">Readiness:</span>{" "}
+            {payload?.readiness?.overallReadinessUnlocked ? (
+              <span>Unlocked — Electricity, Water, and Waste each have ≥{BRD_MIN_MONTHS_FOR_READINESS_GATE} distinct months.</span>
+            ) : (
+              <span className="text-blue-950/90">
+                Locked until each of Electricity, Water, and Waste reaches {BRD_MIN_MONTHS_FOR_READINESS_GATE} distinct calendar months
+                (incremental uploads count toward the total).
+              </span>
+            )}
           </p>
         </div>
       </div>
@@ -272,8 +281,9 @@ export default function UploadOverviewPanel({ refreshKey = 0, variant = "default
       <div className="mt-6 flex gap-3 rounded-xl border border-blue-100 bg-blue-50 px-4 py-3 text-sm text-blue-800">
         <Check className="mt-0.5 h-5 w-5 flex-shrink-0 text-blue-600" />
         <p>
-          Electricity, Water, and Waste each need at least <strong>6 months</strong> of uploads before you can
-          continue to summary.
+          Uploads can be incremental (any number of valid months per file). Readiness for summary unlocks when
+          Electricity, Water, and Waste each reach{" "}
+          <strong>{BRD_MIN_MONTHS_FOR_READINESS_GATE} distinct calendar months</strong> of operational data.
         </p>
       </div>
     </div>

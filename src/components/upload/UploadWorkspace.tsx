@@ -6,6 +6,7 @@ import ProceedButton from "@/components/upload/ProceedButton";
 import RecentUploadsTable from "@/components/upload/RecentUploadsTable";
 import UploadCategoryGrid from "@/components/upload/UploadCategoryGrid";
 import UploadOverviewPanel from "@/components/upload/UploadOverviewPanel";
+import { BRD_MIN_MONTHS_FOR_READINESS_GATE } from "@/lib/upload/brdConstants";
 
 /** Laptop-first dashboard: primary path in one viewport; uploads list scrolls inside panel. */
 export default function UploadWorkspace() {
@@ -29,7 +30,8 @@ export default function UploadWorkspace() {
 
         <div className="flex shrink-0 flex-col gap-1.5 rounded-lg border border-slate-200 bg-white px-2.5 py-2 shadow-sm sm:flex-row sm:items-center sm:justify-between">
           <p className="text-[10px] leading-snug text-slate-500">
-            Electricity, Water, Waste: ≥6 months each to proceed.
+            Electricity, Water, Waste: {BRD_MIN_MONTHS_FOR_READINESS_GATE} distinct months each to unlock summary (incremental uploads
+            accumulate).
           </p>
           <ProceedButton refreshKey={refreshKey} compact />
         </div>
