@@ -1,46 +1,147 @@
+import { NextRequest, NextResponse } from "next/server";
+
+import crypto from "crypto";
+
 import { prisma } from "@/lib/db";
 
-import bcrypt from "bcryptjs";
+import {
+  hashPassword,
+  validatePasswordStrength,
+} from "@/lib/password";
 
-import { NextResponse } from "next/server";
+import {
+  validateEmail,
+  SECTOR_OPTIONS,
+} from "@/lib/validation";
+
+import { sendVerificationEmail } from "@/lib/email";
 
 export async function POST(
-  req: Request
+  request: NextRequest
 ) {
   try {
-    const body = await req.json();
+    const body =
+      await request.json();
 
     const {
-      hospitalName,
-      industry,
+      fullName,
       email,
       password,
-      numberOfBeds,
-      builtUpArea,
+      confirmPassword,
+      organizationName,
+      sectorCode,
+      country,
+      state,
+      acceptTerms,
     } = body;
 
-    /* ====================== */
-    /* VALIDATION             */
-    /* ====================== */
+    // REQUIRED
 
     if (
-      !hospitalName ||
+      !fullName ||
       !email ||
-      !password
+      !password ||
+      !confirmPassword ||
+      !organizationName ||
+      !sectorCode ||
+      !country ||
+      !state
     ) {
       return NextResponse.json(
         {
-          success: false,
           error:
-            "Missing required fields.",
+            "All mandatory fields are required.",
         },
-        { status: 400 }
+        {
+          status: 400,
+        }
       );
     }
 
-    /* ====================== */
-    /* CHECK EXISTING USER    */
-    /* ====================== */
+    // TERMS
+
+    if (!acceptTerms) {
+      return NextResponse.json(
+        {
+          error:
+            "Please accept Terms & Privacy Policy.",
+        },
+        {
+          status: 400,
+        }
+      );
+    }
+
+    // EMAIL
+
+    if (!validateEmail(email)) {
+      return NextResponse.json(
+        {
+          error:
+            "Invalid email format.",
+        },
+        {
+          status: 400,
+        }
+      );
+    }
+
+    // PASSWORD MATCH
+
+    if (
+      password !== confirmPassword
+    ) {
+      return NextResponse.json(
+        {
+          error:
+            "Passwords do not match.",
+        },
+        {
+          status: 400,
+        }
+      );
+    }
+
+    // PASSWORD STRENGTH
+
+    const validation =
+      validatePasswordStrength(
+        password
+      );
+
+    if (!validation.valid) {
+      return NextResponse.json(
+        {
+          error:
+            "Password must contain minimum 8 characters, 1 uppercase letter, 1 number, and 1 symbol.",
+        },
+        {
+          status: 400,
+        }
+      );
+    }
+
+    // SECTOR
+
+    const sectorExists =
+      SECTOR_OPTIONS.find(
+        (s) =>
+          s.code === sectorCode
+      );
+
+    if (!sectorExists) {
+      return NextResponse.json(
+        {
+          error:
+            "Invalid sector selected.",
+        },
+        {
+          status: 400,
+        }
+      );
+    }
+
+    // DUPLICATE EMAIL
 
     const existingUser =
       await prisma.user.findUnique({
@@ -52,90 +153,98 @@ export async function POST(
     if (existingUser) {
       return NextResponse.json(
         {
-          success: false,
           error:
-            "Email already registered.",
+            "An account with this email already exists.",
         },
-        { status: 400 }
+        {
+          status: 400,
+        }
       );
     }
 
-    /* ====================== */
-    /* HASH PASSWORD          */
-    /* ====================== */
-
     const hashedPassword =
-      await bcrypt.hash(
-        password,
-        10
+      await hashPassword(password);
+
+    const verificationToken =
+      crypto.randomBytes(32).toString(
+        "hex"
       );
 
-    /* ====================== */
-    /* CREATE HOSPITAL        */
-    /* ====================== */
+    const verificationExpiry =
+      new Date(
+        Date.now() +
+          1000 * 60 * 60 * 24
+      );
+
+    // CREATE HOSPITAL
 
     const hospital =
       await prisma.hospital.create({
         data: {
-          hospitalName,
+          hospitalName:
+            organizationName,
+
+          sectorCode,
 
           industry:
-            industry ||
-            "Healthcare",
+            sectorExists.label,
 
-          numberOfBeds:
-            Number(numberOfBeds) ||
-            0,
+          country,
 
-          builtUpArea:
-            Number(builtUpArea) ||
-            0,
+          state,
+
+          accountStatus:
+            "Pending Verification",
         },
       });
 
-    /* ====================== */
-    /* CREATE USER            */
-    /* ====================== */
+    // CREATE USER
 
-    const user =
-      await prisma.user.create({
-        data: {
-          email,
+    await prisma.user.create({
+      data: {
+        fullName,
 
-          password:
-            hashedPassword,
+        email,
 
-          hospitalId:
-            hospital.id,
+        password:
+          hashedPassword,
 
-          role: "hospital",
-        },
-      });
+        hospitalId:
+          hospital.id,
+
+        emailVerified: false,
+
+        emailVerificationToken:
+          verificationToken,
+
+        emailVerificationExpiry:
+          verificationExpiry,
+      },
+    });
+
+    await sendVerificationEmail({
+      email,
+      token:
+        verificationToken,
+    });
 
     return NextResponse.json({
       success: true,
 
       message:
-        "Registration successful.",
-
-      userId: user.id,
-
-      hospitalId:
-        hospital.id,
+        "Registration successful. Please verify your email.",
     });
   } catch (error) {
-    console.error(
-      "Register API Error:",
-      error
-    );
+    console.error(error);
 
     return NextResponse.json(
       {
-        success: false,
         error:
           "Registration failed.",
       },
-      { status: 500 }
+      {
+        status: 500,
+      }
     );
   }
 }

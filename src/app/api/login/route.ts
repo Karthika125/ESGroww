@@ -1,92 +1,256 @@
+import {
+  NextRequest,
+  NextResponse,
+} from "next/server";
+
 import { prisma } from "@/lib/db";
 
-import bcrypt from "bcryptjs";
+import {
+  comparePassword,
+} from "@/lib/password";
 
-import { generateToken } from "@/lib/auth";
+import {
+  createSessionToken,
+} from "@/lib/session";
 
-import { NextResponse } from "next/server";
-
-export async function POST(req: Request) {
+export async function POST(
+  request: NextRequest
+) {
   try {
-    const body = await req.json();
 
-    const { email, password } = body;
+    const body =
+      await request.json();
+
+    const {
+      email,
+      password,
+      rememberMe,
+    } = body;
+
+    // REQUIRED
 
     if (!email || !password) {
+
       return NextResponse.json(
         {
-          success: false,
-          error: "Email and password required.",
+          error:
+            "Email and password are required.",
         },
-        { status: 400 }
+        {
+          status: 400,
+        }
       );
     }
 
-    const user = await prisma.user.findUnique({
-      where: {
-        email,
-      },
-    });
+    // FIND USER
+
+    const user =
+      await prisma.user.findUnique({
+        where: {
+          email,
+        },
+
+        include: {
+          hospital: true,
+        },
+      });
+
+    // USER NOT FOUND
 
     if (!user) {
+
       return NextResponse.json(
         {
-          success: false,
-          error: "User not found.",
+          error:
+            "No account found with this email address.",
         },
-        { status: 404 }
+        {
+          status: 404,
+        }
       );
     }
 
-    const passwordMatch =
-      await bcrypt.compare(
+    // LOCKED ACCOUNT
+
+    if (
+      user.accountLockedUntil &&
+      user.accountLockedUntil >
+        new Date()
+    ) {
+
+      return NextResponse.json(
+        {
+          error:
+            "Account locked due to multiple failed attempts. Try again later.",
+        },
+        {
+          status: 403,
+        }
+      );
+    }
+
+    // EMAIL VERIFICATION
+
+    if (!user.emailVerified) {
+
+      return NextResponse.json(
+        {
+          error:
+            "Please verify your email before logging in.",
+        },
+        {
+          status: 403,
+        }
+      );
+    }
+
+    // ACCOUNT STATUS
+
+    if (
+      user.hospital.accountStatus !==
+      "Active"
+    ) {
+
+      return NextResponse.json(
+        {
+          error:
+            "Your account is not active.",
+        },
+        {
+          status: 403,
+        }
+      );
+    }
+
+    // PASSWORD CHECK
+
+    const validPassword =
+      await comparePassword(
         password,
         user.password
       );
 
-    if (!passwordMatch) {
+    // WRONG PASSWORD
+
+    if (!validPassword) {
+
+      const newAttempts =
+        user.failedLoginAttempts + 1;
+
+      let lockUntil = null;
+
+      if (newAttempts >= 5) {
+
+        lockUntil = new Date(
+          Date.now() +
+            1000 *
+              60 *
+              15
+        );
+      }
+
+      await prisma.user.update({
+        where: {
+          id: user.id,
+        },
+
+        data: {
+          failedLoginAttempts:
+            newAttempts,
+
+          accountLockedUntil:
+            lockUntil,
+        },
+      });
+
       return NextResponse.json(
         {
-          success: false,
-          error: "Invalid credentials.",
+          error:
+            newAttempts >= 5
+              ? "Account locked for 15 minutes due to multiple failed attempts."
+              : "Incorrect password.",
         },
-        { status: 401 }
+        {
+          status: 401,
+        }
       );
     }
 
-    const token = generateToken({
-      userId: user.id,
-      hospitalId: user.hospitalId,
-      role: user.role,
+    // SUCCESS LOGIN
+
+    await prisma.user.update({
+      where: {
+        id: user.id,
+      },
+
+      data: {
+        failedLoginAttempts: 0,
+
+        accountLockedUntil: null,
+
+        lastLoginAt:
+          new Date(),
+
+        rememberMeEnabled:
+          rememberMe || false,
+      },
     });
 
-    const response = NextResponse.json({
-      success: true,
-      message: "Login successful.",
-    });
+    // CREATE TOKEN
 
-    response.cookies.set(
-      "token",
-      token,
-      {
-        httpOnly: true,
-        secure: false,
-        sameSite: "lax",
-        path: "/",
-        maxAge: 60 * 60 * 24 * 7,
-      }
-    );
+    const token =
+      createSessionToken({
+        userId: user.id,
+
+        hospitalId:
+          user.hospitalId,
+
+        rememberMe,
+      });
+
+    // RESPONSE
+
+    const response =
+      NextResponse.json({
+        success: true,
+      });
+
+    // SESSION COOKIE
+
+    response.cookies.set({
+      name: "session",
+
+      value: token,
+
+      httpOnly: true,
+
+      secure:
+        process.env.NODE_ENV ===
+        "production",
+
+      sameSite: "lax",
+
+      path: "/",
+
+      maxAge: rememberMe
+        ? 60 * 60 * 24 * 30
+        : 60 * 60,
+    });
 
     return response;
+
   } catch (error) {
+
     console.error(error);
 
     return NextResponse.json(
       {
-        success: false,
-        error: "Login failed.",
+        error:
+          "Login failed.",
       },
-      { status: 500 }
+      {
+        status: 500,
+      }
     );
   }
 }

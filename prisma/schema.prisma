@@ -43,16 +43,44 @@ model Hospital {
 }
 
 model User {
-  id         String   @id @default(cuid())
-  email      String   @unique
-  password   String
-  role       String   @default("hospital")
-  hospitalId String
-  createdAt  DateTime @default(now())
+  id                       String   @id @default(cuid())
+
+  fullName                 String
+
+  email                    String   @unique
+
+  password                 String
+
+  role                     String   @default("hospital_admin")
+
+  hospitalId               String
+
+  emailVerified            Boolean  @default(false)
+
+  emailVerificationToken   String?
+
+  emailVerificationExpiry  DateTime?
+
+  resetPasswordToken       String?
+
+  resetPasswordExpiry      DateTime?
+
+  failedLoginAttempts      Int      @default(0)
+
+  accountLockedUntil       DateTime?
+
+  lastLoginAt              DateTime?
+
+  lastLoginIp              String?
+
+  rememberMeEnabled        Boolean  @default(false)
+
+  createdAt                DateTime @default(now())
+
+  updatedAt                DateTime @updatedAt
 
   hospital Hospital @relation(fields: [hospitalId], references: [id])
 }
-
 model ElectricityData {
   id              String   @id @default(cuid())
   hospitalId      String
