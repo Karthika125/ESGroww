@@ -16,7 +16,7 @@ export default function UploadPage() {
             <span className="w-5 h-5 rounded-full bg-emerald-600 text-white flex items-center justify-center text-[10px] font-bold">1</span>
             Step 1 of 3
           </div>
-          <h1 className="text-3xl font-bold text-slate-900">Data Load</h1>
+          <h1 className="text-3xl font-bold text-slate-900">Assessment</h1>
           <p className="text-slate-500 mt-1.5 text-sm">
             Upload your operational records and complete the governance questionnaire.
           </p>
