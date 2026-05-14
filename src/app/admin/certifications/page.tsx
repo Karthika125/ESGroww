@@ -1,268 +1,269 @@
-'use client';
+"use client";
 
-import { useEffect, useState } from 'react';
-import { ArrowLeft, Award, CheckCircle, AlertCircle } from 'lucide-react';
-import Link from 'next/link';
+import { useEffect, useMemo, useState } from "react";
+import { adminGlassCard, AdminEmpty, AdminSectionTitle, ExportCsvButton } from "@/components/admin/admin-ui";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
 
-interface Certification {
-  framework: string;
-  readinessScore: number;
+type Hospital = { id: string; hospitalName: string; sectorCode: string };
+type Score = {
+  id: string;
+  certificationName: string;
+  readinessPercent: number;
   statusLabel: string;
-  majorGap: string;
-  recommendedTimeline: string;
-  prerequisites: string[];
-}
+  majorGap: string | null;
+  recommendedTimeline: string | null;
+  hospital: { hospitalName: string; sectorCode: string };
+};
+type AppRow = { sectorCode: string; certificationName: string; importanceLevel: string };
+type FW = { certificationName: string; avgReadiness: number; records: number };
 
-export default function CertificationsPage() {
-  const [hospitals, setHospitals] = useState<any[]>([]);
-  const [selectedHospital, setSelectedHospital] = useState<string>('all');
+export default function CertificationsAdminPage() {
+  const [sector, setSector] = useState<string>("all");
+  const [hospitalId, setHospitalId] = useState("all");
+  const [search, setSearch] = useState("");
+  const [data, setData] = useState<{
+    hospitals: Hospital[];
+    applicability: AppRow[];
+    scores: Score[];
+    frameworkAnalytics: FW[];
+  } | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    fetchCertifications();
-  }, []);
+    let cancelled = false;
+    (async () => {
+      try {
+        setLoading(true);
+        const params = new URLSearchParams();
+        if (hospitalId !== "all") params.set("hospitalId", hospitalId);
+        if (sector !== "all") params.set("sector", sector);
+        const res = await fetch(`/api/admin/certifications?${params.toString()}`);
+        const json = await res.json();
+        if (!cancelled) {
+          if (!res.ok) setError(json.error ?? "Failed");
+          else {
+            setData(json);
+            setError(null);
+          }
+        }
+      } catch (e) {
+        if (!cancelled) setError(e instanceof Error ? e.message : "Error");
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [hospitalId, sector]);
 
-  async function fetchCertifications() {
-    try {
-      setLoading(true);
-      const response = await fetch('/api/admin/certifications');
-      if (!response.ok) throw new Error('Failed to fetch certifications');
-      const data = await response.json();
-      setHospitals(data);
-      setError(null);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Unknown error');
-      setHospitals([]);
-    } finally {
-      setLoading(false);
-    }
+  const filteredScores = useMemo(() => {
+    if (!data) return [];
+    const q = search.trim().toLowerCase();
+    return data.scores.filter((s) => {
+      const ok =
+        !q ||
+        s.certificationName.toLowerCase().includes(q) ||
+        s.hospital.hospitalName.toLowerCase().includes(q);
+      return ok;
+    });
+  }, [data, search]);
+
+  if (loading) {
+    return (
+      <div className="flex min-h-[40vh] items-center justify-center">
+        <div className="h-9 w-9 animate-spin rounded-full border-2 border-[#d5ddd6] border-t-[#00673F]" />
+      </div>
+    );
   }
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'Advanced':
-        return 'bg-emerald-600 text-white';
-      case 'Strong Readiness':
-        return 'bg-emerald-500 text-white';
-      case 'Certification Possible':
-        return 'bg-amber-600 text-white';
-      case 'Foundational':
-        return 'bg-orange-600 text-white';
-      case 'Not Ready':
-        return 'bg-red-600 text-white';
-      default:
-        return 'bg-slate-600 text-white';
-    }
-  };
+  if (error || !data) {
+    return <AdminEmpty title="Certification intelligence unavailable" body={error ?? ""} />;
+  }
 
-  const getCertifications = (): Certification[] => [
-    {
-      framework: 'IGBC Healthcare',
-      readinessScore: 82,
-      statusLabel: 'Strong Readiness',
-      majorGap: 'STP water reuse <15%',
-      recommendedTimeline: '6–12M',
-      prerequisites: ['Energy tracking ✓', 'Water metering ✓', 'Biomedical vendor ✓'],
-    },
-    {
-      framework: 'LEED Healthcare',
-      readinessScore: 78,
-      statusLabel: 'Strong Readiness',
-      majorGap: 'IAQ monitoring system',
-      recommendedTimeline: '3–6M',
-      prerequisites: ['Energy monitoring ✓', 'Water metering ✓', 'Waste tracking ✓'],
-    },
-    {
-      framework: 'NABH',
-      readinessScore: 85,
-      statusLabel: 'Advanced',
-      majorGap: 'None major',
-      recommendedTimeline: '<3M',
-      prerequisites: ['Biomedical waste ✓', 'Infection control ✓', 'Daily disposal ✓'],
-    },
-    {
-      framework: 'ISO 14001',
-      readinessScore: 72,
-      statusLabel: 'Certification Possible',
-      majorGap: 'Environmental policy audit',
-      recommendedTimeline: '3–6M',
-      prerequisites: ['Policy drafted ✓', 'ESG owner assigned ✓', 'Compliance register ✓'],
-    },
-    {
-      framework: 'WELL',
-      readinessScore: 65,
-      statusLabel: 'Foundational',
-      majorGap: 'IAQ monitoring system',
-      recommendedTimeline: '12–18M',
-      prerequisites: ['IAQ system missing', 'Thermal comfort monitoring'],
-    },
-    {
-      framework: 'BRSR',
-      readinessScore: 68,
-      statusLabel: 'Foundational',
-      majorGap: 'Scope 3 tracking incomplete',
-      recommendedTimeline: '6–12M',
-      prerequisites: ['Scope 1 & 2 ✓', 'ESG policy ✓', 'Scope 3 partial'],
-    },
-  ];
-
-  const certifications = getCertifications();
+  const sectors = ["all", ...new Set(data.hospitals.map((h) => h.sectorCode))].sort();
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-8">
-      <div className="max-w-7xl mx-auto">
-        {/* Header */}
-        <div className="mb-10">
-          <Link
-            href="/admin"
-            className="inline-flex items-center gap-2 text-slate-400 hover:text-slate-200 transition-colors mb-4"
-          >
-            <ArrowLeft className="w-4 h-4" />
-            Back to Dashboard
-          </Link>
-          <h1 className="text-4xl font-bold text-slate-100 mb-3">Certification Readiness</h1>
-          <p className="text-slate-400">
-            NABH, IGBC, LEED, ISO 14001, WELL, BRSR readiness scores, status badges, prerequisites and timelines
-          </p>
-        </div>
+    <div className="space-y-10 pb-10">
+      <div>
+        <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#3d5248]/80">Readiness intelligence</p>
+        <h1 className="mt-1 text-2xl font-semibold tracking-tight text-[#15221a]">Certification Readiness Control Center</h1>
+        <p className="mt-2 max-w-3xl text-sm leading-relaxed text-[#3d5248]">
+          CertificationScore records, sector applicability from master data, and framework-level averages for portfolio
+          governance.
+        </p>
+      </div>
 
-        {/* BRD Info */}
-        <div className="mb-8 p-4 bg-emerald-500/10 border border-emerald-500/30 rounded-lg flex gap-3">
-          <Award className="w-5 h-5 text-emerald-400 flex-shrink-0 mt-0.5" />
-          <div>
-            <p className="text-sm text-emerald-300 font-medium mb-1">Certification Intelligence</p>
-            <p className="text-xs text-emerald-200">
-              Scores are weighted by category (Energy, Water, Waste, Governance, Evidence). Prerequisites must be met to reach certification thresholds.
-            </p>
-          </div>
-        </div>
-
-        {/* Hospital Selector */}
-        <div className="mb-8">
-          <label className="block text-sm font-medium text-slate-300 mb-3">Filter by Organization:</label>
-          <select
-            value={selectedHospital}
-            onChange={e => setSelectedHospital(e.target.value)}
-            className="w-full md:w-64 px-4 py-2 bg-slate-800/50 border border-slate-700/50 rounded-lg text-slate-200 focus:outline-none focus:border-emerald-500/50 transition-colors"
-          >
-            <option value="all">All Organizations</option>
-            {hospitals.map(h => (
-              <option key={h.id} value={h.id}>
-                {h.name}
-              </option>
+      <div className="flex flex-wrap items-end gap-3">
+        <Select value={hospitalId} onValueChange={setHospitalId}>
+          <SelectTrigger className="h-9 min-w-[220px] border-[#d5ddd6] bg-white/80 text-sm">
+            <SelectValue placeholder="Organization" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All organizations</SelectItem>
+            {data.hospitals.map((h) => (
+              <SelectItem key={h.id} value={h.id}>
+                {h.hospitalName}
+              </SelectItem>
             ))}
-          </select>
-        </div>
+          </SelectContent>
+        </Select>
+        <Select value={sector} onValueChange={setSector}>
+          <SelectTrigger className="h-9 min-w-[160px] border-[#d5ddd6] bg-white/80 text-sm">
+            <SelectValue placeholder="Sector" />
+          </SelectTrigger>
+          <SelectContent>
+            {sectors.map((s) => (
+              <SelectItem key={s} value={s}>
+                {s === "all" ? "All sectors" : s}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <Input
+          className="h-9 max-w-xs border-[#d5ddd6] bg-white/80 text-sm"
+          placeholder="Search framework or hospital…"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+        />
+        <ExportCsvButton
+          filename="esgroww-certification-scores.csv"
+          rows={
+            filteredScores.map((s) => ({
+              hospital: s.hospital.hospitalName,
+              sector: s.hospital.sectorCode,
+              framework: s.certificationName,
+              readiness: s.readinessPercent,
+              status: s.statusLabel,
+              gap: s.majorGap ?? "",
+              timeline: s.recommendedTimeline ?? "",
+            })) as unknown as Record<string, unknown>[]
+          }
+          columns={[
+            { key: "hospital", header: "Organization" },
+            { key: "sector", header: "Sector" },
+            { key: "framework", header: "Framework" },
+            { key: "readiness", header: "Readiness %" },
+            { key: "status", header: "Status" },
+            { key: "gap", header: "Major gap" },
+            { key: "timeline", header: "Timeline" },
+          ]}
+        />
+      </div>
 
-        {/* Certifications Grid */}
-        {loading ? (
-          <div className="flex justify-center py-12">
-            <div className="animate-spin">
-              <div className="w-8 h-8 border-3 border-slate-700 border-t-emerald-500 rounded-full"></div>
-            </div>
-          </div>
-        ) : error ? (
-          <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-4 text-red-400">
-            Error: {error}
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {certifications.map((cert, idx) => (
-              <div
-                key={idx}
-                className="bg-gradient-to-br from-slate-800/60 to-slate-800/30 rounded-xl border border-slate-700/50 p-6 hover:border-slate-600/50 transition-all"
-              >
-                {/* Header with Status */}
-                <div className="flex items-start justify-between mb-5">
-                  <div>
-                    <h3 className="text-lg font-bold text-slate-100">{cert.framework}</h3>
-                  </div>
-                  <span className={`px-3 py-1 rounded-full text-xs font-bold whitespace-nowrap ${getStatusColor(cert.statusLabel)}`}>
-                    {cert.statusLabel}
-                  </span>
+      <div>
+        <AdminSectionTitle
+          eyebrow="Portfolio analytics"
+          title="Framework heat — average readiness"
+          description="Aggregated across CertificationScore rows in current filter scope."
+        />
+        <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
+          {data.frameworkAnalytics.length === 0 ? (
+            <AdminEmpty
+              title="No certification scores yet"
+              body="Run the assessment engine to populate CertificationScore. Applicability rules below still govern sector pathways."
+            />
+          ) : (
+            data.frameworkAnalytics.map((f) => (
+              <div key={f.certificationName} className={adminGlassCard()}>
+                <p className="text-sm font-semibold text-[#15221a]">{f.certificationName}</p>
+                <p className="mt-3 text-xs text-[#3d5248]">Records: {f.records}</p>
+                <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-[#eceee8]">
+                  <div
+                    className="h-full rounded-full bg-gradient-to-r from-[#00673F] to-[#00A86B]"
+                    style={{ width: `${Math.min(f.avgReadiness, 100)}%` }}
+                  />
                 </div>
-
-                {/* Readiness Score */}
-                <div className="mb-5">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-xs font-semibold text-slate-400 uppercase tracking-wide">Readiness Score</span>
-                    <span className="text-2xl font-bold text-slate-100">{cert.readinessScore}%</span>
-                  </div>
-                  <div className="w-full h-3 bg-slate-700 rounded-full overflow-hidden">
-                    <div
-                      className={`h-full rounded-full transition-all ${
-                        cert.readinessScore >= 75
-                          ? 'bg-emerald-500'
-                          : cert.readinessScore >= 60
-                          ? 'bg-amber-500'
-                          : cert.readinessScore >= 40
-                          ? 'bg-orange-500'
-                          : 'bg-red-500'
-                      }`}
-                      style={{ width: `${cert.readinessScore}%` }}
-                    ></div>
-                  </div>
-                </div>
-
-                {/* Major Gap */}
-                <div className="mb-4 p-3 bg-slate-700/30 rounded-lg border border-slate-600/30">
-                  <div className="flex items-start gap-2">
-                    <AlertCircle className="w-4 h-4 text-amber-400 mt-0.5 flex-shrink-0" />
-                    <div>
-                      <p className="text-xs font-semibold text-slate-400 mb-1">Major Gap</p>
-                      <p className="text-sm text-slate-200">{cert.majorGap}</p>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Timeline */}
-                <div className="mb-4 p-3 bg-emerald-500/10 rounded-lg border border-emerald-500/20">
-                  <p className="text-xs font-semibold text-emerald-400 mb-1">Recommended Timeline</p>
-                  <p className="text-sm text-emerald-300">{cert.recommendedTimeline}</p>
-                </div>
-
-                {/* Prerequisites */}
-                <div>
-                  <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-3">Prerequisites</p>
-                  <div className="space-y-2">
-                    {cert.prerequisites.map((prereq, i) => (
-                      <div key={i} className="flex items-center gap-2 text-xs text-slate-300">
-                        <CheckCircle className="w-4 h-4 text-emerald-400 flex-shrink-0" />
-                        {prereq}
-                      </div>
-                    ))}
-                  </div>
-                </div>
+                <p className="mt-2 text-2xl font-semibold tabular-nums text-[#15221a]">{f.avgReadiness}%</p>
               </div>
-            ))}
-          </div>
-        )}
+            ))
+          )}
+        </div>
+      </div>
 
-        {/* Score Legend */}
-        <div className="mt-12 p-6 bg-slate-800/50 rounded-lg border border-slate-700/50">
-          <h3 className="text-sm font-bold text-slate-200 mb-4">Score Interpretation</h3>
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-4 text-xs">
-            <div>
-              <div className="h-3 bg-emerald-600 rounded-full mb-2"></div>
-              <p className="text-slate-300">90–100: Advanced</p>
-            </div>
-            <div>
-              <div className="h-3 bg-emerald-500 rounded-full mb-2"></div>
-              <p className="text-slate-300">75–89: Strong</p>
-            </div>
-            <div>
-              <div className="h-3 bg-amber-600 rounded-full mb-2"></div>
-              <p className="text-slate-300">60–74: Possible</p>
-            </div>
-            <div>
-              <div className="h-3 bg-orange-600 rounded-full mb-2"></div>
-              <p className="text-slate-300">40–59: Foundation</p>
-            </div>
-            <div>
-              <div className="h-3 bg-red-600 rounded-full mb-2"></div>
-              <p className="text-slate-300">&lt;40: Not Ready</p>
-            </div>
+      <div>
+        <AdminSectionTitle
+          eyebrow="Applicability master"
+          title="CertificationApplicability"
+          description="Sector-driven pathways — Mandatory / Highly Recommended / Optional weightings per BRD-aligned master tables."
+        />
+        <div className={adminGlassCard("p-0")}>
+          <div className="max-h-[320px] overflow-y-auto">
+            <table className="w-full text-sm">
+              <thead className="sticky top-0 z-[1] bg-white/95 backdrop-blur">
+                <tr className="border-b border-[#d5ddd6] text-left text-[11px] font-semibold uppercase text-[#3d5248]">
+                  <th className="px-4 py-2">Sector</th>
+                  <th className="px-4 py-2">Framework</th>
+                  <th className="px-4 py-2">Importance</th>
+                </tr>
+              </thead>
+              <tbody>
+                {data.applicability.map((a, i) => (
+                  <tr key={i} className="border-b border-[#eceee8]">
+                    <td className="px-4 py-2 text-xs font-medium">{a.sectorCode}</td>
+                    <td className="px-4 py-2 text-xs text-[#15221a]">{a.certificationName}</td>
+                    <td className="px-4 py-2">
+                      <Badge variant="outline" className="text-[10px] uppercase">
+                        {a.importanceLevel}
+                      </Badge>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <AdminSectionTitle eyebrow="Records" title="CertificationScore detail" />
+        <div className={adminGlassCard("p-0")}>
+          <div className="max-h-[480px] overflow-y-auto">
+            <table className="w-full text-sm">
+              <thead className="sticky top-0 z-[1] bg-white/95 backdrop-blur">
+                <tr className="border-b border-[#d5ddd6] text-left text-[11px] font-semibold uppercase text-[#3d5248]">
+                  <th className="px-4 py-2">Organization</th>
+                  <th className="px-4 py-2">Framework</th>
+                  <th className="px-4 py-2">Readiness</th>
+                  <th className="px-4 py-2">Status</th>
+                  <th className="px-4 py-2">Gap</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredScores.length === 0 ? (
+                  <tr>
+                    <td colSpan={5} className="px-4 py-8 text-center text-sm text-[#3d5248]">
+                      No scores in this view.
+                    </td>
+                  </tr>
+                ) : (
+                  filteredScores.map((s) => (
+                    <tr key={s.id} className="border-b border-[#eceee8]">
+                      <td className="px-4 py-2 text-xs font-medium text-[#15221a]">{s.hospital.hospitalName}</td>
+                      <td className="px-4 py-2 text-xs">{s.certificationName}</td>
+                      <td className="px-4 py-2 text-xs tabular-nums font-semibold">{s.readinessPercent}%</td>
+                      <td className="px-4 py-2">
+                        <Badge variant="secondary" className="text-[10px] uppercase">
+                          {s.statusLabel}
+                        </Badge>
+                      </td>
+                      <td className="max-w-[240px] truncate px-4 py-2 text-[11px] text-[#3d5248]">
+                        {s.majorGap ?? "—"}
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
           </div>
         </div>
       </div>

@@ -1,581 +1,407 @@
-'use client';
+"use client";
 
-import { useEffect, useState } from 'react';
-import { ArrowLeft, BarChart3, AlertCircle, TrendingUp } from 'lucide-react';
-import Link from 'next/link';
+import { useEffect, useState } from "react";
+import { adminGlassCard, AdminEmpty, AdminSectionTitle, ExportCsvButton } from "@/components/admin/admin-ui";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
 
-interface UploadData {
-  hospitalName: string;
-  category: string;
-  monthsUploaded: number;
-  completeness: number;
-  confidenceLevel: string;
-  status: string;
-}
+type HospitalsOpt = { id: string; hospitalName: string };
 
-interface ValidationCheck {
-  check: string;
-  description: string;
-  status: string;
-  severity: string;
-}
+type CalcPayload = {
+  hospitals: HospitalsOpt[];
+  hospitalId: string;
+  hospitalName?: string;
+  builtUpArea?: number;
+  perHospital?: {
+    hospitalId: string;
+    hospitalName: string;
+    categories: {
+      category: string;
+      months: number;
+      completeness: number;
+      confidenceLabel: string;
+      confidenceModifier: number;
+      annualizationEligible: boolean;
+      readinessGateMet: boolean;
+      status: string;
+    }[];
+  }[];
+  categories?: {
+    category: string;
+    months: number;
+    completeness: number;
+    confidenceLabel: string;
+    confidenceModifier: number;
+    annualizationEligible: boolean;
+    readinessGateMet: boolean;
+    status: string;
+  }[];
+  formulas?: Record<string, string>;
+  calculatedMetrics?: {
+    id: string;
+    metricName: string;
+    rawValue: number | null;
+    annualizedValue: number | null;
+    unit: string;
+    confidenceModifier: number;
+    benchmarkStatus: string | null;
+  }[];
+  emissionsSummary?: { id: string; scope: string; source: string; kgCO2e: number; tCO2e: number; factorUsed: string | null }[];
+  validationResults?: {
+    id: string;
+    checkType: string;
+    status: string;
+    category: string;
+    affectedMonth: string | null;
+    notes: string | null;
+  }[];
+  latestEsgScore?: {
+    overallScore: number;
+    energyScore: number;
+    waterScore: number;
+    wasteScore: number;
+    governanceScore: number;
+    emissionsScore: number;
+  } | null;
+};
 
-export default function CalculationsPage() {
-  const [hospitals, setHospitals] = useState<any[]>([]);
-  const [selectedHospital, setSelectedHospital] = useState<string>('all');
+export default function CalculationsAdminPage() {
+  const [hid, setHid] = useState("all");
+  const [data, setData] = useState<CalcPayload | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    fetchData();
-  }, []);
+    let cancelled = false;
+    (async () => {
+      try {
+        setLoading(true);
+        const res = await fetch(`/api/admin/calculations?hospitalId=${encodeURIComponent(hid)}`);
+        const json = await res.json();
+        if (!cancelled) {
+          if (!res.ok) setError(json.error ?? "Failed");
+          else {
+            setData(json);
+            setError(null);
+          }
+        }
+      } catch (e) {
+        if (!cancelled) setError(e instanceof Error ? e.message : "Error");
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [hid]);
 
-  async function fetchData() {
-    try {
-      setLoading(true);
-      const response = await fetch('/api/admin/calculations');
-      if (!response.ok) throw new Error('Failed to fetch calculations data');
-      const data = await response.json();
-      setHospitals(data);
-      setError(null);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Unknown error');
-      setHospitals([]);
-    } finally {
-      setLoading(false);
-    }
+  if (loading) {
+    return (
+      <div className="flex min-h-[40vh] items-center justify-center">
+        <div className="h-9 w-9 animate-spin rounded-full border-2 border-[#d5ddd6] border-t-[#00673F]" />
+      </div>
+    );
   }
 
-  const getStatusColor = (status: string) => {
-    const colors: { [key: string]: string } = {
-      Complete: 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30',
-      Partial: 'bg-amber-500/20 text-amber-400 border-amber-500/30',
-      Low: 'bg-orange-500/20 text-orange-400 border-orange-500/30',
-      Insufficient: 'bg-red-500/20 text-red-400 border-red-500/30',
-      Missing: 'bg-slate-500/20 text-slate-400 border-slate-500/30',
-      Error: 'bg-red-500/20 text-red-400 border-red-500/30',
-    };
-    return colors[status] || 'bg-slate-500/20 text-slate-400 border-slate-500/30';
-  };
+  if (error || !data) {
+    return <AdminEmpty title="Calculations engine unavailable" body={error ?? ""} />;
+  }
 
-  const getConfidenceBadge = (level: string) => {
-    const badges: { [key: string]: string } = {
-      High: 'bg-emerald-500/20 text-emerald-400',
-      Medium: 'bg-amber-500/20 text-amber-400',
-      Low: 'bg-orange-500/20 text-orange-400',
-      Insufficient: 'bg-red-500/20 text-red-400',
-    };
-    return badges[level] || 'bg-slate-500/20 text-slate-400';
-  };
+  const rows =
+    data.hospitalId === "all"
+      ? (data.perHospital ?? []).flatMap((ph) =>
+          ph.categories.map((c) => ({
+            organization: ph.hospitalName,
+            ...c,
+          }))
+        )
+      : (data.categories ?? []).map((c) => ({
+          organization: data.hospitalName ?? "",
+          ...c,
+        }));
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-8">
-      <div className="max-w-7xl mx-auto">
-        {/* Header */}
-        <div className="mb-10">
-          <Link
-            href="/admin"
-            className="inline-flex items-center gap-2 text-slate-400 hover:text-slate-200 transition-colors mb-4"
-          >
-            <ArrowLeft className="w-4 h-4" />
-            Back to Dashboard
-          </Link>
-          <h1 className="text-4xl font-bold text-slate-100 mb-3">Calculations & KPI Engine</h1>
-          <p className="text-slate-400 max-w-3xl">
-            Comprehensive view of all data validation, annualization formulas, confidence modifiers, emissions calculations, and KPI benchmarks per organization.
+    <div className="space-y-10 pb-10">
+      <div className="flex flex-col justify-between gap-4 lg:flex-row lg:items-end">
+        <div>
+          <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#3d5248]/80">Analytics engine</p>
+          <h1 className="mt-1 text-2xl font-semibold tracking-tight text-[#15221a]">Sustainability Intelligence Engine</h1>
+          <p className="mt-2 max-w-3xl text-sm leading-relaxed text-[#3d5248]">
+            Transparency into category coverage, BRD confidence modifiers, annualization eligibility, calculated metrics,
+            emissions factors applied, and persisted validation lineage.
           </p>
         </div>
-
-        {/* BRD Disclaimer */}
-        <div className="mb-8 p-4 bg-amber-500/10 border border-amber-500/30 rounded-lg flex gap-3">
-          <AlertCircle className="w-5 h-5 text-amber-400 flex-shrink-0 mt-0.5" />
-          <div>
-            <p className="text-sm text-amber-300 font-medium mb-1">Key BRD Formulas</p>
-            <ul className="text-xs text-amber-200 space-y-1">
-              <li>• <strong>Annualization:</strong> (Sum of uploaded values) ÷ (Months with data) × 12</li>
-              <li>• <strong>Confidence Modifier:</strong> Data confidence level applied to scores (≥3 months required)</li>
-              <li>• <strong>Intensity Metrics:</strong> Annual Value ÷ Built-up Area → kWh/sqft/year or KL/sqft/year</li>
-            </ul>
-          </div>
+        <div className="flex flex-wrap items-center gap-2">
+          <Select value={hid} onValueChange={setHid}>
+            <SelectTrigger className="h-9 min-w-[220px] border-[#d5ddd6] bg-white/80 text-sm">
+              <SelectValue placeholder="Organization" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All organizations</SelectItem>
+              {data.hospitals.map((h) => (
+                <SelectItem key={h.id} value={h.id}>
+                  {h.hospitalName}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <ExportCsvButton
+            filename="esgroww-calculations-coverage.csv"
+            rows={rows as unknown as Record<string, unknown>[]}
+            columns={[
+              { key: "organization", header: "Organization" },
+              { key: "category", header: "Category" },
+              { key: "months", header: "Months" },
+              { key: "completeness", header: "Completeness %" },
+              { key: "confidenceLabel", header: "Confidence" },
+              { key: "confidenceModifier", header: "Modifier" },
+              { key: "annualizationEligible", header: "Annualization eligible" },
+              { key: "readinessGateMet", header: "Readiness gate" },
+              { key: "status", header: "Status" },
+            ]}
+          />
         </div>
+      </div>
 
-        {/* Hospital Selector */}
-        <div className="mb-8">
-          <label className="block text-sm font-medium text-slate-300 mb-3">Filter by Organization:</label>
-          <select
-            value={selectedHospital}
-            onChange={e => setSelectedHospital(e.target.value)}
-            className="w-full md:w-64 px-4 py-2 bg-slate-800/50 border border-slate-700/50 rounded-lg text-slate-200 focus:outline-none focus:border-emerald-500/50 transition-colors"
-          >
-            <option value="all">All Organizations</option>
-            {hospitals.map(h => (
-              <option key={h.id} value={h.id}>{h.hospitalName}</option>
-            ))}
-          </select>
-        </div>
-
-        {/* SECTION A: Upload Overview Table */}
-        <div className="mb-12">
-          <h2 className="text-2xl font-bold text-slate-100 mb-6 flex items-center gap-2">
-            <BarChart3 className="w-6 h-6 text-emerald-400" />
-            2A. Upload Overview & Completeness
-          </h2>
-
-          {loading ? (
-            <div className="flex justify-center py-8">
-              <div className="animate-spin">
-                <div className="w-6 h-6 border-2 border-slate-700 border-t-emerald-500 rounded-full"></div>
-              </div>
-            </div>
-          ) : error ? (
-            <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-4 text-red-400">
-              {error}
-            </div>
-          ) : (
-            <div className="bg-slate-800/50 rounded-xl border border-slate-700/50 overflow-hidden">
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="border-b border-slate-700/50 bg-slate-800/50">
-                      <th className="px-6 py-3 text-left font-semibold text-slate-300">Category</th>
-                      <th className="px-6 py-3 text-left font-semibold text-slate-300">Months Uploaded</th>
-                      <th className="px-6 py-3 text-left font-semibold text-slate-300">Completeness</th>
-                      <th className="px-6 py-3 text-left font-semibold text-slate-300">Confidence</th>
-                      <th className="px-6 py-3 text-left font-semibold text-slate-300">Status</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-700/30">
-                    {hospitals.length > 0 ? (
-                      hospitals.map((hospital, idx) => (
-                        <tr key={idx} className="hover:bg-slate-700/20 transition-colors">
-                          <td className="px-6 py-3 text-slate-200 font-medium">{hospital.category}</td>
-                          <td className="px-6 py-3 text-slate-300">{hospital.months}/12</td>
-                          <td className="px-6 py-3">
-                            <div className="flex items-center gap-2">
-                              <div className="w-20 h-2 bg-slate-700 rounded-full overflow-hidden">
-                                <div
-                                  className="h-full bg-emerald-500"
-                                  style={{ width: `${hospital.completeness}%` }}
-                                ></div>
-                              </div>
-                              <span className="text-slate-300 text-xs">{hospital.completeness}%</span>
-                            </div>
-                          </td>
-                          <td className="px-6 py-3">
-                            <span className={`px-2 py-1 rounded text-xs font-medium ${getConfidenceBadge(hospital.confidence)}`}>
-                              {hospital.confidence}
-                            </span>
-                          </td>
-                          <td className="px-6 py-3">
-                            <span className={`px-2 py-1 rounded text-xs font-semibold border ${getStatusColor(hospital.status)}`}>
-                              {hospital.status}
-                            </span>
-                          </td>
-                        </tr>
-                      ))
-                    ) : (
-                      <tr>
-                        <td colSpan={5} className="px-6 py-8 text-center text-slate-400">
-                          No data available yet
-                        </td>
-                      </tr>
-                    )}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* SECTION B: Validation Results */}
-        <div className="mb-12">
-          <h2 className="text-2xl font-bold text-slate-100 mb-6 flex items-center gap-2">
-            <AlertCircle className="w-6 h-6 text-amber-400" />
-            2B. Validation Results (6 Checks)
-          </h2>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {[
-              {
-                check: 'Negative Value Detection',
-                desc: 'Scans for kWh/KL/kg < 0',
-                status: 'Pass',
-              },
-              {
-                check: 'Missing Months Detection',
-                desc: 'Identifies data gaps',
-                status: 'Partial',
-              },
-              {
-                check: 'Spike Detection',
-                desc: 'Flags >100% or >70% drop',
-                status: 'Pass',
-              },
-              {
-                check: 'Duplicate Entry Check',
-                desc: 'Keeps latest, flags duplicates',
-                status: 'Pass',
-              },
-              {
-                check: 'Unit Consistency',
-                desc: 'Ensures kWh/MWh alignment',
-                status: 'Pass',
-              },
-              {
-                check: 'Cross-Category Consistency',
-                desc: 'Renewable ≤ Total, etc.',
-                status: 'Pass',
-              },
-            ].map((validation, idx) => (
-              <div key={idx} className="bg-slate-800/50 rounded-lg border border-slate-700/50 p-4">
-                <div className="flex items-start justify-between mb-2">
-                  <h3 className="font-semibold text-slate-200">{validation.check}</h3>
-                  <span
-                    className={`px-2 py-1 rounded text-xs font-bold ${validation.status === 'Pass'
-                        ? 'bg-emerald-500/20 text-emerald-400'
-                        : validation.status === 'Partial'
-                          ? 'bg-amber-500/20 text-amber-400'
-                          : 'bg-red-500/20 text-red-400'
-                      }`}
-                  >
-                    {validation.status}
-                  </span>
-                </div>
-                <p className="text-xs text-slate-400">{validation.desc}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* SECTION C: KPI Benchmarks */}
-        <div className="mb-12">
-          <h2 className="text-2xl font-bold text-slate-100 mb-6 flex items-center gap-2">
-            <TrendingUp className="w-6 h-6 text-cyan-400" />
-            2D. Key Performance Indicators (KPIs)
-          </h2>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {[
-              { name: 'Energy Intensity', value: '18.5', unit: 'kWh/sqft/year', benchmark: 'Within (15-22)', status: 'Good' },
-              { name: 'Water Intensity', value: '0.22', unit: 'KL/sqft/year', benchmark: 'Slightly Above (0.20-0.35)', status: 'Monitor' },
-              { name: 'Renewable %', value: '12.3', unit: '%', benchmark: 'Above Target (>10%)', status: 'Good' },
-              { name: 'Recycling %', value: '48', unit: '%', benchmark: 'Below Target (>60%)', status: 'Action' },
-              { name: 'Emissions Intensity', value: '13.3', unit: 'tCO2e/sqft', benchmark: 'Within Benchmark', status: 'Good' },
-              { name: 'DG Dependency', value: '2.1', unit: '% of hours', benchmark: 'Low (<5%)', status: 'Good' },
-            ].map((kpi, idx) => (
-              <div key={idx} className="bg-gradient-to-br from-slate-800/60 to-slate-800/30 rounded-lg border border-slate-700/50 p-5">
-                <p className="text-xs text-slate-400 uppercase tracking-wide mb-2">{kpi.name}</p>
-                <p className="text-3xl font-bold text-slate-100 mb-1">{kpi.value}</p>
-                <p className="text-xs text-slate-500 mb-3">{kpi.unit}</p>
-                <div className="flex items-center justify-between pt-3 border-t border-slate-700/50">
-                  <span className="text-xs text-slate-400">{kpi.benchmark}</span>
-                  <span
-                    className={`px-2 py-1 rounded text-xs font-semibold ${kpi.status === 'Good'
-                        ? 'bg-emerald-500/20 text-emerald-400'
-                        : kpi.status === 'Monitor'
-                          ? 'bg-amber-500/20 text-amber-400'
-                          : 'bg-red-500/20 text-red-400'
-                      }`}
-                  >
-                    {kpi.status}
-                  </span>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* SECTION E: Emissions Summary */}
+      {data.formulas ? (
         <div>
-          <h2 className="text-2xl font-bold text-slate-100 mb-6">2E. Emissions Summary by Scope</h2>
-
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {[
-              {
-                scope: 'Scope 1 (Direct)',
-                tco2e: '45.2',
-                color: 'emerald',
-                sources: ['Diesel: 32.1', 'PNG/CNG: 8.5', 'Refrigerant: 4.6'],
-              },
-              {
-                scope: 'Scope 2 (Electricity)',
-                tco2e: '127.8',
-                color: 'cyan',
-                sources: ['Grid: 98.2', 'Renewable offset: -29.4'],
-              },
-              {
-                scope: 'Scope 3 (Indirect)',
-                tco2e: '18.4',
-                color: 'amber',
-                sources: ['Waste: 12.1', 'Wastewater: 6.3'],
-              },
-            ].map((scope, idx) => (
-              <div key={idx} className="bg-gradient-to-br from-slate-800/60 to-slate-800/30 rounded-lg border border-slate-700/50 p-6">
-                <h3 className="font-semibold text-slate-200 mb-4">{scope.scope}</h3>
-                <p className="text-4xl font-bold text-slate-100 mb-1">{scope.tco2e}</p>
-                <p className="text-xs text-slate-500 mb-6">tCO₂e</p>
-                <div className="space-y-2 text-xs">
-                  {scope.sources.map((source, i) => (
-                    <div key={i} className="flex justify-between text-slate-400">
-                      <span>{source.split(':')[0]}</span>
-                      <span className="font-medium">{source.split(':')[1]}</span>
-                    </div>
-                  ))}
-                </div>
+          <AdminSectionTitle
+            eyebrow="Traceability"
+            title="Formula & lineage reference"
+            description="Published transformations match assessment engine documentation — values below are definitions, not sample numbers."
+          />
+          <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+            {Object.entries(data.formulas).map(([k, v]) => (
+              <div key={k} className={adminGlassCard("min-h-[100px]")}>
+                <p className="text-[11px] font-semibold uppercase tracking-wide text-[#3d5248]">
+                  {k.replace(/([A-Z])/g, " $1")}
+                </p>
+                <p className="mt-2 font-mono text-xs leading-relaxed text-[#15221a]">{v}</p>
               </div>
             ))}
           </div>
+        </div>
+      ) : null}
 
-          <div className="mt-8 bg-slate-800/50 rounded-lg border border-slate-700/50 p-6">
-            <h3 className="font-semibold text-slate-200 mb-2">Total Emissions</h3>
-            <p className="text-4xl font-bold text-slate-100 mb-2">191.4 tCO₂e</p>
-            <p className="text-sm text-slate-400">Scope 1 + Scope 2 + Scope 3 = Annual Total</p>
+      {data.latestEsgScore && data.hospitalId !== "all" ? (
+        <div className={adminGlassCard()}>
+          <p className="text-xs font-semibold uppercase tracking-wide text-[#3d5248]">Latest ESG score snapshot</p>
+          <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
+            {(
+              [
+                ["Overall", data.latestEsgScore.overallScore],
+                ["Energy", data.latestEsgScore.energyScore],
+                ["Water", data.latestEsgScore.waterScore],
+                ["Waste", data.latestEsgScore.wasteScore],
+                ["Governance", data.latestEsgScore.governanceScore],
+                ["Emissions", data.latestEsgScore.emissionsScore],
+              ] as const
+            ).map(([label, val]) => (
+              <div key={label} className="rounded-lg bg-white/70 px-3 py-2 ring-1 ring-[#00673F]/10">
+                <p className="text-[10px] font-semibold uppercase text-[#3d5248]">{label}</p>
+                <p className="mt-1 text-lg font-semibold tabular-nums text-[#15221a]">{val.toFixed(1)}</p>
+              </div>
+            ))}
           </div>
         </div>
+      ) : null}
+
+      <div>
+        <AdminSectionTitle
+          eyebrow="Coverage"
+          title="Category intelligence grid"
+          description="Months reflect persisted operational rows per category; confidence pulled from ConfidenceThreshold master data."
+        />
+        <div className={adminGlassCard("p-0")}>
+          <Table>
+            <TableHeader className="sticky top-0 z-[1] bg-white/95 backdrop-blur">
+              <TableRow>
+                {data.hospitalId === "all" ? (
+                  <TableHead className="text-[11px] font-semibold uppercase text-[#3d5248]">Organization</TableHead>
+                ) : null}
+                <TableHead className="text-[11px] font-semibold uppercase text-[#3d5248]">Category</TableHead>
+                <TableHead className="text-[11px] font-semibold uppercase text-[#3d5248]">Months</TableHead>
+                <TableHead className="text-[11px] font-semibold uppercase text-[#3d5248]">Completeness</TableHead>
+                <TableHead className="text-[11px] font-semibold uppercase text-[#3d5248]">Confidence</TableHead>
+                <TableHead className="text-[11px] font-semibold uppercase text-[#3d5248]">Annualization</TableHead>
+                <TableHead className="text-[11px] font-semibold uppercase text-[#3d5248]">Gate</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {rows.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={7} className="py-8 text-center text-sm text-[#3d5248]">
+                    No operational rows yet — upload Excel templates to populate the engine.
+                  </TableCell>
+                </TableRow>
+              ) : (
+                rows.map((r, idx) => (
+                  <TableRow key={`${r.organization}-${r.category}-${idx}`} className="border-[#eceee8]">
+                    {data.hospitalId === "all" ? (
+                      <TableCell className="max-w-[160px] truncate text-xs font-medium text-[#15221a]">
+                        {r.organization}
+                      </TableCell>
+                    ) : null}
+                    <TableCell className="text-xs font-medium">{r.category}</TableCell>
+                    <TableCell className="text-xs tabular-nums text-[#3d5248]">{r.months}</TableCell>
+                    <TableCell className="text-xs tabular-nums">{r.completeness}%</TableCell>
+                    <TableCell>
+                      <Badge variant="outline" className="text-[10px] uppercase">
+                        {r.confidenceLabel} ×{r.confidenceModifier.toFixed(2)}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="text-xs">{r.annualizationEligible ? "Eligible" : "Not eligible"}</TableCell>
+                    <TableCell className="text-xs">{r.readinessGateMet ? "Met" : "Open"}</TableCell>
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
+          </Table>
+        </div>
       </div>
-    </div>
-  );
-}
-    
 
-  {/* Emission Factors */ }
-  < section className = "bg-white border border-slate-200 rounded-2xl p-6" >
-          <h2 className="text-2xl font-semibold text-slate-900 mb-6">
-            Emission Factors
-          </h2>
-
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead className="bg-slate-100 text-slate-600">
-                <tr>
-                  <th className="text-left px-4 py-3">
-                    Parameter
-                  </th>
-
-                  <th className="text-left px-4 py-3">
-                    Factor
-                  </th>
-
-                  <th className="text-left px-4 py-3">
-                    Unit
-                  </th>
-
-                  <th className="text-left px-4 py-3">
-                    Usage
-                  </th>
-                </tr>
-              </thead>
-
-              <tbody className="divide-y divide-slate-100">
-                <FactorRow
-                  parameter="Grid Electricity"
-                  factor="0.708"
-                  unit="kgCO₂ / kWh"
-                  usage="Scope 2 Emissions"
-                />
-
-                <FactorRow
-                  parameter="Diesel"
-                  factor="2.68"
-                  unit="kgCO₂ / litre"
-                  usage="DG Emissions"
-                />
-
-                <FactorRow
-                  parameter="Transport Fuel"
-                  factor="2.31"
-                  unit="kgCO₂ / litre"
-                  usage="Ambulance Emissions"
-                />
-
-                <FactorRow
-                  parameter="R134a"
-                  factor="1430"
-                  unit="GWP"
-                  usage="Refrigerant Leakage"
-                />
-              </tbody>
-            </table>
-          </div>
-        </section >
-
-  {/* ESG KPI FORMULAS */ }
-  < section className = "bg-white border border-slate-200 rounded-2xl p-6 space-y-8" >
-          <h2 className="text-2xl font-semibold text-slate-900">
-            ESG KPI Formulas
-          </h2>
-
-          <div className="space-y-8">
-            <FormulaBlock
-              title="Renewable Energy Percentage"
-              formula="(Renewable Electricity ÷ Total Electricity) × 100"
+      {data.hospitalId !== "all" ? (
+        <>
+          <div>
+            <AdminSectionTitle
+              eyebrow="Calculated metrics"
+              title="Engine output — CalculatedMetric"
+              description="Raw vs annualized values, benchmark posture, and confidence modifiers as stored for the selected organization."
             />
-
-            <FormulaBlock
-              title="Water Recycling Percentage"
-              formula="(Recycled Water ÷ Total Water Consumption) × 100"
-            />
-
-            <FormulaBlock
-              title="Waste Diversion Percentage"
-              formula="(Recyclable Waste ÷ Total Waste Generated) × 100"
-            />
-
-            <FormulaBlock
-              title="Energy Intensity per Bed"
-              formula="Total Electricity Consumption ÷ Number of Beds"
-            />
-
-            <FormulaBlock
-              title="Water Intensity per Bed"
-              formula="Total Water Consumption ÷ Number of Beds"
-            />
-          </div>
-        </section >
-
-  {/* ESG READINESS ENGINE */ }
-  < section className = "bg-white border border-slate-200 rounded-2xl p-6" >
-          <h2 className="text-2xl font-semibold text-slate-900 mb-6">
-            ESG Readiness Scoring Logic
-          </h2>
-
-          <div className="space-y-6">
-            <div className="border border-slate-200 rounded-xl p-5 bg-slate-50">
-              <h3 className="font-semibold text-slate-900 mb-3">
-                Environmental Readiness
-              </h3>
-
-              <p className="text-slate-600 text-sm leading-relaxed">
-                Calculated using renewable energy usage,
-                emissions intensity, water recycling
-                efficiency, and waste diversion metrics.
-              </p>
-            </div>
-
-            <div className="border border-slate-200 rounded-xl p-5 bg-slate-50">
-              <h3 className="font-semibold text-slate-900 mb-3">
-                Governance Readiness
-              </h3>
-
-              <p className="text-slate-600 text-sm leading-relaxed">
-                Determined using ESG policy availability,
-                audit reports, sustainability committees,
-                and compliance documentation.
-              </p>
-            </div>
-
-            <div className="border border-slate-200 rounded-xl p-5 bg-slate-50">
-              <h3 className="font-semibold text-slate-900 mb-3">
-                Certification Intelligence
-              </h3>
-
-              <p className="text-slate-600 text-sm leading-relaxed">
-                ESGroww maps uploaded operational data
-                against NABH, ISO 14001, and IGBC
-                Healthcare readiness indicators.
-              </p>
+            <div className={adminGlassCard("p-0")}>
+              <Table>
+                <TableHeader className="sticky top-0 z-[1] bg-white/95 backdrop-blur">
+                  <TableRow>
+                    <TableHead className="text-[11px] font-semibold uppercase text-[#3d5248]">Metric</TableHead>
+                    <TableHead className="text-[11px] font-semibold uppercase text-[#3d5248]">Raw</TableHead>
+                    <TableHead className="text-[11px] font-semibold uppercase text-[#3d5248]">Annualized</TableHead>
+                    <TableHead className="text-[11px] font-semibold uppercase text-[#3d5248]">Unit</TableHead>
+                    <TableHead className="text-[11px] font-semibold uppercase text-[#3d5248]">Benchmark</TableHead>
+                    <TableHead className="text-[11px] font-semibold uppercase text-[#3d5248]">Modifier</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {(data.calculatedMetrics ?? []).length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={6} className="py-8 text-center text-sm text-[#3d5248]">
+                        No calculated metrics persisted for this organization.
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    data.calculatedMetrics!.map((m) => (
+                      <TableRow key={m.id} className="border-[#eceee8]">
+                        <TableCell className="text-xs font-medium text-[#15221a]">{m.metricName}</TableCell>
+                        <TableCell className="text-xs tabular-nums text-[#3d5248]">{m.rawValue ?? "—"}</TableCell>
+                        <TableCell className="text-xs tabular-nums text-[#3d5248]">{m.annualizedValue ?? "—"}</TableCell>
+                        <TableCell className="text-xs">{m.unit}</TableCell>
+                        <TableCell className="text-xs">{m.benchmarkStatus ?? "—"}</TableCell>
+                        <TableCell className="text-xs tabular-nums">{m.confidenceModifier.toFixed(2)}</TableCell>
+                      </TableRow>
+                    ))
+                  )}
+                </TableBody>
+              </Table>
             </div>
           </div>
-        </section >
 
-  {/* Certification Mapping */ }
-  < section className = "bg-white border border-slate-200 rounded-2xl p-6" >
-          <h2 className="text-2xl font-semibold text-slate-900 mb-6">
-            Certification Mapping
-          </h2>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <CertificationCard
-              title="NABH"
-              desc="Hospital governance and healthcare operational compliance."
+          <div>
+            <AdminSectionTitle
+              eyebrow="Emissions"
+              title="EmissionsSummary by scope"
+              description="kgCO₂e and tCO₂e with factorUsed string for audit defensibility."
             />
-
-            <CertificationCard
-              title="ISO 14001"
-              desc="Environmental management system readiness."
-            />
-
-            <CertificationCard
-              title="IGBC Healthcare"
-              desc="Green healthcare infrastructure sustainability."
-            />
+            <div className={adminGlassCard("p-0")}>
+              <Table>
+                <TableHeader className="sticky top-0 z-[1] bg-white/95 backdrop-blur">
+                  <TableRow>
+                    <TableHead className="text-[11px] font-semibold uppercase text-[#3d5248]">Scope</TableHead>
+                    <TableHead className="text-[11px] font-semibold uppercase text-[#3d5248]">Source</TableHead>
+                    <TableHead className="text-[11px] font-semibold uppercase text-[#3d5248]">tCO₂e</TableHead>
+                    <TableHead className="text-[11px] font-semibold uppercase text-[#3d5248]">Factor</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {(data.emissionsSummary ?? []).length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={4} className="py-8 text-center text-sm text-[#3d5248]">
+                        No emissions summaries stored.
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    data.emissionsSummary!.map((e) => (
+                      <TableRow key={e.id} className="border-[#eceee8]">
+                        <TableCell className="text-xs font-medium">{e.scope}</TableCell>
+                        <TableCell className="text-xs text-[#3d5248]">{e.source}</TableCell>
+                        <TableCell className="text-xs tabular-nums">{e.tCO2e.toFixed(3)}</TableCell>
+                        <TableCell className="max-w-[220px] truncate text-[11px] text-[#3d5248]">
+                          {e.factorUsed ?? "—"}
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  )}
+                </TableBody>
+              </Table>
+            </div>
           </div>
-        </section >
-      
 
-
-/* ================================= */
-/* SMALL COMPONENTS                  */
-/* ================================= */
-
-function FactorRow({
-  parameter,
-  factor,
-  unit,
-  usage,
-}: {
-  parameter: string;
-  factor: string;
-  unit: string;
-  usage: string;
-}) {
-  return (
-    <tr>
-      <td className="px-4 py-4 font-medium text-slate-900">
-        {parameter}
-      </td>
-
-      <td className="px-4 py-4 text-emerald-700 font-semibold">
-        {factor}
-      </td>
-
-      <td className="px-4 py-4 text-slate-600">
-        {unit}
-      </td>
-
-      <td className="px-4 py-4 text-slate-600">
-        {usage}
-      </td>
-    </tr>
-  );
-}
-
-function FormulaBlock({
-  title,
-  formula,
-}: {
-  title: string;
-  formula: string;
-}) {
-  return (
-    <div className="border border-slate-200 rounded-xl p-5">
-      <h3 className="font-semibold text-slate-900 mb-3">
-        {title}
-      </h3>
-
-      <div className="bg-slate-100 rounded-lg px-4 py-3 text-slate-800 font-mono text-sm">
-        {formula}
-      </div>
-    </div>
-  );
-}
-
-function CertificationCard({
-  title,
-  desc,
-}: {
-  title: string;
-  desc: string;
-}) {
-  return (
-    <div className="border border-slate-200 rounded-xl p-6 bg-slate-50">
-      <h3 className="text-xl font-semibold text-slate-900">
-        {title}
-      </h3>
-
-      <p className="text-slate-600 text-sm mt-3 leading-relaxed">
-        {desc}
-      </p>
+          <div>
+            <AdminSectionTitle eyebrow="Validation" title="Persisted validation lineage" />
+            <div className={adminGlassCard("p-0")}>
+              <Table>
+                <TableHeader className="sticky top-0 z-[1] bg-white/95 backdrop-blur">
+                  <TableRow>
+                    <TableHead className="text-[11px] font-semibold uppercase text-[#3d5248]">Check</TableHead>
+                    <TableHead className="text-[11px] font-semibold uppercase text-[#3d5248]">Category</TableHead>
+                    <TableHead className="text-[11px] font-semibold uppercase text-[#3d5248]">Status</TableHead>
+                    <TableHead className="text-[11px] font-semibold uppercase text-[#3d5248]">Month</TableHead>
+                    <TableHead className="text-[11px] font-semibold uppercase text-[#3d5248]">Notes</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {(data.validationResults ?? []).length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={5} className="py-8 text-center text-sm text-[#3d5248]">
+                        No validation rows for this hospital.
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    data.validationResults!.map((v) => (
+                      <TableRow key={v.id} className="border-[#eceee8]">
+                        <TableCell className="text-xs">{v.checkType.replace(/_/g, " ")}</TableCell>
+                        <TableCell className="text-xs">{v.category}</TableCell>
+                        <TableCell className="text-xs">
+                          <Badge variant={v.status === "Fail" ? "destructive" : "secondary"} className="text-[10px] uppercase">
+                            {v.status}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-xs">{v.affectedMonth ?? "—"}</TableCell>
+                        <TableCell className="max-w-[280px] truncate text-[11px] text-[#3d5248]">
+                          {v.notes ?? "—"}
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  )}
+                </TableBody>
+              </Table>
+            </div>
+          </div>
+        </>
+      ) : null}
     </div>
   );
 }

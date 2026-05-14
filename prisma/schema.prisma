@@ -360,3 +360,17 @@ model ConfidenceThreshold {
   confidenceLabel String // High, Medium, Low, Insufficient
   @@unique([monthsMin, monthsMax])
 }
+
+/// Append-only record of admin configuration changes (and optional future actions).
+model AdminAuditLog {
+  id         String   @id @default(cuid())
+  action     String
+  entityType String
+  entityId   String?
+  summary    String
+  metadata   Json?
+  createdAt  DateTime @default(now())
+
+  @@index([createdAt])
+  @@index([entityType])
+}

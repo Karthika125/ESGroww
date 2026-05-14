@@ -13,6 +13,7 @@ export function ConditionalChatbot() {
   // Hide chatbot on login and register pages
   const hiddenPaths = ["/login", "/register", "/forgot-password", "/reset-password", "/verify-email"];
   if (hiddenPaths.includes(pathname)) return null;
+  if (pathname?.startsWith("/admin")) return null;
 
   return <MistralChatbot />;
 }
