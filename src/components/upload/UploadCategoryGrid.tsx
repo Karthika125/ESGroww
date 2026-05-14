@@ -145,7 +145,7 @@ function CategoryCard({ config, uploadedMonths, readiness, onUploadSuccess, comp
 
   if (compact) {
     return (
-      <Card className="rounded-lg border border-border/90 bg-card shadow-sm transition-shadow hover:shadow-md">
+      <Card className="rounded-lg border border-border/90 bg-white shadow-sm transition-shadow hover:shadow-md">
         <CardContent className="space-y-2 p-2.5 sm:p-3">
           <div className="flex items-start justify-between gap-1.5">
             <div className="flex min-w-0 items-start gap-2">
@@ -204,7 +204,7 @@ function CategoryCard({ config, uploadedMonths, readiness, onUploadSuccess, comp
   }
 
   return (
-    <Card className="rounded-2xl border border-border shadow-sm transition-all duration-200 hover:shadow-md">
+    <Card className="rounded-2xl border border-border bg-white shadow-sm transition-all duration-200 hover:shadow-md">
       <CardContent className="space-y-4 p-5">
         <div className="flex items-start justify-between gap-3">
           <div className="flex min-w-0 items-start gap-3">
@@ -332,7 +332,7 @@ export default function UploadCategoryGrid({
 
         {/* Governance + Additional: side by side */}
         <div className="grid shrink-0 grid-cols-1 gap-1.5 sm:grid-cols-2">
-          <Card className="rounded-lg border border-primary/30 bg-primary/5 shadow-sm">
+          <Card className="rounded-lg border border-primary/30 bg-white shadow-sm">
             <CardContent className="space-y-2 p-2.5 sm:p-3">
               <div className="flex items-start justify-between gap-1.5">
                 <div className="flex min-w-0 items-start gap-2">
@@ -355,7 +355,7 @@ export default function UploadCategoryGrid({
                 )}
               </div>
 
-              <div className="rounded-md border border-primary/15 bg-card/90 px-2 py-1.5 text-[10px] text-muted-foreground">
+              <div className="rounded-md border border-primary/15 bg-white px-2 py-1.5 text-[10px] text-muted-foreground">
                 {g ? (
                   <>
                     <span className="font-medium text-foreground">
@@ -382,7 +382,7 @@ export default function UploadCategoryGrid({
             </CardContent>
           </Card>
 
-          <Card className="rounded-lg border border-dashed border-border bg-muted/80 shadow-sm">
+          <Card className="rounded-lg border border-dashed border-border bg-white shadow-sm">
             <CardContent className="space-y-2 p-2.5 sm:p-3">
               <div className="flex items-start gap-2">
                 <div className="shrink-0 rounded-md bg-card p-1.5 ring-1 ring-border">
@@ -436,7 +436,7 @@ export default function UploadCategoryGrid({
           />
         ))}
 
-        <Card className="rounded-2xl border border-primary/30 bg-primary/5 shadow-sm transition-all duration-200 hover:shadow-md">
+        <Card className="rounded-2xl border border-primary/30 bg-white shadow-sm transition-all duration-200 hover:shadow-md">
           <CardContent className="space-y-4 p-5">
             <div className="flex items-start justify-between gap-2">
               <div className="flex items-start gap-3">
@@ -459,7 +459,7 @@ export default function UploadCategoryGrid({
               )}
             </div>
 
-            <div className="rounded-xl border border-primary/15 bg-card/90 px-3 py-2.5 text-xs text-muted-foreground">
+            <div className="rounded-xl border border-primary/15 bg-white px-3 py-2.5 text-xs text-muted-foreground">
               {g ? (
                 <>
                   <span className="font-medium text-foreground">
@@ -488,7 +488,7 @@ export default function UploadCategoryGrid({
           </CardContent>
         </Card>
 
-        <Card className="rounded-2xl border border-dashed border-border bg-muted/60 shadow-sm transition-all duration-200 hover:shadow-md">
+        <Card className="rounded-2xl border border-dashed border-border bg-white shadow-sm transition-all duration-200 hover:shadow-md">
           <CardContent className="space-y-4 p-5">
             <div className="flex items-start gap-3">
               <div className="flex-shrink-0 rounded-xl bg-card p-2.5 ring-1 ring-border">

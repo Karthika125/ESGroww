@@ -10,6 +10,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { getWhereIStandData } from "@/actions/whereIStand.action";
 import { updateHospitalProfile } from "@/actions/updateHospitalProfile.actions";
+import { Card as BaseCard } from "@/components/ui/card";
 
 const BRAND = {
   bg: "#FBFBF3",
@@ -413,9 +414,14 @@ export default function WhereIStandPage() {
 /* ─── SUB-COMPONENTS ─── */
 function Card({ children, className = "" }: { children: React.ReactNode; className?: string }) {
   return (
-    <div className={`rounded-2xl border p-4 ${className}`} style={{ background: BRAND.bg, borderColor: BRAND.border }}>
+    <BaseCard
+      className={`gap-0 rounded-2xl border p-0 shadow-sm ${className}`}
+      style={{ background: "#ffffff", borderColor: BRAND.border }}
+    >
+      <div className="p-4">
       {children}
-    </div>
+      </div>
+    </BaseCard>
   );
 }
 

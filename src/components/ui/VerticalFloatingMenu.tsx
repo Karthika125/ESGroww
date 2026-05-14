@@ -2,18 +2,18 @@
 
 import { useCallback, useState } from "react";
 import { useRouter } from "next/navigation";
-  import { AnimatePresence, motion } from "framer-motion";
-  import {
-    MapPin,
-    Compass,
-    BarChart2,
-    Gauge,
-    BookOpen,
-    User,
-    X,
-    LogOut,
-    TrendingUp,
-  } from "lucide-react";
+import { AnimatePresence, motion } from "framer-motion";
+import {
+  MapPin,
+  Compass,
+  BarChart2,
+  Gauge,
+  BookOpen,
+  User,
+  X,
+  LogOut,
+  TrendingUp,
+} from "lucide-react";
 
 type MenuItem = {
   key: string;
@@ -61,11 +61,24 @@ export default function VerticalFloatingMenu() {
             aria-expanded={isProfileOpen}
             aria-label="Open menu"
           >
-            <div className="relative flex h-12 w-12 items-center justify-center rounded-full border border-border bg-card text-foreground shadow-lg sm:h-14 sm:w-14">
-              <span className="absolute inset-0 rounded-full border border-border/60" />
+            <motion.div
+              animate={{ y: [0, -2, 0] }}
+              transition={{ duration: 4.5, repeat: Infinity, ease: "easeInOut" }}
+              whileHover={{ scale: 1.05, rotate: 2 }}
+              className="relative flex h-12 w-12 items-center justify-center rounded-full border border-white/45 bg-white/20 text-foreground shadow-[0_12px_32px_rgba(15,23,42,0.14)] backdrop-blur-xl ring-1 ring-white/35 sm:h-14 sm:w-14"
+              style={{ background: "linear-gradient(145deg, rgba(255,255,255,0.42), rgba(255,255,255,0.12))" }}
+            >
+              <span className="absolute inset-0 rounded-full border border-white/50 bg-white/10 shadow-[inset_0_1px_0_rgba(255,255,255,0.45)]" />
+              <span className="absolute inset-0 rounded-full bg-gradient-to-br from-white/35 via-white/10 to-transparent opacity-80" />
 
-              <User size={22} />
-            </div>
+              <motion.div
+                animate={{ scale: [1, 1.04, 1] }}
+                transition={{ duration: 3.8, repeat: Infinity, ease: "easeInOut" }}
+                className="relative z-10"
+              >
+                <User size={22} />
+              </motion.div>
+            </motion.div>
           </button>
 
           {/* Menu items shown under profile (replacing hamburger) */}
@@ -96,13 +109,21 @@ export default function VerticalFloatingMenu() {
                       animate={{ opacity: 1, y: 0, scale: 1 }}
                       transition={{ delay: 0.03, duration: 0.2 }}
                       whileHover={{ scale: 1.06, y: -2 }}
-                      className="group relative flex h-11 w-11 items-center justify-center overflow-visible rounded-full border border-border bg-card/95 text-foreground shadow-md backdrop-blur-sm transition-colors duration-300 hover:border-primary hover:bg-primary hover:text-primary-foreground sm:h-12 sm:w-12"
+                      className="group relative flex h-11 w-11 items-center justify-center overflow-visible rounded-full border border-white/40 bg-white/18 text-foreground shadow-[0_10px_28px_rgba(15,23,42,0.12)] backdrop-blur-xl ring-1 ring-white/30 transition-all duration-300 hover:-translate-y-1 hover:border-primary/40 hover:bg-primary hover:text-primary-foreground sm:h-12 sm:w-12"
+                      style={{ background: "linear-gradient(145deg, rgba(255,255,255,0.38), rgba(255,255,255,0.08))" }}
                     >
-                      <span className="absolute inset-0 rounded-full bg-primary/10 opacity-0 blur-md transition-opacity duration-300 group-hover:opacity-100" />
+                      <span className="absolute inset-0 rounded-full bg-white/20 opacity-0 blur-md transition-opacity duration-300 group-hover:opacity-100" />
+                      <span className="absolute inset-0 rounded-full border border-white/40 shadow-[inset_0_1px_0_rgba(255,255,255,0.35)]" />
 
-                      <Icon size={16} className="relative z-10 transition-colors duration-300" />
+                      <motion.div
+                        whileHover={{ scale: 1.08, rotate: -4 }}
+                        transition={{ type: "spring", stiffness: 320, damping: 18 }}
+                        className="relative z-10"
+                      >
+                        <Icon size={16} className="transition-colors duration-300" />
+                      </motion.div>
 
-                      <span className="pointer-events-none absolute right-full mr-2.5 w-max whitespace-nowrap rounded-md bg-foreground px-2.5 py-1 text-xs font-medium text-background opacity-0 shadow-lg transition-all duration-200 group-hover:-translate-x-0.5 group-hover:opacity-100 sm:mr-3 sm:px-3 sm:py-1.5">
+                      <span className="pointer-events-none absolute right-full mr-2.5 w-max whitespace-nowrap rounded-md border border-white/15 bg-slate-950/80 px-2.5 py-1 text-xs font-medium text-white opacity-0 shadow-lg backdrop-blur-md transition-all duration-200 group-hover:-translate-x-0.5 group-hover:opacity-100 sm:mr-3 sm:px-3 sm:py-1.5">
                         {item.label}
                       </span>
                     </motion.button>
