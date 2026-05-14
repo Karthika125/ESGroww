@@ -214,8 +214,7 @@ export default function ResultsPage() {
   const annEl   = data.annualizedValues.electricity ?? 0;
   const annWa   = data.annualizedValues.water       ?? 0;
   const annWaste= data.annualizedValues.waste        ?? 0;
-  const orgBeds = (data as any).orgBeds ?? 100;
-  const sqft    = orgBeds * 2.5; // standard healthcare sqft-per-bed approximation
+  const sqft    = (data as any).builtUpArea ?? (data as any).orgBuiltUpArea ?? 0;
   const renPct  = (data as any).percentages?.renewableEnergy  ?? 0;
   const wRePct  = (data as any).percentages?.waterRecycling   ?? 0;
   const wsePct  = (data as any).percentages?.wasteRecycling   ?? 0;

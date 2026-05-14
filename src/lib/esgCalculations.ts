@@ -10,7 +10,7 @@
  */
 
 const EMISSION_FACTORS = {
-  electricity: 0.82, // kg CO2e / kWh
+  electricity: 0.72, // kg CO2e / kWh
 
   diesel: 2.68, // kg CO2e / litre
 
@@ -366,6 +366,7 @@ export function calculateBenchmarkScores(params: {
   waterRecyclingPercentage: number;
   wasteDiversionPercentage: number;
   energyPerBed: number;
+  energyIntensityPerSqft?: number;
   waterPerBed: number;
   wastePerBed: number;
 }): Record<string, number> {
@@ -375,17 +376,20 @@ export function calculateBenchmarkScores(params: {
     waterRecyclingPercentage: 25, // 25% water recycling target
     wasteDiversionPercentage: 40, // 40% waste diversion target
     energyPerBed: 15000, // 15,000 kWh per bed per year
+    energyIntensityPerSqft: 15, // 15 kWh/sqft/year target
     waterPerBed: 800, // 800 KL per bed per year
     wastePerBed: 1200, // 1,200 kg per bed per year
   };
 
-  const { renewablePercentage, waterRecyclingPercentage, wasteDiversionPercentage, energyPerBed, waterPerBed, wastePerBed } = params;
+  const { renewablePercentage, waterRecyclingPercentage, wasteDiversionPercentage, energyPerBed, energyIntensityPerSqft, waterPerBed, wastePerBed } = params;
 
   // Calculate performance ratios (current / benchmark)
   const renewableRatio = renewablePercentage / benchmarks.renewablePercentage;
   const waterRatio = waterRecyclingPercentage / benchmarks.waterRecyclingPercentage;
   const wasteRatio = wasteDiversionPercentage / benchmarks.wasteDiversionPercentage;
-  const energyRatio = benchmarks.energyPerBed / energyPerBed; // Lower is better for intensity
+  const energyRatio = energyIntensityPerSqft && energyIntensityPerSqft > 0
+    ? benchmarks.energyIntensityPerSqft / energyIntensityPerSqft
+    : benchmarks.energyPerBed / energyPerBed; // Lower is better for intensity
   const waterIntensityRatio = benchmarks.waterPerBed / waterPerBed;
   const wasteIntensityRatio = benchmarks.wastePerBed / wastePerBed;
 
@@ -532,12 +536,27 @@ export function calculateCategoryScores(params: {
     wasteCompleteness,
   } = params;
 
-  // Energy score: based on renewable % and energy intensity
-  const energyScore = Math.round(
-    (renewablePercentage * 0.6 +
-      Math.min(benchmarkScores.energyIntensityScore ?? 50, 100) * 0.4) *
-      (electricityCompleteness / 100)
-  );
+  const electricityMonths = Math.round((electricityCompleteness / 100) * 12);
+  const electricityModifier = electricityMonths >= 3 ? calculateConfidenceScore(electricityMonths) : 0;
+
+  // Energy score: parameter-level scoring where only electricity-dependent
+  // components receive the confidence modifier.
+  const monthlyElectricityTracking = electricityMonths > 0 ? 20 * electricityModifier : 0;
+  const energyIntensityBenchmark = Math.min(20, Math.max(0, (benchmarkScores.energyIntensityScore ?? 0) * 0.2)) * electricityModifier;
+  const ledCoverage = 0;
+  const hvacEquipmentEfficiency = 7.5;
+  const energyMonitoringSystem = 0;
+  const renewableContribution = 0;
+  const powerFactor = 5;
+
+  const energyScore =
+    monthlyElectricityTracking +
+    energyIntensityBenchmark +
+    ledCoverage +
+    hvacEquipmentEfficiency +
+    energyMonitoringSystem +
+    renewableContribution +
+    powerFactor;
 
   // Water score: based on recycling % and completeness
   const waterScore = Math.round(
@@ -553,7 +572,7 @@ export function calculateCategoryScores(params: {
   const governance = Math.round(governanceScore);
 
   return {
-    energy: Math.min(energyScore, 100),
+    energy: Math.min(Math.round(energyScore * 100) / 100, 100),
     water: Math.min(waterScore, 100),
     waste: Math.min(wasteScore, 100),
     governance: Math.min(governance, 100),

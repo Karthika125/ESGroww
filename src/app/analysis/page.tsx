@@ -22,13 +22,14 @@ export default function AnalysisPage() {
   }
 
   // Calculate metrics
-  const numberOfBeds = data?.orgBeds || 100;
-  const sqft = numberOfBeds * 2.5;
+  const sqft = data?.builtUpArea || data?.orgBuiltUpArea || 0;
   const electricity = data?.annualizedValues?.electricity || 0;
   const water = data?.annualizedValues?.water || 0;
 
-  const energyIntensity = electricity > 0 ? electricity / sqft : 0;
-  const waterIntensity = water > 0 ? water / sqft : 0;
+  const energyIntensity = electricity > 0 && sqft > 0 ? electricity / sqft : null;
+  const waterIntensity = water > 0 && sqft > 0 ? water / sqft : null;
+  const energyIntensityValue = energyIntensity ?? 0;
+  const waterIntensityValue = waterIntensity ?? 0;
   const renewableEnergy = data?.percentages?.renewableEnergy || 0;
   const recyclingRate = data?.percentages?.wasteRecycling || 0;
 
@@ -64,12 +65,12 @@ export default function AnalysisPage() {
       icon: Zap,
       toneClass: "text-blue-500",
       accentClass: "border-blue-200 bg-blue-50",
-      value: energyIntensity.toFixed(2),
+      value: energyIntensity !== null ? energyIntensity.toFixed(2) : "N/A",
       unit: "kWh/sqft/year",
       status: getEnergyStatus(),
       benchmark: "Target < 15",
-      note: energyIntensity < 15 ? "Efficient" : energyIntensity <= 22 ? "Borderline" : "High",
-      score: energyIntensity < 15 ? 88 : energyIntensity <= 22 ? 68 : 42,
+      note: energyIntensityValue < 15 ? "Efficient" : energyIntensityValue <= 22 ? "Borderline" : "High",
+      score: energyIntensityValue < 15 ? 88 : energyIntensityValue <= 22 ? 68 : 42,
     },
     {
       key: "water",
@@ -77,12 +78,12 @@ export default function AnalysisPage() {
       icon: Droplets,
       toneClass: "text-cyan-500",
       accentClass: "border-cyan-200 bg-cyan-50",
-      value: waterIntensity.toFixed(3),
+      value: waterIntensity !== null ? waterIntensity.toFixed(3) : "N/A",
       unit: "KL/sqft/year",
       status: getWaterStatus(),
       benchmark: "Target < 0.20",
-      note: waterIntensity < 0.2 ? "Efficient" : waterIntensity <= 0.35 ? "Borderline" : "High",
-      score: waterIntensity < 0.2 ? 88 : waterIntensity <= 0.35 ? 68 : 42,
+      note: waterIntensityValue < 0.2 ? "Efficient" : waterIntensityValue <= 0.35 ? "Borderline" : "High",
+      score: waterIntensityValue < 0.2 ? 88 : waterIntensityValue <= 0.35 ? 68 : 42,
     },
     {
       key: "renewable",
@@ -192,7 +193,7 @@ export default function AnalysisPage() {
             <div className="flex items-start justify-between mb-2">
               <div>
                 <p className="text-[11px] font-bold text-blue-600 uppercase tracking-widest">Energy</p>
-                <p className="text-xl font-bold text-gray-900 mt-1">{energyIntensity.toFixed(2)}</p>
+                <p className="text-xl font-bold text-gray-900 mt-1">{energyIntensity !== null ? energyIntensity.toFixed(2) : "N/A"}</p>
                 <p className="text-[11px] text-gray-500 mt-0.5">kWh/sqft/year</p>
               </div>
               <div className="text-blue-200 opacity-70 group-hover:opacity-100 transition-opacity">
@@ -209,7 +210,7 @@ export default function AnalysisPage() {
             <div className="flex items-start justify-between mb-2">
               <div>
                 <p className="text-[11px] font-bold text-cyan-600 uppercase tracking-widest">Water</p>
-                <p className="text-xl font-bold text-gray-900 mt-1">{waterIntensity.toFixed(3)}</p>
+                <p className="text-xl font-bold text-gray-900 mt-1">{waterIntensity !== null ? waterIntensity.toFixed(3) : "N/A"}</p>
                 <p className="text-[11px] text-gray-500 mt-0.5">KL/sqft/year</p>
               </div>
               <div className="text-cyan-200 opacity-70 group-hover:opacity-100 transition-opacity">

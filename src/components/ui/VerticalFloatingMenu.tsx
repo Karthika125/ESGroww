@@ -29,7 +29,6 @@ export default function VerticalFloatingMenu() {
 
   const items: MenuItem[] = [
     { key: "where", label: "Where I stand", Icon: MapPin, href: "/where-i-stand" },
-    { key: "next", label: "What next", Icon: Compass, href: "/what-next" },
     { key: "kpi", label: "KPI", Icon: BarChart2, href: "/kpi" },
     { key: "analysis", label: "Analysis", Icon: TrendingUp, href: "/analysis" },
     { key: "metrics", label: "Completeness & Confidence", Icon: Gauge, href: "/metrics" },
