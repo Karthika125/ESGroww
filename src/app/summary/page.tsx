@@ -5,6 +5,13 @@ type DriverType =
   | "positive"
   | "negative";
 
+type DriverCardData = {
+  type: DriverType;
+  title: string;
+  impact: string;
+  detail: string;
+};
+
 export default async function SummaryPage() {
   const data = await getSummaryData();
 
@@ -18,8 +25,25 @@ export default async function SummaryPage() {
   const overallScore       = data.scores.overallScore;
   const readiness          = data.readinessStage;
 
-  const confidence    = data.confidence;
+  const confidence = data.confidence;
   const totalEmissions = data.totals.totalEmissions;
+  const dieselEmissionShare =
+    totalEmissions > 0
+      ? Math.round(
+          (data.emissions.dieselEmissions /
+            totalEmissions) *
+            100
+        )
+      : 0;
+
+  const scoreImpact = (delta: number) => {
+    const magnitude = Math.max(
+      1,
+      Math.round(Math.abs(delta) / 5)
+    );
+
+    return `${delta >= 0 ? "+" : "-"}${magnitude} ESG`;
+  };
 
   /* ========================= */
   /* DYNAMIC INSIGHTS          */
@@ -58,53 +82,49 @@ export default async function SummaryPage() {
   /* DRIVERS                   */
   /* ========================= */
 
-  const drivers: {
-    type: DriverType;
-    title: string;
-    impact: string;
-  }[] = [
+  const drivers: DriverCardData[] = [
     {
       type:
-        data.percentages.waterRecyclePercentage >
-        40
+        data.percentages.renewablePercentage >= 30
           ? "positive"
           : "negative",
+      title: "Renewable Energy Mix",
+      impact: scoreImpact(
+        data.percentages.renewablePercentage - 30
+      ),
+      detail: `${data.percentages.renewablePercentage}% renewable electricity against a 30% target.`,
+    },
 
+    {
+      type:
+        data.percentages.waterRecyclePercentage >= 25
+          ? "positive"
+          : "negative",
       title: "Water Recycling",
-
-      impact:
-        data.percentages.waterRecyclePercentage >
-        40
-          ? "+8 ESG"
-          : "-5 ESG",
+      impact: scoreImpact(
+        data.percentages.waterRecyclePercentage - 25
+      ),
+      detail: `${data.percentages.waterRecyclePercentage}% recycled water against a 25% target.`,
     },
 
     {
       type:
-        data.coverage.electricityMonths >= 10
+        confidence >= 70
           ? "positive"
           : "negative",
-
-      title: "Electricity Tracking",
-
-      impact:
-        data.coverage.electricityMonths >= 10
-          ? "+10 ESG"
-          : "-8 ESG",
+      title: "Reporting Coverage",
+      impact: scoreImpact(confidence - 70),
+      detail: `${confidence}% confidence from category coverage across the uploaded data.`,
     },
 
     {
       type:
-        data.totals.totalDiesel > 0
-          ? "negative"
-          : "positive",
-
-      title: "Diesel Consumption",
-
-      impact:
-        data.totals.totalDiesel > 0
-          ? "-14 ESG"
-          : "+5 ESG",
+        dieselEmissionShare <= 25
+          ? "positive"
+          : "negative",
+      title: "Diesel Dependency",
+      impact: scoreImpact(25 - dieselEmissionShare),
+      detail: `${dieselEmissionShare}% of total emissions comes from diesel consumption.`,
     },
   ];
 
@@ -358,6 +378,7 @@ export default async function SummaryPage() {
                   title={driver.title}
                   impact={driver.impact}
                   type={driver.type}
+                  detail={driver.detail}
                 />
               ))}
 
@@ -373,63 +394,69 @@ export default async function SummaryPage() {
 
               <div className="flex items-center mb-4">
 
-                <h2 className="text-xl font-bold text-slate-900">
-                  Emissions
-                </h2>
+                <h2 className="text-xl font-bold text-slate-900">Emissions</h2>
 
-                <InfoTooltip text="Calculated using standard emission conversion factors for electricity and diesel consumption." />
+                <InfoTooltip text="Calculated from annualized electricity, diesel, transport fuel, and refrigerant activity using shared emission factors." />
 
               </div>
 
-              <div className="space-y-3 text-sm">
+              <div className="space-y-3">
 
                 <div className="bg-slate-50 rounded-xl p-4">
-
-                  <p className="font-semibold text-slate-900">
-                    Electricity
-                  </p>
-
+                  <p className="font-semibold text-slate-900">Electricity</p>
                   <p className="mt-1 text-slate-600">
-                    {Math.round(
-                      data.totals.totalElectricity
-                    )}{" "}
-                    × 0.82
+                    {Math.round(data.emissions?.annualizedElectricity ?? data.totals.totalElectricity)} kWh × factor
                   </p>
-
                   <p className="mt-1 text-emerald-700 font-bold">
-                    {Math.round(
-                      data.totals
-                        .totalElectricity * 0.82
-                    )}{" "}
-                    kgCO₂e
+                    {data.emissions?.electricityEmissions ?? Math.round((data.totals.totalElectricity ?? 0) * 0.82)} kgCO₂e
                   </p>
-
                 </div>
 
                 <div className="bg-slate-50 rounded-xl p-4">
-
-                  <p className="font-semibold text-slate-900">
-                    Diesel
-                  </p>
-
+                  <p className="font-semibold text-slate-900">Diesel</p>
                   <p className="mt-1 text-slate-600">
-                    {Math.round(
-                      data.totals.totalDiesel
-                    )}{" "}
-                    × 2.68
+                    {Math.round(data.emissions?.annualizedDiesel ?? data.totals.totalDiesel)} L × 2.68
                   </p>
-
                   <p className="mt-1 text-emerald-700 font-bold">
-                    {Math.round(
-                      data.totals.totalDiesel *
-                        2.68
-                    )}{" "}
+                    {data.emissions?.dieselEmissions ?? Math.round((data.totals.totalDiesel ?? 0) * 2.68)} kgCO₂e
+                  </p>
+                </div>
+
+                <div className="bg-slate-50 rounded-xl p-4">
+                  <p className="font-semibold text-slate-900">Transport</p>
+                  <p className="mt-1 text-slate-600">
+                    {Math.round(data.emissions?.annualizedTransportFuel ?? data.totals.totalTransportFuel)} L × factor
+                  </p>
+                  <p className="mt-1 text-emerald-700 font-bold">
+                    {data.emissions?.transportEmissions ?? 0} kgCO₂e
+                  </p>
+                </div>
+
+                <div className="bg-slate-50 rounded-xl p-4">
+                  <p className="font-semibold text-slate-900">Refrigerants</p>
+                  <p className="mt-1 text-slate-600">
+                    {Math.round(data.emissions?.annualizedRefrigerantEmissions ?? 0)} kg (leaked)
+                  </p>
+                  <p className="mt-1 text-emerald-700 font-bold">
+                    {data.emissions?.refrigerantEmissions ?? 0} kgCO₂e
+                  </p>
+                </div>
+
+                <div className="bg-slate-50 rounded-xl p-4">
+                  <p className="font-semibold text-slate-900">Total</p>
+                  <p className="mt-1 text-emerald-700 font-bold">
+                    {data.emissions
+                      ? (data.emissions.electricityEmissions ?? 0) +
+                        (data.emissions.dieselEmissions ?? 0) +
+                        (data.emissions.transportEmissions ?? 0) +
+                        (data.emissions.refrigerantEmissions ?? 0)
+                      : totalEmissions}{" "}
                     kgCO₂e
                   </p>
-
                 </div>
 
               </div>
+
             </div>
 
             {/* RECOMMENDATIONS */}
@@ -617,10 +644,12 @@ function DriverCard({
   title,
   impact,
   type,
+  detail,
 }: {
   title: string;
   impact: string;
   type: DriverType;
+  detail?: string;
 }) {
   return (
     <div
@@ -633,21 +662,19 @@ function DriverCard({
 
       <div className="flex items-center justify-between">
 
-        <p className="font-semibold text-slate-900 text-sm">
-          {title}
-        </p>
+        <p className="font-semibold text-slate-900 text-sm">{title}</p>
 
         <p
           className={`font-bold text-sm ${
-            type === "positive"
-              ? "text-emerald-700"
-              : "text-red-600"
+            type === "positive" ? "text-emerald-700" : "text-red-600"
           }`}
         >
           {impact}
         </p>
 
       </div>
+
+      {detail && <p className="mt-2 text-sm text-slate-600">{detail}</p>}
 
     </div>
   );

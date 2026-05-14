@@ -1,6 +1,23 @@
 "use server";
 
 import { prisma } from "@/lib/db";
+import {
+  annualizeElectricity,
+  annualizeFuel,
+  annualizeValue,
+  calculateDieselEmissions,
+  calculateRefrigerantEmissions,
+  calculateRenewablePercentage,
+  calculateScope2Emissions,
+  calculateTransportEmissions,
+  calculateWaterRecyclingPercentage,
+  calculateWasteDiversionPercentage,
+} from "@/lib/esgCalculations";
+import { BRD_MIN_MONTHS_FOR_ANNUALIZATION } from "@/lib/upload/brdConstants";
+
+function annualizationDenominator(distinctMonths: number): number {
+  return distinctMonths >= BRD_MIN_MONTHS_FOR_ANNUALIZATION ? distinctMonths : 0;
+}
 
 export async function getSummaryData() {
 
@@ -141,6 +158,13 @@ if (!hospital) {
       0
     );
 
+  const totalTransportFuel =
+    hospital.transportData.reduce(
+      (sum, item) =>
+        sum + item.ambulanceFuelLitres,
+      0
+    );
+
   const totalWaste =
     hospital.wasteData.reduce(
       (sum, item) =>
@@ -156,6 +180,17 @@ if (!hospital) {
       (sum, item) =>
         sum +
         item.recyclableWasteKg,
+      0
+    );
+
+  const totalRefrigerantEmissions =
+    hospital.refrigerantData.reduce(
+      (sum, item) =>
+        sum +
+        calculateRefrigerantEmissions(
+          item.refrigerantType,
+          item.refrigerantLeakKg
+        ),
       0
     );
 
@@ -194,24 +229,60 @@ if (!hospital) {
   /* ESG EMISSIONS                         */
   /* ===================================== */
 
+  const annualizedElectricity =
+    annualizeElectricity(
+      totalElectricity,
+      annualizationDenominator(
+        electricityMonths
+      )
+    );
+
+  const annualizedDiesel =
+    annualizeFuel(
+      totalDiesel,
+      annualizationDenominator(
+        fuelMonths
+      )
+    );
+
+  const annualizedTransportFuel =
+    annualizeFuel(
+      totalTransportFuel,
+      annualizationDenominator(
+        transportMonths
+      )
+    );
+
+  const annualizedRefrigerantEmissions =
+    annualizeValue(
+      totalRefrigerantEmissions,
+      annualizationDenominator(
+        refrigerantMonths
+      )
+    );
+
   const electricityEmissions =
-    totalElectricity * 0.82;
+    calculateScope2Emissions(
+      annualizedElectricity
+    );
 
   const dieselEmissions =
-    totalDiesel * 2.68;
+    calculateDieselEmissions(
+      annualizedDiesel
+    );
+
+  const transportEmissions =
+    calculateTransportEmissions(
+      annualizedTransportFuel
+    );
 
   const refrigerantEmissions =
-    hospital.refrigerantData.reduce(
-      (sum, item) =>
-        sum +
-        item.refrigerantLeakKg *
-          1430,
-      0
-    );
+    annualizedRefrigerantEmissions;
 
   const totalEmissions =
     electricityEmissions +
     dieselEmissions +
+    transportEmissions +
     refrigerantEmissions;
 
   /* ===================================== */
@@ -358,6 +429,7 @@ if (!hospital) {
       totalElectricity,
       totalWater,
       totalDiesel,
+      totalTransportFuel,
       totalWaste,
       totalEmissions,
     },
@@ -396,9 +468,34 @@ if (!hospital) {
           dieselEmissions
         ),
 
+      transportEmissions:
+        Math.round(
+          transportEmissions
+        ),
+
       refrigerantEmissions:
         Math.round(
           refrigerantEmissions
+        ),
+
+      annualizedElectricity:
+        Math.round(
+          annualizedElectricity
+        ),
+
+      annualizedDiesel:
+        Math.round(
+          annualizedDiesel
+        ),
+
+      annualizedTransportFuel:
+        Math.round(
+          annualizedTransportFuel
+        ),
+
+      annualizedRefrigerantEmissions:
+        Math.round(
+          annualizedRefrigerantEmissions
         ),
     },
 
