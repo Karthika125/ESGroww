@@ -10,8 +10,8 @@ import { MistralChatbot } from "./MistralChatbot";
 export function ConditionalChatbot() {
   const pathname = usePathname();
 
-  // Hide chatbot on login and register pages
-  const hiddenPaths = ["/login", "/register", "/forgot-password", "/reset-password", "/verify-email"];
+  // Hide chatbot on public pages.
+  const hiddenPaths = ["/", "/login", "/register", "/forgot-password", "/reset-password", "/verify-email"];
   if (hiddenPaths.includes(pathname)) return null;
 
   return <MistralChatbot />;

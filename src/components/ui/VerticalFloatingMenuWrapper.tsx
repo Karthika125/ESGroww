@@ -8,8 +8,8 @@ export default function VerticalFloatingMenuWrapper() {
 
   if (!pathname) return null;
 
-  // hide on auth pages
-  const hide = ["/login", "/register"];
+  // hide on public pages
+  const hide = ["/", "/login", "/register"];
   if (hide.includes(pathname) || hide.some((p) => pathname.startsWith(p + "/"))) return null;
 
   return <VerticalFloatingMenu />;
