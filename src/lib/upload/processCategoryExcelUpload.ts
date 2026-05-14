@@ -6,7 +6,7 @@ import { prisma } from "@/lib/db";
 import {
   BRD_MAX_MONTHS_PER_FILE,
   BRD_MIN_MONTHS_FOR_READINESS_GATE,
-  BRD_MIN_MONTHS_PER_FILE,
+  
 } from "@/lib/upload/brdConstants";
 import { fingerprintDataset } from "@/lib/upload/datasetFingerprint";
 import {
@@ -15,11 +15,7 @@ import {
   parseCalendarMonthKey,
   parseRefrigerantRowKey,
 } from "@/lib/upload/monthKeys";
-import {
-  mergeStrategyRequiresIncomingFile,
-  parseMergeStrategy,
-  type MergeStrategy,
-} from "@/lib/upload/mergeStrategies";
+import { type MergeStrategy } from "@/lib/upload/mergeStrategies";
 import type {
   ExcelUploadActionResult,
   MergePreviewPayload,
@@ -187,6 +183,7 @@ function detectAbnormalSpikes(
   return warnings;
 }
 
+// CHANGE 1 applied: removed BRD_MIN_MONTHS_PER_FILE check from validateRows
 function validateRows(
   rows: Record<string, unknown>[],
   requiredFields: string[],
@@ -194,9 +191,6 @@ function validateRows(
 ): string | null {
   if (!rows.length) {
     return `Your ${category} file is empty or the column headers are incorrect.`;
-  }
-  if (rows.length < BRD_MIN_MONTHS_PER_FILE) {
-    return `${category} upload must contain at least ${BRD_MIN_MONTHS_PER_FILE} month row(s).`;
   }
   if (rows.length > BRD_MAX_MONTHS_PER_FILE) {
     return `${category} upload cannot contain more than ${BRD_MAX_MONTHS_PER_FILE} months of data in a single file.`;
@@ -232,13 +226,11 @@ function validateRows(
   return null;
 }
 
+// CHANGE 2 applied: removed BRD_MIN_MONTHS_PER_FILE check from validateRowsRefrigerants
 function validateRowsRefrigerants(rows: Record<string, unknown>[]): string | null {
   const cat = "Refrigerants";
   if (!rows.length) {
     return `Your ${cat} file is empty or the column headers are incorrect.`;
-  }
-  if (rows.length < BRD_MIN_MONTHS_PER_FILE) {
-    return `${cat} upload must contain at least ${BRD_MIN_MONTHS_PER_FILE} row(s).`;
   }
   if (rows.length > BRD_MAX_MONTHS_PER_FILE * 4) {
     return `${cat} upload exceeds maximum row count for a single file. Split into multiple uploads.`;
@@ -524,11 +516,29 @@ async function latestBatchHash(hospitalId: string, category: string) {
   return b;
 }
 
+type UploadMergeStrategy = MergeStrategy | "SKIP_DUPLICATE_DATASET" | "FORCE_DUPLICATE_REAUDIT";
+
+function parseMergeStrategy(value: FormDataEntryValue | null): UploadMergeStrategy | undefined {
+  const raw = String(value ?? "").trim();
+  if (!raw) return undefined;
+  if (raw === "ADD_TO_EXISTING" || raw === "REPLACE_EXISTING" || raw === "KEEP_EXISTING_ADD_NEW") {
+    return raw;
+  }
+  if (raw === "SKIP_DUPLICATE_DATASET" || raw === "FORCE_DUPLICATE_REAUDIT") {
+    return raw;
+  }
+  return undefined;
+}
+
+function mergeStrategyRequiresIncomingFile(strategy?: UploadMergeStrategy) {
+  return strategy !== "SKIP_DUPLICATE_DATASET" && strategy !== "FORCE_DUPLICATE_REAUDIT";
+}
+
 function orClauseFromCalendarKeys(keys: string[]) {
   return keys
     .map((k) => parseCalendarMonthKey(k))
     .filter((p): p is { year: number; month: string } => p !== null)
-    .map((p) => ({ AND: [{ year: p.year }, { month: p.month }] as const }));
+    .map((p) => ({ AND: [{ year: p.year }, { month: p.month }] }));
 }
 
 export async function processCategoryExcelUpload(
@@ -738,9 +748,11 @@ export async function processCategoryExcelUpload(
     }
 
     const strategy: MergeStrategy =
-      mergeStrategy ??
-      (overlap.length === 0 ? "KEEP_EXISTING_ADD_MISSING" : "KEEP_EXISTING_ADD_MISSING");
-
+      mergeStrategy === "ADD_TO_EXISTING" ||
+      mergeStrategy === "REPLACE_EXISTING" ||
+      mergeStrategy === "KEEP_EXISTING_ADD_NEW"
+        ? mergeStrategy
+        : "KEEP_EXISTING_ADD_NEW";
     const version = await nextBatchVersion(hospitalId, category);
     const monthKeysCsv = [...new Set(incomingKeys)].sort().join(",");
 
@@ -766,96 +778,39 @@ export async function processCategoryExcelUpload(
         },
       });
 
-      const keysToUpsert = new Set<string>();
+      const keysToInsert = new Set<string>();
 
-      if (strategy === "REPLACE_OVERLAPS" || strategy === "MERGE_COMPARE_APPLY_INCOMING") {
-        for (const k of incomingKeys) keysToUpsert.add(k);
-      } else if (strategy === "KEEP_EXISTING_ADD_MISSING" || strategy === "MERGE_COMPARE_APPLY_EXISTING") {
-        for (const k of newOnly) keysToUpsert.add(k);
-      } else {
-        for (const k of incomingKeys) keysToUpsert.add(k);
+      /* -------------------------------- */
+      /* KEEP EXISTING + ADD NEW          */
+      /* -------------------------------- */
+
+      if (strategy === "KEEP_EXISTING_ADD_NEW") {
+        for (const k of newOnly) {
+          keysToInsert.add(k);
+        }
       }
 
-      const uniqueOverlapCalendarKeys = [
-        ...new Set(
-          overlap.map((k) => {
-            const r = parseRefrigerantRowKey(k);
-            if (r) return buildCalendarMonthKey(r.year, r.month);
-            const c = parseCalendarMonthKey(k);
-            return c ? buildCalendarMonthKey(c.year, c.month) : k;
-          })
-        ),
-      ];
+      /* -------------------------------- */
+      /* REPLACE EXISTING                 */
+      /* -------------------------------- */
 
-      const collectAffectedBatchIds = async (): Promise<string[]> => {
-        const ids = new Set<string>();
-        if (category === "Refrigerants") {
-          const parsed = overlap
-            .map((k) => parseRefrigerantRowKey(k))
-            .filter((p): p is NonNullable<ReturnType<typeof parseRefrigerantRowKey>> => p !== null);
-          if (!parsed.length) return [];
-          const hit = await tx.refrigerantData.findMany({
-            where: {
-              hospitalId,
-              OR: parsed.map((p) => ({
-                AND: [{ year: p.year }, { month: p.month }, { refrigerantType: p.refrigerantType }],
-              })),
-            },
-            select: { sourceBatchId: true },
-          });
-          hit.forEach((h) => {
-            if (h.sourceBatchId) ids.add(h.sourceBatchId);
-          });
-          return [...ids];
-        }
-        const orClause = orClauseFromCalendarKeys(uniqueOverlapCalendarKeys);
-        if (!orClause.length) return [];
-        if (category === "Electricity") {
-          const hit = await tx.electricityData.findMany({
-            where: { hospitalId, OR: orClause },
-            select: { sourceBatchId: true },
-          });
-          hit.forEach((h) => {
-            if (h.sourceBatchId) ids.add(h.sourceBatchId);
-          });
-        } else if (category === "Water") {
-          const hit = await tx.waterData.findMany({
-            where: { hospitalId, OR: orClause },
-            select: { sourceBatchId: true },
-          });
-          hit.forEach((h) => {
-            if (h.sourceBatchId) ids.add(h.sourceBatchId);
-          });
-        } else if (category === "Fuel") {
-          const hit = await tx.fuelData.findMany({
-            where: { hospitalId, OR: orClause },
-            select: { sourceBatchId: true },
-          });
-          hit.forEach((h) => {
-            if (h.sourceBatchId) ids.add(h.sourceBatchId);
-          });
-        } else if (category === "Waste") {
-          const hit = await tx.wasteData.findMany({
-            where: { hospitalId, OR: orClause },
-            select: { sourceBatchId: true },
-          });
-          hit.forEach((h) => {
-            if (h.sourceBatchId) ids.add(h.sourceBatchId);
-          });
-        } else if (category === "Transport") {
-          const hit = await tx.transportData.findMany({
-            where: { hospitalId, OR: orClause },
-            select: { sourceBatchId: true },
-          });
-          hit.forEach((h) => {
-            if (h.sourceBatchId) ids.add(h.sourceBatchId);
-          });
-        }
-        return [...ids];
-      };
+      else if (strategy === "REPLACE_EXISTING") {
+        const uniqueOverlapCalendarKeys = [
+          ...new Set(
+            overlap.map((k) => {
+              const r = parseRefrigerantRowKey(k);
 
-      if (strategy === "REPLACE_OVERLAPS" || strategy === "MERGE_COMPARE_APPLY_INCOMING") {
-        const affected = await collectAffectedBatchIds();
+              if (r) {
+                return buildCalendarMonthKey(r.year, r.month);
+              }
+
+              const c = parseCalendarMonthKey(k);
+
+              return c ? buildCalendarMonthKey(c.year, c.month) : k;
+            })
+          ),
+        ];
+
         const orCal = orClauseFromCalendarKeys(uniqueOverlapCalendarKeys);
 
         if (category === "Electricity" && orCal.length) {
@@ -878,39 +833,138 @@ export async function processCategoryExcelUpload(
           await tx.transportData.deleteMany({
             where: { hospitalId, OR: orCal },
           });
-        } else if (category === "Refrigerants") {
-          const rk = overlap
+        }
+
+        // CHANGE 5 applied: Refrigerants support in REPLACE_EXISTING
+        else if (category === "Refrigerants") {
+          const refrigerantKeys = overlap
             .map((k) => parseRefrigerantRowKey(k))
-            .filter((p): p is NonNullable<ReturnType<typeof parseRefrigerantRowKey>> => p !== null);
-          if (rk.length) {
+            .filter(
+              (p): p is NonNullable<ReturnType<typeof parseRefrigerantRowKey>> => p !== null
+            );
+
+          if (refrigerantKeys.length) {
             await tx.refrigerantData.deleteMany({
               where: {
                 hospitalId,
-                OR: rk.map((p) => ({
-                  AND: [{ year: p.year }, { month: p.month }, { refrigerantType: p.refrigerantType }],
+                OR: refrigerantKeys.map((p) => ({
+                  AND: [
+                    { year: p.year },
+                    { month: p.month },
+                    { refrigerantType: p.refrigerantType },
+                  ],
                 })),
               },
             });
           }
         }
 
-        for (const id of affected) {
-          if (id === batch.id) continue;
-          await tx.dataUploadBatch.update({
-            where: { id },
-            data: {
-              isSuperseded: true,
-              supersededAt: new Date(),
-              supersededByBatchId: batch.id,
-            },
-          });
+        for (const k of incomingKeys) {
+          keysToInsert.add(k);
         }
       }
+
+      /* -------------------------------- */
+      /* ADD TO EXISTING                  */
+      /* -------------------------------- */
+
+      else if (strategy === "ADD_TO_EXISTING") {
+        for (const row of rows) {
+          const key = rowKeyForCategory(category, row);
+          const existingRow = existing.get(key);
+
+          if (existingRow) {
+            if (category === "Electricity") {
+              await tx.electricityData.update({
+                where: { id: existingRow.id as string },
+                data: {
+                  electricityKwh:
+                    Number(existingRow.electricityKwh) +
+                    parseNumericField(row.electricityKwh),
+                  renewableKwh:
+                    Number(existingRow.renewableKwh) +
+                    parseNumericField(row.renewableKwh),
+                },
+              });
+            } else if (category === "Water") {
+              await tx.waterData.update({
+                where: { id: existingRow.id as string },
+                data: {
+                  waterKl:
+                    Number(existingRow.waterKl) + parseNumericField(row.waterKl),
+                  recycledWaterKl:
+                    Number(existingRow.recycledWaterKl) +
+                    parseNumericField(row.recycledWaterKl),
+                },
+              });
+            } else if (category === "Fuel") {
+              await tx.fuelData.update({
+                where: { id: existingRow.id as string },
+                data: {
+                  dgDieselLitres:
+                    Number(existingRow.dgDieselLitres) +
+                    parseNumericField(row.dgDieselLitres),
+                },
+              });
+            } else if (category === "Waste") {
+              await tx.wasteData.update({
+                where: { id: existingRow.id as string },
+                data: {
+                  biomedicalWasteKg:
+                    Number(existingRow.biomedicalWasteKg) +
+                    parseNumericField(row.biomedicalWasteKg),
+                  recyclableWasteKg:
+                    Number(existingRow.recyclableWasteKg) +
+                    parseNumericField(row.recyclableWasteKg),
+                  landfillWasteKg:
+                    Number(existingRow.landfillWasteKg) +
+                    parseNumericField(row.landfillWasteKg),
+                },
+              });
+            } else if (category === "Transport") {
+              await tx.transportData.update({
+                where: { id: existingRow.id as string },
+                data: {
+                  ambulanceFuelLitres:
+                    Number(existingRow.ambulanceFuelLitres) +
+                    parseNumericField(row.ambulanceFuelLitres),
+                  staffCommuteKm:
+                    Number(existingRow.staffCommuteKm) +
+                    parseNumericField(row.staffCommuteKm),
+                },
+              });
+            } else if (category === "Refrigerants") {
+              await tx.refrigerantData.update({
+                where: { id: existingRow.id as string },
+                data: {
+                  refrigerantLeakKg:
+                    Number(existingRow.refrigerantLeakKg) +
+                    parseNumericField(row.refrigerantLeakKg),
+                },
+              });
+            }
+          } else {
+            keysToInsert.add(key);
+          }
+        }
+      }
+
+      /* -------------------------------- */
+      /* DEFAULT                          */
+      /* -------------------------------- */
+
+      else {
+        for (const k of incomingKeys) {
+          keysToInsert.add(k);
+        }
+      }
+
+      // CHANGE 4 applied: removed dead uniqueOverlapCalendarKeys block that was here
 
       let inserted = 0;
       for (const row of rows) {
         const key = rowKeyForCategory(category, row);
-        if (!keysToUpsert.has(key)) continue;
+        if (!keysToInsert.has(key)) continue;
         const pb = parsedBaseFromRow(row);
         if (category === "Electricity") {
           await tx.electricityData.create({
@@ -1016,10 +1070,17 @@ export async function processCategoryExcelUpload(
     const conf = calculateConfidenceScore(distinctAfter);
 
     let mergeSummary = "";
-    if (strategy === "REPLACE_OVERLAPS") mergeSummary = "Overlapping months were replaced with incoming values.";
-    else if (strategy === "MERGE_COMPARE_APPLY_INCOMING") mergeSummary = "Merge resolution: incoming values applied for overlaps.";
-    else if (strategy === "MERGE_COMPARE_APPLY_EXISTING" || strategy === "KEEP_EXISTING_ADD_MISSING")
-      mergeSummary = "Existing months preserved; only new months were appended.";
+
+    if (strategy === "ADD_TO_EXISTING") {
+      mergeSummary =
+        "Existing overlapping months were aggregated and new months were inserted.";
+    } else if (strategy === "REPLACE_EXISTING") {
+      mergeSummary =
+        "Existing overlapping months were replaced and new months were inserted.";
+    } else if (strategy === "KEEP_EXISTING_ADD_NEW") {
+      mergeSummary =
+        "Existing months were preserved and only new months were inserted.";
+    }
 
     return {
       success: true,

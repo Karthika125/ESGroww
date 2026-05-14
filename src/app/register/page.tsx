@@ -251,7 +251,7 @@ export default function RegisterPage() {
   return (
     <div className="flex min-h-0 w-full min-w-0 flex-1 flex-col bg-background">
       <PageWrapper maxWidth="wide" className="grid min-h-0 flex-1 grid-cols-1 items-start gap-6 py-6 sm:gap-8 sm:py-8 lg:grid-cols-2 lg:gap-10">
-        <aside className="hidden flex-col justify-center space-y-5 rounded-2xl border border-border bg-card p-7 text-muted-foreground shadow-sm ring-1 ring-foreground/[0.04] lg:sticky lg:top-6 lg:flex lg:max-h-[calc(100dvh-6rem)] lg:overflow-y-auto">
+        <aside className="hidden flex-col justify-center space-y-5 rounded-2xl border border-border bg-card p-7 text-muted-foreground shadow-sm ring-1 ring-foreground/[0.04] lg:flex">
           <div className="flex items-center gap-3">
             <div className="rounded-2xl border border-primary/20 bg-primary/10 p-3">
               <Leaf className="h-9 w-9 text-primary" />
@@ -306,14 +306,14 @@ export default function RegisterPage() {
           </p>
         </aside>
 
-        <div className="rounded-2xl border border-border bg-card p-6 shadow-md ring-1 ring-foreground/[0.04] sm:p-8 md:p-9">
+        <div className="rounded-2xl border border-border bg-white p-6 shadow-md ring-1 ring-foreground/[0.04] sm:p-8 md:p-9">
           <div className="mb-6 flex items-center gap-3 lg:hidden">
             <div className="rounded-xl border border-primary/20 bg-primary/10 p-2">
               <Leaf className="h-7 w-7 text-primary" />
             </div>
 
             <div>
-              <h2 className="text-2xl font-bold text-foreground">
+              <h2 className="text-2xl font-bold" style={{ color: "#004958" }}>
                 Create account
               </h2>
 
@@ -324,7 +324,7 @@ export default function RegisterPage() {
           </div>
 
           <div className="mb-6 hidden lg:block">
-            <h2 className="text-2xl font-bold text-foreground">
+            <h2 className="text-2xl font-bold" style={{ color: "#004958" }}>
               Registration
             </h2>
 
@@ -355,7 +355,7 @@ export default function RegisterPage() {
             </div>
           )}
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5" style={{ color: "#004958" }}>
             <InputField
               label="Full name"
               value={form.fullName}

@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { Geist_Mono, Lexend } from "next/font/google";
 import "./globals.css";
 import TopNav from "@/components/TopNav";
-import { MistralChatbot } from "@/components/chatbot/MistralChatbot";
+import { ConditionalChatbot } from "@/components/chatbot/ConditionalChatbot";
 import VerticalFloatingMenuWrapper from "@/components/ui/VerticalFloatingMenuWrapper";
 
 const lexend = Lexend({
@@ -33,7 +33,7 @@ export default function RootLayout({
         <main className="mx-auto flex min-h-0 w-full min-w-0 max-w-none flex-1 flex-col overflow-y-auto px-3 pt-1 pb-5 sm:px-4 sm:pb-6 lg:px-6 xl:px-8 2xl:px-10">
           {children}
         </main>
-        <MistralChatbot />
+        <ConditionalChatbot />
         <VerticalFloatingMenuWrapper />
       </body>
     </html>

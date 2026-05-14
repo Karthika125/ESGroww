@@ -247,33 +247,25 @@ export default function ExcelUploadButton({ category, onUploadSuccess, dense }: 
         <div className={cn("mt-3 grid gap-2", dense ? "grid-cols-1" : "sm:grid-cols-3")}>
           <button
             type="button"
-            onClick={() => void commitMerge("REPLACE_OVERLAPS")}
+            onClick={() => void commitMerge("REPLACE_EXISTING")}
             className="inline-flex items-center justify-center gap-1 rounded-lg border border-rose-200 bg-rose-50 px-2 py-2 text-[11px] font-semibold text-rose-900 hover:bg-rose-100"
           >
             Replace overlaps
           </button>
           <button
             type="button"
-            onClick={() => void commitMerge("KEEP_EXISTING_ADD_MISSING")}
+            onClick={() => void commitMerge("KEEP_EXISTING_ADD_NEW")}
             className="inline-flex items-center justify-center gap-1 rounded-lg border border-emerald-200 bg-emerald-50 px-2 py-2 text-[11px] font-semibold text-emerald-900 hover:bg-emerald-100"
           >
-            Keep + add missing
+            Keep existing + add missing
           </button>
           <button
             type="button"
-            onClick={() => void commitMerge("MERGE_COMPARE_APPLY_INCOMING")}
+            onClick={() => void commitMerge("ADD_TO_EXISTING")}
             className="inline-flex items-center justify-center gap-1 rounded-lg border border-blue-200 bg-blue-50 px-2 py-2 text-[11px] font-semibold text-blue-900 hover:bg-blue-100"
           >
             <GitMerge className="size-3.5 shrink-0" />
-            Merge: use incoming
-          </button>
-          <button
-            type="button"
-            onClick={() => void commitMerge("MERGE_COMPARE_APPLY_EXISTING")}
-            className="inline-flex items-center justify-center gap-1 rounded-lg border border-slate-200 bg-slate-50 px-2 py-2 text-[11px] font-semibold text-slate-800 hover:bg-slate-100 sm:col-span-2"
-          >
-            <GitMerge className="size-3.5 shrink-0" />
-            Merge: keep existing on overlaps
+            Add incoming to existing
           </button>
         </div>
       </div>

@@ -1,29 +1,29 @@
-/**
- * Resolution strategies for overlapping calendar months or duplicate datasets.
- */
-export const MERGE_STRATEGIES = [
-  "REPLACE_OVERLAPS",
-  "KEEP_EXISTING_ADD_MISSING",
-  "MERGE_COMPARE_APPLY_INCOMING",
-  "MERGE_COMPARE_APPLY_EXISTING",
-  "SKIP_DUPLICATE_DATASET",
-  "FORCE_DUPLICATE_REAUDIT",
-] as const;
+export type MergeStrategy =
+  | "ADD_TO_EXISTING"
+  | "REPLACE_EXISTING"
+  | "KEEP_EXISTING_ADD_NEW";
 
-export type MergeStrategy = (typeof MERGE_STRATEGIES)[number];
+export const MERGE_STRATEGY_LABELS = {
+  ADD_TO_EXISTING: {
+    title: "Add to Existing Data",
 
-export function parseMergeStrategy(raw: FormDataEntryValue | null): MergeStrategy | null {
-  if (raw === null || raw === undefined) return null;
-  const s = String(raw).trim();
-  if (!s) return null;
-  return (MERGE_STRATEGIES as readonly string[]).includes(s) ? (s as MergeStrategy) : null;
-}
+    description:
+      "Combine uploaded values with existing month values.",
+  },
 
-export function mergeStrategyRequiresIncomingFile(strategy: MergeStrategy): boolean {
-  return (
-    strategy === "REPLACE_OVERLAPS" ||
-    strategy === "KEEP_EXISTING_ADD_MISSING" ||
-    strategy === "MERGE_COMPARE_APPLY_INCOMING" ||
-    strategy === "MERGE_COMPARE_APPLY_EXISTING"
-  );
-}
+  REPLACE_EXISTING: {
+    title:
+      "Replace Existing Data",
+
+    description:
+      "Overwrite existing overlapping month values.",
+  },
+
+  KEEP_EXISTING_ADD_NEW: {
+    title:
+      "Keep Existing + Add Missing",
+
+    description:
+      "Ignore overlaps and only insert new months.",
+  },
+};

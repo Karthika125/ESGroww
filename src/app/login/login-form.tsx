@@ -259,7 +259,7 @@ export default function LoginForm() {
         </section>
 
         <div className="order-1 flex w-full min-w-0 items-center justify-center lg:order-2">
-          <Card className="w-full max-w-lg border-border bg-card shadow-md ring-1 ring-foreground/[0.04] lg:max-w-none">
+          <Card className="w-full max-w-lg border-border bg-white shadow-md ring-1 ring-foreground/[0.04] lg:max-w-none">
             <CardHeader className="space-y-3 pb-2">
               <div className="mb-1 flex justify-center lg:hidden">
                 <div className="rounded-full border border-primary/20 bg-primary/10 p-3">
@@ -267,7 +267,7 @@ export default function LoginForm() {
                 </div>
               </div>
 
-              <CardTitle className="text-center text-2xl font-bold text-foreground">
+              <CardTitle className="text-center text-2xl font-bold" style={{ color: "#004958" }}>
                 Welcome back
               </CardTitle>
 
@@ -281,6 +281,7 @@ export default function LoginForm() {
               <form
                 onSubmit={handleLogin}
                 className="space-y-4"
+                style={{ color: "#004958" }}
               >
                 {infoBanner && (
                   <div className="rounded-lg border border-primary/25 bg-primary/10 px-3 py-2 text-sm text-foreground">
