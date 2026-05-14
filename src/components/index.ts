@@ -13,9 +13,3 @@ export { default as GenericSpiderChart } from "../charts/GenericSpiderChart";
 
 // Metrics Components
 export { default as CategoryCard } from "../metrics/CategoryCard";
-export { default as CategoryComparisonChart } from "../metrics/CategoryComparisonChart";
-export { default as ConfidenceChart } from "../metrics/ConfidenceChart";
-export { default as OverallMetricsChart } from "../metrics/OverallMetricsChart";
-
-// KPI Components
-export { default as KPICard } from "../kpi/KPICard";

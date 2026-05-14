@@ -13,10 +13,13 @@ export interface DownloadReportData {
   confidence: number;
   totalEmissions: number;
   annualizedValues: { electricity: number; water: number; fuel: number; waste: number };
-  certificationReadiness: Record<string, boolean | number>;
+  certificationReadiness?: { name: string; score: number; status: string }[];
   categoryScores?: { energy: number; water: number; waste: number; governance: number };
   emissions?: { scope1: number; scope2: number; scope3: number };
   strengths?: string[];
+  builtUpArea?: number;
+  orgBuiltUpArea?: number;
+  percentages?: { renewableEnergy?: number; waterRecycling?: number; wasteRecycling?: number };
   gaps?: { text: string; severity: "High" | "Medium" | "Low" }[];
   regulatoryReadiness?: { regulation: string; readiness: number; risk: "Low" | "Medium" | "Medium-High" | "High" }[];
   roadmap?: { action: string; timeline: string; impact: string }[];
@@ -27,7 +30,10 @@ interface DownloadReportButtonProps {
   className?: string;
   label?: string;
   disabled?: boolean;
-  /** When set, captures this DOM node and composites it onto `public/pdf_template/*.pdf`. */
+  /**
+   * Root element that contains one or more `[data-pdf-page]` print canvases.
+   * Each page is rasterized separately and composited onto a copy of `public/pdf_template/template.pdf`.
+   */
   captureRootId: string;
 }
 

@@ -15,6 +15,10 @@ import {
   calculateEnergyPerBed,
   calculateWaterPerBed,
   calculateWastePerBed,
+  calculateBenchmarkScores,
+  calculateCertificationReadiness,
+  calculateConfidenceScore,
+  calculateGapAnalysis,
 
   calculateESGReadinessScore,
 } from "@/lib/esgCalculations";
