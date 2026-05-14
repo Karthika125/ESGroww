@@ -302,6 +302,10 @@ export async function fetchDashboardIntelligence() {
       waterRecyclingPercentage,
       wasteDiversionPercentage,
       energyPerBed,
+      energyIntensityPerSqft:
+        hospital.builtUpArea > 0
+          ? electricityKwh / hospital.builtUpArea
+          : 0,
       waterPerBed,
       wastePerBed,
     });

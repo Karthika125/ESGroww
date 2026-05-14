@@ -255,6 +255,11 @@ export async function computeAndSaveAssessment() {
 
   const annualizedWaste = annualizeWaste(totalWaste, annualizationDenominator(wasteMonths));
 
+  const energyIntensityPerSqft =
+    hospital.builtUpArea > 0
+      ? annualizedElectricity / hospital.builtUpArea
+      : 0;
+
   // ─────────────────────────────────────────────
   // EMISSIONS
   // ─────────────────────────────────────────────
@@ -371,6 +376,7 @@ export async function computeAndSaveAssessment() {
       waterRecyclingPercentage,
       wasteDiversionPercentage,
       energyPerBed,
+      energyIntensityPerSqft,
       waterPerBed,
       wastePerBed,
     });
@@ -807,6 +813,9 @@ export async function computeAndSaveAssessment() {
       confidenceScore,
 
     totalEmissions,
+
+    builtUpArea:
+      hospital.builtUpArea,
 
     orgName:
       hospital.hospitalName,

@@ -32,8 +32,7 @@ export default function KPIPage() {
 
   // Extract assessment data
   const annualizedValues = data?.annualizedValues || {};
-  const numberOfBeds = data?.orgBeds || 100;
-  const sqft = numberOfBeds * 2.5;
+  const sqft = data?.builtUpArea || data?.orgBuiltUpArea || 0;
 
   // Calculate KPIs
   const electricity = annualizedValues.electricity || 0;
@@ -41,8 +40,8 @@ export default function KPIPage() {
   const waste = annualizedValues.waste || 0;
 
   // Per sqft calculations
-  const energyIntensity = electricity > 0 ? electricity / sqft : null;
-  const waterIntensity = water > 0 ? water / sqft : null;
+  const energyIntensity = electricity > 0 && sqft > 0 ? electricity / sqft : null;
+  const waterIntensity = water > 0 && sqft > 0 ? water / sqft : null;
 
   // Percentages from assessment data
   const renewablePercentage = data?.percentages?.renewableEnergy || 0;
@@ -147,7 +146,7 @@ export default function KPIPage() {
               </div>
               <div className="rounded-md border border-slate-200 bg-slate-50 p-3 flex flex-col justify-center">
                 <p className="text-slate-500 mb-1">Beds / Sqft</p>
-                <p className="text-sm font-semibold text-slate-800">{numberOfBeds} / {sqft.toFixed(0)}</p>
+                <p className="text-sm font-semibold text-slate-800">{sqft.toFixed(0)} sqft</p>
               </div>
             </div>
           </section>
