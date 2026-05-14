@@ -975,9 +975,6 @@ export async function computeAndSaveAssessment() {
     orgBeds:
       hospital.numberOfBeds,
 
-    orgName:
-      hospital.hospitalName,
-
     // Total values for reference
     totals: {
       electricity:

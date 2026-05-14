@@ -1,34 +1,56 @@
-import { toCanvas } from "html-to-image";
+import html2canvas from "html2canvas";
 import { PDFDocument } from "pdf-lib";
+import {
+  A4_PORTRAIT_PT,
+  PDF_RASTER_SCALE,
+  PDF_TEMPLATE_URL,
+  pdfPointsToCssPx,
+} from "@/lib/pdf/pdfConstants";
 
-/** Tried in order; place your branded A4 PDF under `public/pdf_template/`. */
-const TEMPLATE_URL_CANDIDATES = [
-  "/pdf_template/template.pdf",
-  "/pdf_template/report.pdf",
-  "/pdf_template/esg-report-template.pdf",
-];
-
-/** Content inset in PDF points (space reserved for template header/footer/frames). */
-const CONTENT_INSETS_PT = { left: 36, right: 36, top: 108, bottom: 48 };
-
-function sliceCanvas(source: HTMLCanvasElement, srcY: number, srcH: number): HTMLCanvasElement {
-  const w = source.width;
-  const h = Math.max(1, Math.round(srcH));
-  const slice = document.createElement("canvas");
-  slice.width = w;
-  slice.height = h;
-  const ctx = slice.getContext("2d");
-  if (!ctx) throw new Error("Could not get canvas context");
-  ctx.drawImage(source, 0, Math.round(srcY), w, h, 0, 0, w, h);
-  return slice;
+function ensureImagesLoaded(root: HTMLElement): Promise<void> {
+  const images = Array.from(root.querySelectorAll("img")) as HTMLImageElement[];
+  return Promise.all(
+    images.map(
+      (img) =>
+        new Promise<void>((resolve) => {
+          if (img.complete && img.naturalWidth !== 0) {
+            resolve();
+            return;
+          }
+          const finish = () => {
+            img.removeEventListener("load", finish);
+            img.removeEventListener("error", finish);
+            resolve();
+          };
+          img.addEventListener("load", finish);
+          img.addEventListener("error", finish);
+        })
+    )
+  ).then(() => undefined);
 }
 
-async function canvasToPngBytes(canvas: HTMLCanvasElement): Promise<Uint8Array> {
+function normalizeCaptureSubtree(node: HTMLElement) {
+  node.style.boxSizing = "border-box";
+  node.style.pointerEvents = "none";
+  for (const child of Array.from(node.children)) {
+    if (child instanceof HTMLElement) normalizeCaptureSubtree(child);
+  }
+}
+
+async function waitForStableRender() {
+  if (document.fonts?.ready) {
+    await document.fonts.ready;
+  }
+  await new Promise<void>((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve())));
+  await new Promise<void>((resolve) => setTimeout(resolve, 80));
+}
+
+function canvasToPngBytes(canvas: HTMLCanvasElement): Promise<Uint8Array> {
   return new Promise((resolve, reject) => {
     canvas.toBlob(
       (blob) => {
         if (!blob) {
-          reject(new Error("Canvas toBlob failed"));
+          reject(new Error("Canvas toBlob returned null."));
           return;
         }
         void blob.arrayBuffer().then((buf) => resolve(new Uint8Array(buf)));
@@ -39,104 +61,117 @@ async function canvasToPngBytes(canvas: HTMLCanvasElement): Promise<Uint8Array> 
   });
 }
 
-async function fetchTemplateBytes(): Promise<Uint8Array | null> {
-  for (const url of TEMPLATE_URL_CANDIDATES) {
-    try {
-      const res = await fetch(url, { cache: "no-store" });
-      if (res.ok) return new Uint8Array(await res.arrayBuffer());
-    } catch {
-      /* try next */
-    }
-  }
-  return null;
-}
-
 /**
- * Renders `captureRoot` to PNG slices scaled to fit the template content width,
- * repeats the template first page behind each slice so nothing is cropped mid-widget;
- * uses multiple A4-sized pages when the dashboard is taller than one frame.
+ * Builds a multi-page PDF by copying the vector template once per page, then drawing a
+ * transparent-background raster overlay produced from dedicated print nodes (`[data-pdf-page]`).
+ * Does not capture the dashboard DOM or slice a single tall screenshot.
  */
 export async function buildResultsPdfWithTemplate(captureRoot: HTMLElement): Promise<Uint8Array> {
-  /** Rasterize via SVG+canvas so modern CSS colors (oklch/lab) work; html2canvas cannot parse them. */
-  const pixelRatio = Math.min(2, Math.max(1, 1680 / Math.max(captureRoot.scrollWidth, 1)));
-
-  const canvas = await toCanvas(captureRoot, {
-    pixelRatio,
-    backgroundColor: "#f8fafc",
-    width: captureRoot.scrollWidth,
-    height: captureRoot.scrollHeight,
-    filter: (node) => {
-      if (!(node instanceof HTMLElement)) return true;
-      return !node.hasAttribute("data-html2canvas-ignore");
-    },
-    style: {
-      overflow: "visible",
-      maxHeight: "none",
-      height: "auto",
-    },
-  });
-
-  const imgW = canvas.width;
-  const imgH = canvas.height;
-  if (imgW < 2 || imgH < 2) {
-    throw new Error("Could not capture the report area (empty canvas).");
+  const pageEls = Array.from(captureRoot.querySelectorAll<HTMLElement>("[data-pdf-page]"));
+  if (pageEls.length === 0) {
+    throw new Error('No printable pages found. Add elements with the attribute data-pdf-page="" inside the export root.');
   }
 
-  const templateBytes = await fetchTemplateBytes();
-  let templateDoc: PDFDocument | null = null;
-  if (templateBytes) {
+  const templateRes = await fetch(PDF_TEMPLATE_URL);
+  if (!templateRes.ok) {
+    throw new Error(`Could not load PDF template (${PDF_TEMPLATE_URL}).`);
+  }
+  const templateBytes = await templateRes.arrayBuffer();
+  const templateDoc = await PDFDocument.load(templateBytes);
+  const templatePageIndex = 0;
+  let pageWPt = A4_PORTRAIT_PT.width;
+  let pageHPt = A4_PORTRAIT_PT.height;
+  try {
+    const s = templateDoc.getPage(templatePageIndex).getSize();
+    pageWPt = s.width;
+    pageHPt = s.height;
+  } catch {
+    /* use defaults */
+  }
+
+  const cssW = pdfPointsToCssPx(pageWPt);
+  const cssH = pdfPointsToCssPx(pageHPt);
+
+  const outDoc = await PDFDocument.create();
+
+  for (const pageEl of pageEls) {
+    pageEl.style.width = `${cssW}px`;
+    pageEl.style.height = `${cssH}px`;
+    pageEl.style.boxSizing = "border-box";
+  }
+  await waitForStableRender();
+
+  for (const pageEl of pageEls) {
+    const clone = pageEl.cloneNode(true) as HTMLElement;
+    normalizeCaptureSubtree(clone);
+    clone.style.width = `${cssW}px`;
+    clone.style.height = `${cssH}px`;
+    clone.style.position = "relative";
+    clone.style.overflow = "hidden";
+    clone.style.opacity = "1";
+
+    const wrapper = document.createElement("div");
+    wrapper.setAttribute("data-pdf-export-wrapper", "");
+    wrapper.style.cssText = [
+      "position:fixed",
+      "left:-32768px",
+      "top:0",
+      `width:${cssW}px`,
+      `height:${cssH}px`,
+      "overflow:hidden",
+      "pointer-events:none",
+      "z-index:-1",
+      "visibility:visible",
+    ].join(";");
+
+    wrapper.appendChild(clone);
+    document.body.appendChild(wrapper);
+
     try {
-      templateDoc = await PDFDocument.load(templateBytes, { ignoreEncryption: true });
-    } catch {
-      templateDoc = null;
+      await waitForStableRender();
+      await ensureImagesLoaded(clone);
+      await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+
+      const canvas = await html2canvas(clone, {
+        scale: PDF_RASTER_SCALE,
+        useCORS: true,
+        allowTaint: false,
+        backgroundColor: null,
+        logging: false,
+        width: cssW,
+        height: cssH,
+        windowWidth: cssW,
+        windowHeight: cssH,
+        ignoreElements: (element) => element.hasAttribute("data-html2canvas-ignore"),
+      });
+
+      if (!canvas || canvas.width < 2 || canvas.height < 2) {
+        throw new Error("Print page rasterization failed (empty canvas).");
+      }
+
+      const pngBytes = await canvasToPngBytes(canvas);
+      const png = await outDoc.embedPng(pngBytes);
+
+      const [embedded] = await outDoc.copyPages(templateDoc, [templatePageIndex]);
+      outDoc.addPage(embedded);
+      const page = outDoc.getPage(outDoc.getPageCount() - 1);
+
+      page.drawImage(png, {
+        x: 0,
+        y: 0,
+        width: pageWPt,
+        height: pageHPt,
+      });
+    } finally {
+      document.body.removeChild(wrapper);
     }
   }
 
-  const outPdf = await PDFDocument.create();
-  const tplPage0 = templateDoc?.getPage(0);
-  const pageW = tplPage0?.getWidth() ?? 595.28;
-  const pageH = tplPage0?.getHeight() ?? 841.89;
-
-  const contentX = CONTENT_INSETS_PT.left;
-  const contentW = pageW - CONTENT_INSETS_PT.left - CONTENT_INSETS_PT.right;
-  const contentH = pageH - CONTENT_INSETS_PT.top - CONTENT_INSETS_PT.bottom;
-
-  const pxToPt = contentW / imgW;
-  const slicePx = contentH / pxToPt;
-
-  let yPx = 0;
-  while (yPx < imgH - 0.5) {
-    const hPx = Math.min(slicePx, imgH - yPx);
-    const slice = sliceCanvas(canvas, yPx, hPx);
-    const pngBytes = await canvasToPngBytes(slice);
-    const embedded = await outPdf.embedPng(pngBytes);
-
-    if (templateDoc) {
-      const [copied] = await outPdf.copyPages(templateDoc, [0]);
-      outPdf.addPage(copied);
-    } else {
-      outPdf.addPage([pageW, pageH]);
-    }
-
-    const page = outPdf.getPage(outPdf.getPageCount() - 1);
-    const drawW = contentW;
-    const drawH = hPx * pxToPt;
-    const topFromBottom = pageH - CONTENT_INSETS_PT.top;
-    page.drawImage(embedded, {
-      x: contentX,
-      y: topFromBottom - drawH,
-      width: drawW,
-      height: drawH,
-    });
-
-    yPx += hPx;
-  }
-
-  return outPdf.save();
+  return outDoc.save({ useObjectStreams: true });
 }
 
 export function triggerPdfDownload(bytes: Uint8Array, fileName: string) {
-  const blob = new Blob([bytes], { type: "application/pdf" });
+  const blob = new Blob([bytes.buffer as ArrayBuffer], { type: "application/pdf" });
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;

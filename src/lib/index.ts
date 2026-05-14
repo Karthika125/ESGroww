@@ -20,6 +20,4 @@ export {
   getValidationStatus,
   clampPercentage,
   truncateText,
-  getStatusColor as getMetricsStatusColor,
-  getStatusBadgeColor as getMetricsBadgeColor,
 } from "./metricsUtils";

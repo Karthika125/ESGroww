@@ -258,6 +258,8 @@ export default function RiskAnalysisPage() {
           </select>
         </div>
 
+        <main className="space-y-12">
+
         {/* SECTION A: Critical Gaps */}
         <div className="mb-12">
           <h2 className="text-2xl font-bold text-slate-100 mb-6 flex items-center gap-2">
@@ -379,11 +381,6 @@ export default function RiskAnalysisPage() {
             ))}
           </div>
         </div>
-      </div>
-    </div>
-  );
-}
-
 
         {/* Overall Risk Summary */}
         <section className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -544,6 +541,7 @@ export default function RiskAnalysisPage() {
         </section>
       </main>
     </div>
+  </div>
   );
 }
 

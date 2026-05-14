@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { DownloadReportButton } from "@/components/shared/DownloadReportButton";
+import { ReportPdfCapture } from "@/components/pdf/ReportPdfCapture";
 import { Link2, Mail, Phone } from "lucide-react";
 import {
   evaluateEnergyIntensity,
@@ -13,8 +14,6 @@ import {
   evaluateWaterReuse,
   evaluateTankerWaterDependency,
   evaluateWasteSegregation,
-  getStatusBadgeColor,
-  getStatusColor,
 } from "@/lib/kpiUtils";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -27,13 +26,16 @@ interface AssessmentData {
   confidence: number;
   totalEmissions: number;
   annualizedValues: { electricity: number; water: number; fuel: number; waste: number };
-  certificationReadiness: Record<string, boolean | number>;
+  certificationReadiness?: { name: string; score: number; status: string }[];
   categoryScores?: { energy: number; water: number; waste: number; governance: number };
   emissions?: { scope1: number; scope2: number; scope3: number };
   strengths?: string[];
   gaps?: { text: string; severity: "High" | "Medium" | "Low" }[];
   regulatoryReadiness?: { regulation: string; readiness: number; risk: "Low" | "Medium" | "Medium-High" | "High" }[];
   roadmap?: { action: string; timeline: string; impact: string }[];
+  builtUpArea?: number;
+  orgBuiltUpArea?: number;
+  percentages?: { renewableEnergy?: number; waterRecycling?: number; wasteRecycling?: number };
 }
  
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -76,12 +78,6 @@ const formatCertName = (name: string): string => {
   return nameMap[name] || name;
 };
  
-const certScore = (v: boolean | number): number => {
-  if (typeof v === "number") return v;
-  // For boolean values from API, convert to score
-  // True (ready) = 70-80, False (not ready) = 40-50
-  return v ? 75 : 45;
-};
  
 // ─── Gauge SVG ────────────────────────────────────────────────────────────────
 function Gauge({ value, size = 88 }: { value: number; size?: number }) {
@@ -158,7 +154,7 @@ const MOCK: AssessmentData = {
   confidence: 0,
   totalEmissions: 0,
   annualizedValues: { electricity: 0, water: 0, fuel: 0, waste: 0 },
-  certificationReadiness: {},
+  certificationReadiness: [],
   categoryScores: { energy: 0, water: 0, waste: 0, governance: 0 },
   emissions: { scope1: 0, scope2: 0, scope3: 0 },
   strengths: [],
@@ -213,11 +209,10 @@ export default function ResultsPage() {
   // ── KPI derivations from existing data ──
   const annEl   = data.annualizedValues.electricity ?? 0;
   const annWa   = data.annualizedValues.water       ?? 0;
-  const annWaste= data.annualizedValues.waste        ?? 0;
-  const sqft    = (data as any).builtUpArea ?? (data as any).orgBuiltUpArea ?? 0;
-  const renPct  = (data as any).percentages?.renewableEnergy  ?? 0;
-  const wRePct  = (data as any).percentages?.waterRecycling   ?? 0;
-  const wsePct  = (data as any).percentages?.wasteRecycling   ?? 0;
+  const sqft    = data.builtUpArea ?? data.orgBuiltUpArea ?? 0;
+  const renPct  = data.percentages?.renewableEnergy  ?? 0;
+  const wRePct  = data.percentages?.waterRecycling   ?? 0;
+  const wsePct  = data.percentages?.wasteRecycling   ?? 0;
 
   const kpiItems = [
     { title: "Energy Intensity",    kpi: evaluateEnergyIntensity(annEl  > 0 && sqft > 0 ? annEl / sqft : null),   unit: "kWh/sqft/yr", icon: "⚡" },
@@ -231,10 +226,19 @@ export default function ResultsPage() {
     { title: "DG Dependency",       kpi: evaluateDGDependency(0),             unit: "%", icon: "🛢️" },
   ];
  
+  const glassCardClass = "bg-white/70 backdrop-blur-md border-white/20 shadow-xl";
+  const glassCardStyle: Record<string, string> = {
+    background: "rgba(255, 255, 255, 0.78)",
+    backdropFilter: "blur(16px)",
+    WebkitBackdropFilter: "blur(16px)",
+    border: "1px solid rgba(255, 255, 255, 0.45)",
+    boxShadow: "0 20px 45px rgba(15, 23, 42, 0.08)",
+  };
+
   return (
     <div style={{
       fontFamily: "'DM Sans', 'Segoe UI', sans-serif",
-      background: "#f8fafc",
+      background: "linear-gradient(180deg, #f8fafc 0%, #ecfdf5 100%)",
       minHeight: "100vh",
       width: "100%",
       overflowY: "auto",
@@ -246,9 +250,10 @@ export default function ResultsPage() {
       opacity: loaded ? 1 : 0,
       transition: "opacity 0.4s ease",
     }}>
+      <ReportPdfCapture data={data} />
       <div
         id="results-report-capture"
-        style={{ display: "flex", flexDirection: "column", flex: 1, minHeight: 0, width: "100%" }}
+        style={{ display: "flex", flexDirection: "column", flex: 1, minHeight: 0, width: "100%", maxWidth: "100%" }}
       >
       {/* ── Header ── */}
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
@@ -268,7 +273,7 @@ export default function ResultsPage() {
         <div data-html2canvas-ignore="true" style={{ display: "flex", gap: 8, alignItems: "center" }}>
           <DownloadReportButton
             data={data}
-            captureRootId="results-report-capture"
+            captureRootId="pdf-report-capture"
             label={loaded ? "Download Report" : "Loading report..."}
             className="min-w-[140px] bg-slate-900 text-white hover:bg-slate-800"
             disabled={!loaded}
@@ -325,10 +330,10 @@ export default function ResultsPage() {
       )}
  
       {/* ── Main grid ── */}
-      <div style={{ flex: 1, display: "grid", gridTemplateColumns: "minmax(180px, 240px) minmax(220px, 1fr) minmax(220px, 1fr) minmax(220px, 1fr)", gridAutoRows: "minmax(240px, auto)", gridTemplateRows: "minmax(240px, auto) minmax(240px, auto) auto", gap: 16, minHeight: 0 }}>
+      <div style={{ flex: 1, display: "grid", gridTemplateColumns: "minmax(220px, 240px) minmax(140px, 1fr) minmax(140px, 1fr) minmax(140px, 1fr)", gridAutoRows: "minmax(220px, auto)", gridTemplateRows: "minmax(240px, auto) minmax(240px, auto) auto", gap: 14, minHeight: 0 }}>
  
         {/* ── Col 1: Overall Hero (spans 2 rows) ── */}
-        <div style={{ gridRow: "1 / 3", background: "#fff", borderRadius: 12, border: "1px solid #e2e8f0", padding: "14px 12px", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "space-between" }}>
+        <div className={glassCardClass} style={{ ...glassCardStyle, gridRow: "1 / 3", borderRadius: 16, padding: "18px 16px", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "space-between" }}>
           <div style={{ textAlign: "center", width: "100%" }}>
             <p style={{ margin: 0, fontSize: 9, fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", letterSpacing: 1 }}>Overall Readiness</p>
             <div style={{ margin: "6px auto 0" }}>
@@ -365,13 +370,12 @@ export default function ResultsPage() {
         </div>
  
         {/* ── Row 1 Col 2: Certification Readiness ── */}
-        <div style={{ background: "#fff", borderRadius: 12, border: "1px solid #e2e8f0", padding: "12px 14px", overflow: "hidden", display: "flex", flexDirection: "column" }}>
-          <p style={{ margin: "0 0 8px", fontSize: 10, fontWeight: 700, color: "#0f172a", textTransform: "uppercase", letterSpacing: 0.8 }}>Certification Readiness</p>
-          <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 5, overflow: "hidden" }}>
+        <div className={glassCardClass} style={{ ...glassCardStyle, borderRadius: 16, padding: "14px 16px", overflow: "visible", display: "flex", flexDirection: "column" }}>
+          <p style={{ margin: "0 0 10px", fontSize: 10, fontWeight: 700, color: "#0f172a", textTransform: "uppercase", letterSpacing: 0.8 }}>Certification Readiness</p>
+          <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 5, overflow: "visible" }}>
             {certEntries.map((cert) => {
               const s = cert.score;
               const c = stageColor(s);
-              const lbl = stageLabel(s);
               return (
                 <div key={cert.name} style={{ display: "flex", alignItems: "center", gap: 8 }}>
                   <div style={{ flex: "0 0 90px", fontSize: 10, fontWeight: 600, color: "#334155", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{formatCertName(cert.name)}</div>
@@ -388,8 +392,8 @@ export default function ResultsPage() {
         </div>
  
         {/* ── Row 1 Col 3: Category Scores + Emissions ── */}
-        <div style={{ background: "#fff", borderRadius: 12, border: "1px solid #e2e8f0", padding: "12px 14px", display: "flex", flexDirection: "column" }}>
-          <p style={{ margin: "0 0 8px", fontSize: 10, fontWeight: 700, color: "#0f172a", textTransform: "uppercase", letterSpacing: 0.8 }}>Category Performance</p>
+        <div className={glassCardClass} style={{ ...glassCardStyle, borderRadius: 16, padding: "14px 16px", display: "flex", flexDirection: "column" }}>
+          <p style={{ margin: "0 0 10px", fontSize: 10, fontWeight: 700, color: "#0f172a", textTransform: "uppercase", letterSpacing: 0.8 }}>Category Performance</p>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 6, flex: 1 }}>
             {[
               { label: "Energy", val: catScores.energy, color: "#f59e0b", icon: "⚡" },
@@ -426,8 +430,8 @@ export default function ResultsPage() {
         </div>
  
         {/* ── Row 1 Col 4: Annualized KPIs ── */}
-        <div style={{ background: "#fff", borderRadius: 12, border: "1px solid #e2e8f0", padding: "12px 14px", display: "flex", flexDirection: "column" }}>
-          <p style={{ margin: "0 0 8px", fontSize: 10, fontWeight: 700, color: "#0f172a", textTransform: "uppercase", letterSpacing: 0.8 }}>Annualized Metrics</p>
+        <div className={glassCardClass} style={{ ...glassCardStyle, borderRadius: 16, padding: "14px 16px", display: "flex", flexDirection: "column" }}>
+          <p style={{ margin: "0 0 10px", fontSize: 10, fontWeight: 700, color: "#0f172a", textTransform: "uppercase", letterSpacing: 0.8 }}>Annualized Metrics</p>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 6, flex: 1 }}>
             {[
               { label: "Electricity", val: Math.round(data.annualizedValues.electricity).toLocaleString(), unit: "kWh", icon: "⚡", color: "#f59e0b" },
@@ -448,12 +452,12 @@ export default function ResultsPage() {
         </div>
  
         {/* ── Row 2 Col 2: Strengths + Gaps ── */}
-        <div style={{ background: "#fff", borderRadius: 12, border: "1px solid #e2e8f0", padding: "12px 14px", display: "flex", flexDirection: "column", overflow: "hidden" }}>
+        <div className={glassCardClass} style={{ ...glassCardStyle, borderRadius: 16, padding: "14px 16px", display: "flex", flexDirection: "column", overflow: "visible" }}>
           <div style={{ display: "flex", gap: 12, flex: 1, minHeight: 0 }}>
             {/* Strengths */}
-            <div style={{ flex: 1, overflow: "hidden", display: "flex", flexDirection: "column" }}>
+            <div style={{ flex: 1, overflow: "visible", display: "flex", flexDirection: "column" }}>
               <p style={{ margin: "0 0 7px", fontSize: 10, fontWeight: 700, color: "#16a34a", textTransform: "uppercase", letterSpacing: 0.8 }}>✓ Strengths</p>
-              <div style={{ flex: 1, overflow: "hidden", display: "flex", flexDirection: "column", gap: 4 }}>
+              <div style={{ flex: 1, overflow: "visible", display: "flex", flexDirection: "column", gap: 4 }}>
                 {(data.strengths ?? []).slice(0, 4).map((s, i) => (
                   <div key={i} style={{ background: "#f0fdf4", borderRadius: 6, padding: "5px 8px", border: "1px solid #bbf7d0" }}>
                     <p style={{ margin: 0, fontSize: 9, color: "#166534", lineHeight: 1.3 }}>{s}</p>
@@ -477,7 +481,7 @@ export default function ResultsPage() {
         </div>
  
         {/* ── Row 2 Col 3: Regulatory Readiness ── */}
-        <div style={{ background: "#fff", borderRadius: 12, border: "1px solid #e2e8f0", padding: "12px 14px", display: "flex", flexDirection: "column", overflow: "hidden" }}>
+        <div className={glassCardClass} style={{ ...glassCardStyle, borderRadius: 16, padding: "14px 16px", display: "flex", flexDirection: "column", overflow: "visible" }}>
           <p style={{ margin: "0 0 8px", fontSize: 10, fontWeight: 700, color: "#0f172a", textTransform: "uppercase", letterSpacing: 0.8 }}>Regulatory Readiness</p>
           <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 5 }}>
             {(data.regulatoryReadiness ?? []).map((reg, i) => (
@@ -510,9 +514,9 @@ export default function ResultsPage() {
         </div>
  
         {/* ── Row 2 Col 4: Priority Action Roadmap ── */}
-        <div style={{ background: "#fff", borderRadius: 12, border: "1px solid #e2e8f0", padding: "12px 14px", display: "flex", flexDirection: "column", overflow: "hidden" }}>
+        <div className={glassCardClass} style={{ ...glassCardStyle, borderRadius: 16, padding: "14px 16px", display: "flex", flexDirection: "column", overflow: "visible" }}>
           <p style={{ margin: "0 0 8px", fontSize: 10, fontWeight: 700, color: "#0f172a", textTransform: "uppercase", letterSpacing: 0.8 }}>Priority Action Roadmap</p>
-          <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 5, overflow: "hidden" }}>
+          <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 5, overflow: "visible" }}>
             {(data.roadmap ?? []).slice(0, 5).map((r, i) => {
               const tlColors: Record<string, string> = {
                 "Immediate": "#dc2626", "0–3 Months": "#ea580c", "3–6 Months": "#ca8a04", "6–12 Months": "#2563eb", "12+ Months": "#7c3aed",
@@ -539,7 +543,7 @@ export default function ResultsPage() {
         </div>
  
         {/* ── Row 3: KPI Dashboard (full width) ── */}
-        <div style={{ gridColumn: "1 / -1", background: "#fff", borderRadius: 16, border: "1px solid #e2e8f0", padding: "18px 22px", display: "flex", flexDirection: "column", gap: 14, boxShadow: "0 4px 20px rgba(15, 23, 42, 0.03)" }}>
+        <div className={glassCardClass} style={{ ...glassCardStyle, gridColumn: "1 / -1", borderRadius: 20, border: "1px solid rgba(255,255,255,0.45)", padding: "20px 24px", display: "flex", flexDirection: "column", gap: 14 }}>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
             <div>
               <p style={{ margin: 0, fontSize: 13, fontWeight: 800, color: "#0f172a", textTransform: "uppercase", letterSpacing: 0.8 }}>KPI Scorecards</p>
