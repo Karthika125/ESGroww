@@ -1,10 +1,21 @@
-'use client';
+"use client";
 
-import { useEffect, useState } from 'react';
-import { ArrowLeft, Plus, MapPin, Users, Building2, Search, Filter } from 'lucide-react';
-import Link from 'next/link';
+import { useEffect, useMemo, useState } from "react";
+import Link from "next/link";
+import { Building2, Plus, ArrowUpDown } from "lucide-react";
+import { adminGlassCard, AdminEmpty, ExportCsvButton } from "@/components/admin/admin-ui";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
 
-interface HospitalWithData {
+type Row = {
   id: string;
   hospitalName: string;
   sectorCode: string;
@@ -14,232 +25,276 @@ interface HospitalWithData {
   builtUpArea: number;
   numberOfBeds: number;
   numberOfEmployees: number;
-  averageDailyOccupancy: number;
-  operatingHours: number;
-  yearEstablished: number;
-  esgScores: Array<{ overallScore: number }>;
-  uploads: Array<{ id: string }>;
-  _count: { uploads: number };
-}
+  uploadsCount: number;
+  validationCount: number;
+  confidenceLabel: string;
+  dataCoverageMonthsMax: number;
+  emissionsFootprintTCO2e: number;
+  esgScore: { overallScore: number } | null;
+  latestAssessment: {
+    completenessPct: number | null;
+    readinessStage: string | null;
+    createdAt: string;
+  } | null;
+  certificationPreview: { certificationName: string; readinessPercent: number; statusLabel: string }[];
+};
 
-export default function HospitalsPage() {
-  const [hospitals, setHospitals] = useState<HospitalWithData[]>([]);
+const PAGE_SIZE = 8;
+
+export default function HospitalsAdminPage() {
+  const [rows, setRows] = useState<Row[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [search, setSearch] = useState('');
-  const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [search, setSearch] = useState("");
+  const [sector, setSector] = useState("all");
+  const [status, setStatus] = useState("all");
+  const [sortKey, setSortKey] = useState<"name" | "score" | "footprint" | "uploads">("name");
+  const [page, setPage] = useState(0);
 
   useEffect(() => {
-    fetchHospitals();
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch("/api/admin/hospitals");
+        const data = await res.json();
+        if (!cancelled) {
+          if (!res.ok) setError(data.error ?? "Failed");
+          else setRows(data);
+        }
+      } catch (e) {
+        if (!cancelled) setError(e instanceof Error ? e.message : "Error");
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
-  async function fetchHospitals() {
-    try {
-      setLoading(true);
-      const response = await fetch('/api/admin/hospitals');
-      if (!response.ok) throw new Error('Failed to fetch hospitals');
-      const data = await response.json();
-      setHospitals(data);
-      setError(null);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Unknown error');
-      setHospitals([]);
-    } finally {
-      setLoading(false);
-    }
+  const sectors = useMemo(() => ["all", ...new Set(rows.map((r) => r.sectorCode))].sort(), [rows]);
+
+  const filtered = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    let list = rows.filter((r) => {
+      const okSearch =
+        !q || r.hospitalName.toLowerCase().includes(q) || r.sectorCode.toLowerCase().includes(q);
+      const okSector = sector === "all" || r.sectorCode === sector;
+      const okStatus = status === "all" || r.accountStatus === status;
+      return okSearch && okSector && okStatus;
+    });
+    list = [...list].sort((a, b) => {
+      if (sortKey === "name") return a.hospitalName.localeCompare(b.hospitalName);
+      if (sortKey === "score")
+        return (b.esgScore?.overallScore ?? -1) - (a.esgScore?.overallScore ?? -1);
+      if (sortKey === "footprint") return b.emissionsFootprintTCO2e - a.emissionsFootprintTCO2e;
+      return b.uploadsCount - a.uploadsCount;
+    });
+    return list;
+  }, [rows, search, sector, status, sortKey]);
+
+  const pageRows = filtered.slice(page * PAGE_SIZE, page * PAGE_SIZE + PAGE_SIZE);
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+
+  useEffect(() => {
+    setPage(0);
+  }, [search, sector, status, sortKey]);
+
+  if (loading) {
+    return (
+      <div className="flex min-h-[40vh] items-center justify-center">
+        <div className="h-9 w-9 animate-spin rounded-full border-2 border-[#d5ddd6] border-t-[#00673F]" />
+      </div>
+    );
   }
 
-  const filteredHospitals = hospitals.filter(hospital => {
-    const matchesSearch =
-      hospital.hospitalName.toLowerCase().includes(search.toLowerCase()) ||
-      hospital.sectorCode.includes(search);
-    const matchesStatus = statusFilter === 'all' || hospital.accountStatus === statusFilter;
-    return matchesSearch && matchesStatus;
-  });
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'Active':
-        return 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30';
-      case 'Pending Verification':
-        return 'bg-amber-500/20 text-amber-400 border-amber-500/30';
-      case 'Locked':
-        return 'bg-red-500/20 text-red-400 border-red-500/30';
-      default:
-        return 'bg-slate-500/20 text-slate-400 border-slate-500/30';
-    }
-  };
-
-  const getSectorLabel = (code: string) => {
-    const sectors: { [key: string]: string } = {
-      HOSP: 'Healthcare',
-      BLDG: 'Building',
-      MFGR: 'Manufacturing',
-      TEXT: 'Textiles',
-      ELEC: 'Electronics',
-      FOOD: 'Food & Beverage',
-      LOGI: 'Logistics',
-      EDUC: 'Education',
-      NGO: 'NGO',
-      GEN: 'General',
-    };
-    return sectors[code] || code;
-  };
+  if (error) {
+    return <AdminEmpty title="Organizations unavailable" body={error} />;
+  }
 
   return (
-    <div className="min-h-screen bg-slate-50 p-8">
-      <div className="max-w-7xl mx-auto">
-        {/* Header */}
-        <div className="mb-8 flex items-center justify-between">
-          <div>
-            <Link
-              href="/admin"
-              className="inline-flex items-center gap-2 text-slate-600 hover:text-slate-900 transition-colors mb-4"
-            >
-              <ArrowLeft className="w-4 h-4" />
-              Back to Dashboard
+    <div className="space-y-8 pb-10">
+      <div className="flex flex-col justify-between gap-4 lg:flex-row lg:items-end">
+        <div>
+          <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#3d5248]/80">Portfolio</p>
+          <h1 className="mt-1 text-2xl font-semibold tracking-tight text-[#15221a]">Organization Intelligence Hub</h1>
+          <p className="mt-2 max-w-3xl text-sm leading-relaxed text-[#3d5248]">
+            Live profiles with sector, readiness signals, upload throughput, validation exposure, emissions footprint,
+            and certification previews — sourced from Prisma relations without mock payloads.
+          </p>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          <Button asChild size="sm" className="h-9 bg-[#00673F] text-white hover:bg-[#008F56]">
+            <Link href="/register">
+              <Plus className="mr-1 h-4 w-4" aria-hidden />
+              Register organization
             </Link>
-            <h1 className="text-4xl font-bold text-slate-900">Organizations</h1>
-            <p className="text-slate-600 mt-2">Manage hospitals and facilities across all sectors</p>
-          </div>
-          <button className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-3 rounded-lg font-medium transition-colors">
-            <Plus className="w-4 h-4" />
-            Add Organization
-          </button>
+          </Button>
+          <ExportCsvButton
+            filename="esgroww-organizations.csv"
+            rows={filtered as unknown as Record<string, unknown>[]}
+            columns={[
+              { key: "hospitalName", header: "Name" },
+              { key: "sectorCode", header: "Sector" },
+              { key: "accountStatus", header: "Status" },
+              { key: "state", header: "State" },
+              { key: "country", header: "Country" },
+              { key: "uploadsCount", header: "Uploads" },
+              { key: "validationCount", header: "Validations" },
+              { key: "confidenceLabel", header: "Confidence" },
+              { key: "emissionsFootprintTCO2e", header: "tCO2e" },
+            ]}
+          />
         </div>
+      </div>
 
-        {/* Filters */}
-        <div className="flex gap-4 mb-6">
-          <div className="flex-1 relative">
-            <Search className="absolute left-3 top-3 w-4 h-4 text-slate-500" />
-            <input
-              type="text"
-              placeholder="Search by name or sector..."
-              value={search}
-              onChange={e => setSearch(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 bg-white border border-slate-200 rounded-lg text-slate-900 placeholder-slate-400 focus:outline-none focus:border-emerald-500 transition-colors"
-            />
-          </div>
-          <select
-            value={statusFilter}
-            onChange={e => setStatusFilter(e.target.value)}
-            className="px-4 py-2 bg-white border border-slate-200 rounded-lg text-slate-900 focus:outline-none focus:border-emerald-500 transition-colors"
-          >
-            <option value="all">All Status</option>
-            <option value="Active">Active</option>
-            <option value="Pending Verification">Pending</option>
-            <option value="Locked">Locked</option>
-          </select>
-        </div>
+      <div className="flex flex-wrap items-center gap-2">
+        <Input
+          placeholder="Search name or sector code…"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="h-9 max-w-xs border-[#d5ddd6] bg-white/80 text-sm"
+        />
+        <Select value={sector} onValueChange={setSector}>
+          <SelectTrigger className="h-9 w-[160px] border-[#d5ddd6] bg-white/80 text-sm">
+            <SelectValue placeholder="Sector" />
+          </SelectTrigger>
+          <SelectContent>
+            {sectors.map((s) => (
+              <SelectItem key={s} value={s}>
+                {s === "all" ? "All sectors" : s}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <Select value={status} onValueChange={setStatus}>
+          <SelectTrigger className="h-9 w-[200px] border-[#d5ddd6] bg-white/80 text-sm">
+            <SelectValue placeholder="Account status" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All statuses</SelectItem>
+            <SelectItem value="Active">Active</SelectItem>
+            <SelectItem value="Pending Verification">Pending Verification</SelectItem>
+            <SelectItem value="Locked">Locked</SelectItem>
+          </SelectContent>
+        </Select>
+        <Select value={sortKey} onValueChange={(v) => setSortKey(v as typeof sortKey)}>
+          <SelectTrigger className="h-9 w-[200px] border-[#d5ddd6] bg-white/80 text-sm">
+            <SelectValue placeholder="Sort" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="name">Sort: Name</SelectItem>
+            <SelectItem value="score">Sort: ESG score</SelectItem>
+            <SelectItem value="footprint">Sort: Emissions</SelectItem>
+            <SelectItem value="uploads">Sort: Uploads</SelectItem>
+          </SelectContent>
+        </Select>
+        <span className="text-xs text-[#3d5248]">
+          Showing {filtered.length} organizations · Page {page + 1}/{totalPages}
+        </span>
+      </div>
 
-        {/* Status Message */}
-        <div className="mb-6 text-sm text-slate-400">
-          Showing {filteredHospitals.length} of {hospitals.length} organizations
-        </div>
-
-        {/* Table */}
-        {loading ? (
-          <div className="flex justify-center py-12">
-            <div className="animate-spin">
-              <div className="w-8 h-8 border-3 border-slate-700 border-t-emerald-500 rounded-full"></div>
-            </div>
-          </div>
-        ) : error ? (
-          <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-4 text-red-400">
-            Error: {error}
-          </div>
-        ) : filteredHospitals.length === 0 ? (
-          <div className="text-center py-12">
-            <Building2 className="w-12 h-12 text-slate-600 mx-auto mb-4" />
-            <p className="text-slate-400">No organizations found</p>
-          </div>
-        ) : (
-          <div className="space-y-4">
-            {filteredHospitals.map(hospital => (
-              <div
-                key={hospital.id}
-                className="bg-white rounded-xl border border-slate-200 p-6 shadow-sm transition-all duration-300 hover:shadow-lg"
-              >
-                <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 mb-4">
-                  {/* Left Column: Name and Status */}
-                  <div className="lg:col-span-2">
-                    <div className="flex items-start gap-3 mb-3">
-                      <h3 className="text-lg font-semibold text-slate-900">{hospital.hospitalName}</h3>
-                      <span className={`px-3 py-1 rounded-full text-xs font-semibold border ${getStatusColor(hospital.accountStatus)}`}>
-                        {hospital.accountStatus}
-                      </span>
-                    </div>
-                    <div className="flex flex-wrap gap-4 text-sm text-slate-600">
-                      <span className="flex items-center gap-1 text-slate-600">
-                        <Building2 className="w-4 h-4 text-slate-500" />
-                        {getSectorLabel(hospital.sectorCode)}
-                      </span>
-                      <span className="flex items-center gap-1 text-slate-600">
-                        <MapPin className="w-4 h-4 text-slate-500" />
-                        {hospital.state}, {hospital.country}
-                      </span>
-                    </div>
+      {filtered.length === 0 ? (
+        <AdminEmpty
+          title="No organizations match filters"
+          body="Adjust search or sector filters, or register a new facility to begin the ESG data journey."
+        />
+      ) : (
+        <div className="grid grid-cols-1 gap-4">
+          {pageRows.map((h) => (
+            <div key={h.id} className={adminGlassCard("min-h-[140px]")}>
+              <div className="flex flex-col gap-4 lg:flex-row lg:justify-between">
+                <div className="flex min-w-0 flex-1 gap-3">
+                  <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-[#00673F]/10 text-[#00673F]">
+                    <Building2 className="h-5 w-5" aria-hidden />
                   </div>
-
-                  {/* Middle Column: Key Metrics */}
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="bg-slate-50 rounded-lg p-3 border border-slate-200">
-                      <p className="text-xs text-slate-500 mb-1">ESG Score</p>
-                      <p className="text-xl font-bold text-emerald-600">
-                        {hospital.esgScores[0]?.overallScore?.toFixed(0) || '-'}%
-                      </p>
+                  <div className="min-w-0">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <h2 className="truncate text-base font-semibold text-[#15221a]">{h.hospitalName}</h2>
+                      <Badge variant="outline" className="text-[10px] uppercase">
+                        {h.sectorCode}
+                      </Badge>
+                      <Badge variant="secondary" className="text-[10px] uppercase">
+                        {h.accountStatus}
+                      </Badge>
                     </div>
-                    <div className="bg-slate-50 rounded-lg p-3 border border-slate-200">
-                      <p className="text-xs text-slate-500 mb-1">Uploads</p>
-                      <p className="text-xl font-bold text-cyan-600">{hospital._count.uploads}</p>
-                    </div>
-                  </div>
-
-                  {/* Right Column: Infrastructure */}
-                  <div className="grid grid-cols-3 gap-3 text-xs">
-                    <div className="bg-slate-50 rounded-lg p-2 text-center border border-slate-200">
-                      <p className="text-slate-500 mb-1">Built-up Area</p>
-                      <p className="font-semibold text-slate-900">{hospital.builtUpArea.toLocaleString()} sqft</p>
-                    </div>
-                    <div className="bg-slate-50 rounded-lg p-2 text-center border border-slate-200">
-                      <p className="text-slate-500 mb-1">Beds</p>
-                      <p className="font-semibold text-slate-900">{hospital.numberOfBeds}</p>
-                    </div>
-                    <div className="bg-slate-50 rounded-lg p-2 text-center border border-slate-200">
-                      <p className="text-slate-500 mb-1">Employees</p>
-                      <p className="font-semibold text-slate-900">{hospital.numberOfEmployees}</p>
+                    <p className="mt-1 text-xs text-[#3d5248]">
+                      {h.state}, {h.country} · {h.builtUpArea.toLocaleString()} sqft · {h.numberOfBeds} beds ·{" "}
+                      {h.numberOfEmployees} FTE
+                    </p>
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      {(h.certificationPreview ?? []).slice(0, 3).map((c) => (
+                        <span
+                          key={c.certificationName}
+                          className="rounded-md bg-white/80 px-2 py-0.5 text-[11px] font-medium text-[#15221a] ring-1 ring-[#00673F]/10"
+                        >
+                          {c.certificationName}: {Math.round(c.readinessPercent)}%
+                        </span>
+                      ))}
                     </div>
                   </div>
                 </div>
-
-                {/* Detailed Info Row */}
-                <div className="grid grid-cols-4 gap-4 text-xs border-t border-slate-200/80 pt-4">
-                  <div>
-                    <p className="text-slate-500 mb-1">Daily Occupancy</p>
-                    <p className="font-semibold text-slate-900">{hospital.averageDailyOccupancy}%</p>
-                  </div>
-                  <div>
-                    <p className="text-slate-500 mb-1">Operating Hours</p>
-                    <p className="font-semibold text-slate-200">{hospital.operatingHours}h/day</p>
-                  </div>
-                  <div>
-                    <p className="text-slate-500 mb-1">Year Established</p>
-                    <p className="font-semibold text-slate-200">{hospital.yearEstablished}</p>
-                  </div>
-                  <div className="flex items-end justify-end gap-2">
-                    <button className="px-4 py-2 bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-400 rounded-lg text-xs font-medium transition-colors">
-                      View Details
-                    </button>
-                    <button className="px-4 py-2 bg-slate-700/20 hover:bg-slate-700/40 text-slate-400 rounded-lg text-xs font-medium transition-colors">
-                      Edit
-                    </button>
+                <div className="grid shrink-0 grid-cols-2 gap-2 sm:grid-cols-4 lg:w-[420px]">
+                  <Metric label="ESG score" value={h.esgScore ? `${Math.round(h.esgScore.overallScore)}` : "—"} />
+                  <Metric label="Uploads" value={String(h.uploadsCount)} />
+                  <Metric label="Validations" value={String(h.validationCount)} />
+                  <Metric label="tCO₂e" value={h.emissionsFootprintTCO2e.toFixed(2)} />
+                  <Metric label="Confidence" value={h.confidenceLabel} />
+                  <Metric label="Months (max cat)" value={String(h.dataCoverageMonthsMax)} />
+                  <Metric
+                    label="Assessment"
+                    value={h.latestAssessment?.readinessStage ?? "—"}
+                    sub={
+                      h.latestAssessment?.completenessPct != null
+                        ? `${Math.round(h.latestAssessment.completenessPct)}% complete`
+                        : undefined
+                    }
+                  />
+                  <div className="flex items-end justify-end">
+                    <Button variant="outline" size="sm" className="h-8 text-xs" disabled title="Coming soon">
+                      <ArrowUpDown className="mr-1 h-3 w-3" aria-hidden />
+                      Drilldown
+                    </Button>
                   </div>
                 </div>
               </div>
-            ))}
-          </div>
-        )}
-      </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {filtered.length > PAGE_SIZE ? (
+        <div className="flex justify-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-8"
+            disabled={page <= 0}
+            onClick={() => setPage((p) => Math.max(0, p - 1))}
+          >
+            Previous
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-8"
+            disabled={page >= totalPages - 1}
+            onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
+          >
+            Next
+          </Button>
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+function Metric({ label, value, sub }: { label: string; value: string; sub?: string }) {
+  return (
+    <div className="rounded-lg bg-white/70 px-2 py-1.5 ring-1 ring-[#00673F]/8">
+      <p className="text-[10px] font-semibold uppercase tracking-wide text-[#3d5248]">{label}</p>
+      <p className="mt-0.5 text-sm font-semibold tabular-nums text-[#15221a]">{value}</p>
+      {sub ? <p className="text-[10px] text-[#3d5248]">{sub}</p> : null}
     </div>
   );
 }
