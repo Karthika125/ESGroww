@@ -151,13 +151,7 @@ export async function getWhereIStandData() {
 
   const latestScore =
     hospital.esgScores?.[0];
-
-  const readinessScore =
-    Math.round(
-      latestScore
-        ?.overallScore || 0
-    );
-
+  // confidence score (from latest assessment) expressed as percentage
   const confidenceScore =
     Math.round(
       Number(
@@ -214,6 +208,16 @@ export async function getWhereIStandData() {
         48) *
         100
     );
+
+  // Fallback readiness calculation when ESG score not present
+  function fallbackReadiness(profilePct: number, uploadPct: number, confidencePct: number) {
+    const val = (0.5 * profilePct) + (0.3 * uploadPct) + (0.2 * confidencePct);
+    return Math.round(Math.max(0, Math.min(100, val)));
+  }
+
+  const finalReadinessScore = (typeof latestScore?.overallScore === "number" && latestScore?.overallScore > 0)
+    ? Math.round(latestScore.overallScore)
+    : fallbackReadiness(profileCompletion, uploadCompletion, confidenceScore);
 
   /* -------------------------------- */
   /* CURRENT STATUS                   */
@@ -394,10 +398,10 @@ export async function getWhereIStandData() {
         name: "NABH",
 
         readiness:
-          readinessScore >=
+          finalReadinessScore >=
           75
             ? 80
-            : readinessScore >=
+            : finalReadinessScore >=
               60
             ? 65
             : 35,
@@ -525,7 +529,7 @@ export async function getWhereIStandData() {
 
     readiness: {
       overall:
-        readinessScore,
+        finalReadinessScore,
 
       confidence:
         confidenceScore,

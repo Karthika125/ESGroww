@@ -94,7 +94,7 @@ export default function KPIPage() {
       <div className="xl:h-[calc(100vh-5.5rem)] xl:overflow-hidden">
       <div className="grid grid-cols-1 xl:grid-cols-12 gap-3 h-full">
         <section className="xl:col-span-8 bg-white border border-slate-200 rounded-lg shadow-sm overflow-hidden h-full flex flex-col min-h-0">
-          <div className="bg-slate-900 px-3 py-2.5">
+          <div className="px-3 py-2.5" style={{ backgroundColor: '#004D7C' }}>
             <h2 className="text-sm font-semibold text-white">KPI Scorecards</h2>
           </div>
           <div className="p-2 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 flex-1 min-h-0 lg:auto-rows-fr">
@@ -108,7 +108,7 @@ export default function KPIPage() {
 
         <aside className="xl:col-span-4 flex flex-col gap-3 min-h-0">
           <section className="bg-white border border-slate-200 rounded-lg shadow-sm overflow-hidden flex flex-col min-h-0 shrink-0">
-            <div className="bg-slate-900 px-3 py-2.5">
+            <div className="px-3 py-2.5" style={{ backgroundColor: '#004D7C' }}>
               <h3 className="text-sm font-semibold text-white">Status Summary</h3>
             </div>
             <div className="p-3 grid grid-cols-3 gap-3 text-xs">
@@ -128,7 +128,7 @@ export default function KPIPage() {
           </section>
 
           <section className="bg-white border border-slate-200 rounded-lg shadow-sm overflow-hidden flex flex-col min-h-0 shrink-0">
-            <div className="bg-slate-900 px-3 py-2.5">
+            <div className="px-3 py-2.5" style={{ backgroundColor: '#004D7C' }}>
               <h3 className="text-sm font-semibold text-white">Data Summary</h3>
             </div>
             <div className="p-3 grid grid-cols-2 gap-3 text-xs">

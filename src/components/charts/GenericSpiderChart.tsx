@@ -64,7 +64,7 @@ export default function GenericSpiderChart({
 }: GenericSpiderChartProps) {
   const chartHeight = compact ? 320 : 540;
   const chartMargin = compact
-    ? { top: 22, right: 28, bottom: 22, left: 28 }
+    ? { top: 8, right: 12, bottom: 8, left: 12 }
     : { top: 70, right: 90, bottom: 95, left: 120 };
 
   return (
@@ -119,7 +119,7 @@ export default function GenericSpiderChart({
           <PolarAngleAxis
             dataKey={angleAxisKey}
             tick={{
-              fontSize: compact ? 11 : 15,
+              fontSize: compact ? 10 : 15,
               fontWeight: 700,
               fill: "#1f2937",
               textAnchor: "middle",

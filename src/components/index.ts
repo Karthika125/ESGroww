@@ -3,6 +3,7 @@ export { default as MetricCard } from "./MetricCard";
 export { default as ChartCard } from "./ChartCard";
 export { default as BenchmarkComparisonSection } from "./BenchmarkComparisonSection";
 export { default as PageLayout } from "./PageLayout";
+export { default as BentoGrid } from "./BentoGrid";
 
 // Chart Components
 export { default as GenericBarChart } from "../charts/GenericBarChart";

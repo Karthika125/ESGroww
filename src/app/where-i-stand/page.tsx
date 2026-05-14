@@ -11,6 +11,7 @@ import { useRouter } from "next/navigation";
 import { getWhereIStandData } from "@/actions/whereIStand.action";
 import { updateHospitalProfile } from "@/actions/updateHospitalProfile.actions";
 import { Card as BaseCard } from "@/components/ui/card";
+import BentoGrid from "@/components/shared/BentoGrid";
 
 const BRAND = {
   bg: "#FBFBF3",
@@ -164,12 +165,25 @@ export default function WhereIStandPage() {
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState<any>(null);
   const [editModalOpen, setEditModalOpen] = useState(false);
+  const [timelineExpanded, setTimelineExpanded] = useState(false);
 
   useEffect(() => {
     getWhereIStandData()
       .then(setData)
       .catch(console.error)
       .finally(() => setLoading(false));
+  }, []);
+
+  // Periodic refetch so readiness (and other computed values) stay updated dynamically
+  useEffect(() => {
+    const id = setInterval(() => {
+      getWhereIStandData()
+        .then((fresh) => {
+          if (fresh) setData(fresh);
+        })
+        .catch(console.error);
+    }, 8000);
+    return () => clearInterval(id);
   }, []);
 
   const handleProfileSaved = (updatedOrg: any) => {
@@ -193,8 +207,8 @@ export default function WhereIStandPage() {
     <>
       <EditProfileModal open={editModalOpen} data={data} onClose={() => setEditModalOpen(false)} onSaved={handleProfileSaved} />
 
-      <div className="h-screen w-screen overflow-hidden" style={{ background: BRAND.bg }}>
-        <div className="h-full flex flex-col p-3 gap-3">
+      <div className="w-full overflow-x-hidden" style={{ background: BRAND.bg }}>
+        <div className="flex flex-col p-3 gap-3">
 
           {/* Header */}
           <div className="flex items-center justify-between px-5 py-3 rounded-2xl border shrink-0" style={{ borderColor: BRAND.border, background: BRAND.bg }}>
@@ -215,10 +229,9 @@ export default function WhereIStandPage() {
           </div>
 
           {/* Bento Grid */}
-          <div className="flex-1 min-h-0 grid grid-cols-12 gap-3">
-
-            {/* LEFT col-span-3 */}
-            <div className="col-span-3 flex flex-col gap-3 min-h-0">
+          <BentoGrid
+            left={
+              <div className="flex flex-col gap-3 min-h-0">
 
               {/* Organization */}
               <Card className="shrink-0">
@@ -263,9 +276,9 @@ export default function WhereIStandPage() {
               </Card>
 
               {/* Current Status */}
-              <Card className="flex-1 min-h-0 flex flex-col">
+              <Card className="flex flex-col overflow-y-auto max-h-[36rem]">
                 <SectionTitle icon={Activity} title="Current Status" />
-                <div className="flex-1 min-h-0 overflow-y-auto mt-4 space-y-2 pr-1">
+                <div className="mt-4 space-y-2">
                   {data.currentStatus?.length > 0 ? data.currentStatus.map((item: any, idx: number) => {
                     const isSuccess = item.type === "success";
                     const color = isSuccess ? "#16a34a" : item.type === "warning" ? "#ca8a04" : "#dc2626";
@@ -281,10 +294,10 @@ export default function WhereIStandPage() {
                   }) : <p className="text-xs text-slate-400 text-center mt-8">No signals yet. Upload data to begin.</p>}
                 </div>
               </Card>
-            </div>
-
-            {/* CENTER col-span-5 */}
-            <div className="col-span-5 flex flex-col gap-3 min-h-0">
+              </div>
+            }
+            center={
+              <div className="flex flex-col gap-3 min-h-0">
 
               {/* Readiness + Certifications row */}
               <div className="grid grid-cols-2 gap-3 shrink-0">
@@ -300,9 +313,9 @@ export default function WhereIStandPage() {
                   </div>
                 </Card>
 
-                <Card className="flex flex-col min-h-0">
+                <Card className="flex flex-col">
                   <SectionTitle icon={FileBarChart2} title="Certifications" />
-                  <div className="flex-1 min-h-0 overflow-y-auto mt-4 space-y-4 pr-1">
+                  <div className="mt-4 space-y-4">
                     {data.certifications?.map((cert: any) => (
                       <div key={cert.name}>
                         <div className="flex justify-between items-center mb-1.5">
@@ -324,12 +337,12 @@ export default function WhereIStandPage() {
               </div>
 
               {/* Upload Readiness — fills remaining */}
-              <Card className="flex-1 min-h-0 flex flex-col">
+              <Card className="flex flex-col overflow-y-auto max-h-[36rem]">
                 <div className="flex items-center justify-between mb-3 shrink-0">
                   <SectionTitle icon={Upload} title="Upload Readiness" />
                   <StatusPill label="1M Upload · 3M Ann · 6M ESG · 12M Max" color={BRAND.primary} />
                 </div>
-                <div className="flex-1 min-h-0 overflow-y-auto pr-1">
+                <div>
                   <div className="grid grid-cols-2 gap-3">
                     {data.uploadReadiness?.map((upload: any) => {
                       const pct = Math.min((upload.uploaded / upload.recommended) * 100, 100);
@@ -351,15 +364,15 @@ export default function WhereIStandPage() {
                   </div>
                 </div>
               </Card>
-            </div>
-
-            {/* RIGHT col-span-4 */}
-            <div className="col-span-4 flex flex-col gap-3 min-h-0">
+              </div>
+            }
+            right={
+              <div className="flex flex-col gap-3 min-h-0">
 
               {/* Roadmap */}
-              <Card className="flex-1 min-h-0 flex flex-col">
+              <Card className="flex flex-col">
                 <SectionTitle icon={TrendingUp} title="Roadmap" />
-                <div className="flex-1 min-h-0 overflow-y-auto mt-4 space-y-2 pr-1">
+                <div className="mt-2 space-y-2">
                   {data.roadmap?.length > 0 ? data.roadmap.map((action: any, idx: number) => {
                     const pColor = action.priority === "Critical" ? "#dc2626" : action.priority === "High" ? "#ca8a04" : "#2563eb";
                     return (
@@ -377,34 +390,50 @@ export default function WhereIStandPage() {
               </Card>
 
               {/* Timeline */}
-              <Card className="flex-1 min-h-0 flex flex-col">
+              <Card className="flex flex-col">
                 <SectionTitle icon={CalendarDays} title="Upload Timeline" />
-                <div className="flex-1 min-h-0 overflow-y-auto mt-4 pr-1">
+                <div className="mt-2">
                   {data.timeline?.length > 0 ? (
-                    <div className="relative pl-5">
-                      <div className="absolute left-[7px] top-2 bottom-2 w-px" style={{ background: BRAND.border }} />
-                      <div className="space-y-4">
-                        {data.timeline.map((item: any, idx: number) => (
-                          <div key={idx} className="flex gap-3 items-start relative">
-                            <div className="absolute -left-5 w-4 h-4 rounded-full flex items-center justify-center shrink-0 mt-0.5 z-10" style={{ background: BRAND.primary, boxShadow: `0 0 0 3px ${BRAND.bg}` }}>
-                              <div className="w-1.5 h-1.5 rounded-full bg-white" />
-                            </div>
-                            <div className="flex-1 pb-1">
-                              <p className="text-xs font-semibold text-slate-800 leading-snug">{item.title}</p>
-                              <div className="flex items-center gap-2 mt-1">
-                                <span className="text-[9px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded-full" style={{ background: `${BRAND.primary}12`, color: BRAND.primary }}>{item.category}</span>
-                                <span className="text-[10px] text-slate-400">{new Date(item.date).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}</span>
+                    <div>
+                      <div className="relative pl-5">
+                        <div className="absolute left-[7px] top-2 bottom-2 w-px" style={{ background: BRAND.border }} />
+                        <div className="space-y-4">
+                          {(timelineExpanded ? data.timeline : (data.timeline || []).slice(0, 4)).map((item: any, idx: number) => (
+                            <div key={idx} className="flex gap-3 items-start relative">
+                              <div className="absolute -left-5 w-4 h-4 rounded-full flex items-center justify-center shrink-0 mt-0.5 z-10" style={{ background: BRAND.primary, boxShadow: `0 0 0 3px ${BRAND.bg}` }}>
+                                <div className="w-1.5 h-1.5 rounded-full bg-white" />
+                              </div>
+                              <div className="flex-1 pb-1">
+                                <p className="text-xs font-semibold text-slate-800 leading-snug">{item.title}</p>
+                                <div className="flex items-center gap-2 mt-1">
+                                  <span className="text-[9px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded-full" style={{ background: `${BRAND.primary}12`, color: BRAND.primary }}>{item.category}</span>
+                                  <span className="text-[10px] text-slate-400">{new Date(item.date).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}</span>
+                                </div>
                               </div>
                             </div>
-                          </div>
-                        ))}
+                          ))}
+                        </div>
                       </div>
+
+                      {/* View more / collapse toggle */}
+                      {data.timeline.length > 4 && (
+                        <div className="mt-2 flex justify-center">
+                          <button
+                            onClick={() => setTimelineExpanded((s) => !s)}
+                            className="text-[12px] font-semibold text-slate-700 px-3 py-1 rounded-full border hover:opacity-90"
+                            style={{ borderColor: BRAND.border, background: `${BRAND.primary}04` }}
+                          >
+                            {timelineExpanded ? "View less" : `View more (${data.timeline.length - 4})`}
+                          </button>
+                        </div>
+                      )}
                     </div>
                   ) : <p className="text-xs text-slate-400 text-center mt-8">No upload history yet.</p>}
                 </div>
               </Card>
-            </div>
-          </div>
+              </div>
+            }
+          />
         </div>
       </div>
     </>
