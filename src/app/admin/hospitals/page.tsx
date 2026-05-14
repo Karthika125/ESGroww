@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { ArrowLeft, Plus, MapPin, Users, SquareFeet, Building2, Search, Filter } from 'lucide-react';
+import { ArrowLeft, Plus, MapPin, Users, Building2, Search, Filter } from 'lucide-react';
 import Link from 'next/link';
 
 interface HospitalWithData {

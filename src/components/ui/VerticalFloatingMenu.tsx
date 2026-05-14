@@ -65,7 +65,7 @@ export default function VerticalFloatingMenu() {
               animate={{ y: [0, -2, 0] }}
               transition={{ duration: 4.5, repeat: Infinity, ease: "easeInOut" }}
               whileHover={{ scale: 1.05, rotate: 2 }}
-              className="relative flex h-12 w-12 items-center justify-center rounded-full border border-white/45 bg-white/20 text-foreground shadow-[0_12px_32px_rgba(15,23,42,0.14)] backdrop-blur-xl ring-1 ring-white/35 sm:h-14 sm:w-14"
+              className="relative flex h-12 w-12 items-center justify-center rounded-full border border-white/45 bg-white/20 text-foreground shadow-[0_12px_32px_rgba(15,23,42,0.14)] backdrop-blur-xl ring-1 ring-white/35 sm:h-14 sm:w-14 transition-colors duration-300 hover:text-[#004D7C]"
               style={{ background: "linear-gradient(145deg, rgba(255,255,255,0.42), rgba(255,255,255,0.12))" }}
             >
               <span className="absolute inset-0 rounded-full border border-white/50 bg-white/10 shadow-[inset_0_1px_0_rgba(255,255,255,0.45)]" />
@@ -108,8 +108,8 @@ export default function VerticalFloatingMenu() {
                       initial={{ opacity: 0, y: -8, scale: 0.95 }}
                       animate={{ opacity: 1, y: 0, scale: 1 }}
                       transition={{ delay: 0.03, duration: 0.2 }}
-                      whileHover={{ scale: 1.06, y: -2 }}
-                      className="group relative flex h-11 w-11 items-center justify-center overflow-visible rounded-full border border-white/40 bg-white/18 text-foreground shadow-[0_10px_28px_rgba(15,23,42,0.12)] backdrop-blur-xl ring-1 ring-white/30 transition-all duration-300 hover:-translate-y-1 hover:border-primary/40 hover:bg-primary hover:text-primary-foreground sm:h-12 sm:w-12"
+                      whileHover={{ scale: 1.06, x: -2 }}
+                      className="group relative flex h-11 w-11 items-center justify-center overflow-visible rounded-full border border-white/40 bg-white/18 text-foreground shadow-[0_10px_28px_rgba(15,23,42,0.12)] backdrop-blur-xl ring-1 ring-white/30 transition-all duration-300 hover:-translate-x-1 hover:text-[#004D7C] sm:h-12 sm:w-12"
                       style={{ background: "linear-gradient(145deg, rgba(255,255,255,0.38), rgba(255,255,255,0.08))" }}
                     >
                       <span className="absolute inset-0 rounded-full bg-white/20 opacity-0 blur-md transition-opacity duration-300 group-hover:opacity-100" />
