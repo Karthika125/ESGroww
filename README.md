@@ -436,25 +436,90 @@ The admin panel includes:
 # Folder Structure
 
 ```txt
-src/
-├── actions/
-├── app/
-│   ├── admin/
-│   ├── dashboard/
-│   ├── uploads/
-│   ├── results/
-│   ├── where-i-stand/
-│   └── summary/
-├── components/
-├── lib/
-│   ├── calculations/
-│   ├── upload/
-│   ├── emissions/
-│   ├── benchmarking/
-│   └── scoring/
+ESGroww/
 ├── prisma/
+│   ├── schema.prisma
+│   └── migrations/
+│
 ├── public/
-├── styles/
+│   ├── pdf_template/
+│   └── templates/
+│
+├── src/
+│   ├── actions/
+│   │   ├── assessment.actions.ts
+│   │   ├── chatbot.actions.ts
+│   │   ├── dashboard.actions.ts
+│   │   ├── governance.actions.ts
+│   │   ├── summary.actions.ts
+│   │   ├── upload.actions.ts
+│   │   └── whereIStand.action.ts
+│   │
+│   ├── app/
+│   │   ├── layout.tsx
+│   │   ├── globals.css
+│   │   ├── loading.tsx
+│   │   │
+│   │   ├── (public)/
+│   │   │   ├── page.tsx
+│   │   │   ├── login/
+│   │   │   └── register/
+│   │   │
+│   │   ├── admin/
+│   │   │   ├── layout.tsx
+│   │   │   ├── page.tsx
+│   │   │   ├── certifications/
+│   │   │   ├── calculations/
+│   │   │   ├── reports/
+│   │   │   └── uploads/
+│   │   │
+│   │   ├── api/
+│   │   │   ├── auth/
+│   │   │   ├── assessment/
+│   │   │   └── admin/
+│   │   │
+│   │   ├── upload/
+│   │   ├── results/
+│   │   ├── summary/
+│   │   ├── kpi/
+│   │   ├── metrics/
+│   │   ├── glossary/
+│   │   ├── analysis/
+│   │   ├── where-i-stand/
+│   │   └── what-next/
+│   │
+│   ├── components/
+│   │   ├── admin/
+│   │   ├── chatbot/
+│   │   ├── dashboard/
+│   │   ├── charts/
+│   │   ├── results/
+│   │   ├── summary/
+│   │   ├── upload/
+│   │   ├── shared/
+│   │   ├── layout/
+│   │   └── ui/
+│   │
+│   ├── hooks/
+│   │   └── useFetchAssessment.ts
+│   │
+│   └── lib/
+│       ├── auth.ts
+│       ├── db.ts
+│       ├── email.ts
+│       ├── esgCalculations.ts
+│       ├── glossaryData.ts
+│       ├── kpiUtils.ts
+│       ├── metricsUtils.ts
+│       ├── validation.ts
+│       ├── pdf/
+│       ├── upload/
+│       └── admin/
+│
+├── package.json
+├── tsconfig.json
+├── next.config.ts
+└── README.md
 ```
 
 ---
