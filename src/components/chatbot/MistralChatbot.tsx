@@ -170,6 +170,7 @@ export function MistralChatbot({
     sectorName: string;
     certification: string;
   }>({ sectorName: "", certification: "" });
+  const [hasInteractedByMode, setHasInteractedByMode] = useState<Record<"certificate" | "regulatory" | "general", boolean>>({ certificate: false, regulatory: false, general: false });
 
   const conversation = useMemo(() => {
     const current = messagesByMode[activeMode] || [];
@@ -461,35 +462,46 @@ export function MistralChatbot({
                   </AnimatePresence>
                 </div>
 
-                <div className="flex flex-wrap gap-2 mb-3 shrink-0">
-                  {activeMode === "regulatory" && REGULATORY_SUGGESTIONS.map((prompt) => (
-                    <button
-                      key={prompt}
-                      type="button"
-                      className="rounded-full border border-slate-200 bg-white px-3 py-1.5 text-[11px] font-medium text-slate-600 hover:bg-emerald-50 hover:text-emerald-700 hover:border-emerald-200 transition-colors shadow-sm text-left line-clamp-1"
-                      onClick={() => handleSend(prompt)}
-                      disabled={isSending}
-                    >
-                      {prompt}
-                    </button>
-                  ))}
-                  {activeMode === "general" && GENERAL_SUGGESTIONS.map((prompt) => (
-                    <button
-                      key={prompt}
-                      type="button"
-                      className="rounded-full border border-slate-200 bg-white px-3 py-1.5 text-[11px] font-medium text-slate-600 hover:bg-emerald-50 hover:text-emerald-700 hover:border-emerald-200 transition-colors shadow-sm text-left line-clamp-1"
-                      onClick={() => handleSend(prompt)}
-                      disabled={isSending}
-                    >
-                      {prompt}
-                    </button>
-                  ))}
-                </div>
+                {/* Suggestions: show only until the user interacts (focus or sends) for regulatory/general */}
+                {!hasInteractedByMode[activeMode] && (activeMode === "regulatory" || activeMode === "general") && (
+                  <div className="flex flex-wrap gap-2 mb-3 shrink-0">
+                    {activeMode === "regulatory" && REGULATORY_SUGGESTIONS.map((prompt) => (
+                      <button
+                        key={prompt}
+                        type="button"
+                        className="rounded-full border border-slate-200 bg-white px-3 py-1.5 text-[11px] font-medium text-slate-600 hover:bg-emerald-50 hover:text-emerald-700 hover:border-emerald-200 transition-colors shadow-sm text-left line-clamp-1"
+                        onClick={() => {
+                          setHasInteractedByMode((prev) => ({ ...prev, [activeMode]: true }));
+                          void handleSend(prompt);
+                        }}
+                        disabled={isSending}
+                      >
+                        {prompt}
+                      </button>
+                    ))}
+
+                    {activeMode === "general" && GENERAL_SUGGESTIONS.map((prompt) => (
+                      <button
+                        key={prompt}
+                        type="button"
+                        className="rounded-full border border-slate-200 bg-white px-3 py-1.5 text-[11px] font-medium text-slate-600 hover:bg-emerald-50 hover:text-emerald-700 hover:border-emerald-200 transition-colors shadow-sm text-left line-clamp-1"
+                        onClick={() => {
+                          setHasInteractedByMode((prev) => ({ ...prev, [activeMode]: true }));
+                          void handleSend(prompt);
+                        }}
+                        disabled={isSending}
+                      >
+                        {prompt}
+                      </button>
+                    ))}
+                  </div>
+                )}
 
                 <form
                   className="mt-auto shrink-0"
                   onSubmit={(event) => {
                     event.preventDefault();
+                    setHasInteractedByMode((prev) => ({ ...prev, [activeMode]: true }));
                     if (activeMode === "certificate") {
                       const msg = `Let's explore how the "${certificateSelection.certification}" certification can strengthen our ESG commitment in the "${certificateSelection.sectorName}" sector. What makes it relevant for ESG, what are the key requirements, and how can we leverage it to drive meaningful sustainability outcomes?`;
                       void handleSend(msg);
@@ -542,9 +554,11 @@ export function MistralChatbot({
                         ref={inputRef}
                         value={currentDraft}
                         onChange={handleTextareaChange}
+                        onFocus={() => setHasInteractedByMode((prev) => ({ ...prev, [activeMode]: true }))}
                         onKeyDown={(event) => {
                           if (event.key === "Enter" && !event.shiftKey) {
                             event.preventDefault();
+                            setHasInteractedByMode((prev) => ({ ...prev, [activeMode]: true }));
                             void handleSend(currentDraft);
                             event.currentTarget.style.height = 'auto'; // Reset height on send
                           }
@@ -563,9 +577,7 @@ export function MistralChatbot({
 
                   <div className="mt-3 flex items-center justify-between pl-1">
                     {activeMode !== "certificate" ? (
-                      <p className="text-[10px] text-slate-400 font-medium">
-                        ⏎ to send • Shift+⏎ for new line
-                      </p>
+                      <p className="text-[10px] text-slate-400 font-medium">⏎ to send • Shift+⏎ for new line</p>
                     ) : (
                       <div />
                     )}
