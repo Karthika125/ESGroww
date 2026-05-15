@@ -100,38 +100,68 @@ export async function POST(
 
     // EMAIL VERIFICATION
 
-    if (!user.emailVerified) {
+    
 
-      return NextResponse.json(
-        {
-          error:
-            "Please verify your email before logging in. Use \"Resend verification email\" if you did not receive the link.",
+// EMAIL VERIFICATION FALLBACK
 
-          requiresVerification: true,
-        },
-        {
-          status: 403,
-        }
-      );
-    }
 
+
+   
+  if (!user.emailVerified) {
+
+  if (
+    process.env.NODE_ENV ===
+    "development"
+  ) {
+
+    await prisma.user.update({
+      where: {
+        id: user.id,
+      },
+
+      data: {
+        emailVerified: true,
+      },
+    });
+
+  } else {
+
+    return NextResponse.json(
+      {
+        error:
+          "Please verify your email before logging in. Use \"Resend verification email\" if you did not receive the link.",
+
+        requiresVerification: true,
+      },
+      {
+        status: 403,
+      }
+    );
+  }
+}
     // ACCOUNT STATUS
 
-    if (
-      user.hospital.accountStatus !==
-      "Active"
-    ) {
+   // ACCOUNT STATUS
 
-      return NextResponse.json(
-        {
-          error:
-            "Your account is not active.",
-        },
-        {
-          status: 403,
-        }
-      );
+// ACCOUNT STATUS
+
+if (
+  process.env.NODE_ENV ===
+    "production" &&
+  user.hospital.accountStatus !==
+    "Active"
+) {
+
+  return NextResponse.json(
+    {
+      error:
+        "Your account is not active.",
+    },
+    {
+      status: 403,
     }
+  );
+}
 
     // PASSWORD CHECK
 
