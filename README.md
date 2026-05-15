@@ -514,24 +514,12 @@ npm install
 ```
 
 ---
-
-## Configure Environment Variables
-
-Create `.env`:
-
-```env
-DATABASE_URL=
-NEXTAUTH_SECRET=
-NEXTAUTH_URL=
-```
-
----
-
 ## Prisma Setup
 
 ```bash
 npx prisma generate
-npx prisma migrate dev
+npx prisma db push
+npx prisma studio
 ```
 
 ---
