@@ -553,8 +553,8 @@ Planned future enhancements:
 
 ## Developed By
 
-Karthika Suresh
-Karthik S
+- Karthika Suresh
+- Karthik S
 ---
 
 # License
