@@ -313,21 +313,11 @@ export function MistralChatbot({
               type="button"
               variant="ghost"
               size="sm"
-              className="text-slate-500 hover:text-slate-900"
+              className="text-slate-500 hover:text-slate-900 pl-1.5"
               onClick={handleReset}
             >
               <RefreshCw className="mr-2 size-4" />
               Reset
-            </Button>
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              className="text-slate-500 hover:text-slate-900"
-              onClick={handleClose}
-            >
-              <ChevronDown className="mr-2 size-4" />
-              Minimize Evio
             </Button>
           </div>
         </div>
