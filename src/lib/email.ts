@@ -63,7 +63,7 @@ export async function sendVerificationEmail({
       to: email,
 
       subject:
-        "Verify your ESGroww account — SAM Assessment",
+        "Verify your ESGroww account email",
 
       html: `
       <div style="font-family: Arial, sans-serif; padding: 24px; max-width: 560px;">
@@ -105,10 +105,29 @@ export async function sendVerificationEmail({
     });
 
   if (error) {
-    throw new Error(
-      formatResendFailure(error)
+
+  console.error(
+    "Verification email failed:",
+    formatResendFailure(error)
+  );
+
+  // DEV MODE FALLBACK
+  if (
+    process.env.NODE_ENV ===
+    "development"
+  ) {
+
+    console.warn(
+      "DEV MODE: Email verification skipped."
     );
+
+    return;
   }
+
+  throw new Error(
+    formatResendFailure(error)
+  );
+}
 }
 
 export async function sendPasswordResetEmail({

@@ -9,7 +9,6 @@ import {
 
 const protectedRoutes = [
   "/upload",
-  "/dashboard",
   "/results",
   "/summary",
 ];
@@ -17,11 +16,6 @@ const protectedRoutes = [
 export function middleware(
   request: NextRequest
 ) {
-  const token =
-    request.cookies.get(
-      "session"
-    )?.value;
-
   const pathname =
     request.nextUrl.pathname;
 
@@ -33,6 +27,11 @@ export function middleware(
   if (!isProtected) {
     return NextResponse.next();
   }
+
+  const token =
+    request.cookies.get(
+      "session"
+    )?.value;
 
   if (!token) {
     return NextResponse.redirect(
@@ -46,7 +45,12 @@ export function middleware(
   const payload =
     verifySessionToken(token);
 
-  if (!payload) {
+  // DEV FALLBACK
+  if (
+    !payload &&
+    process.env.NODE_ENV ===
+      "production"
+  ) {
     return NextResponse.redirect(
       new URL(
         "/login",
@@ -61,7 +65,6 @@ export function middleware(
 export const config = {
   matcher: [
     "/upload/:path*",
-    "/dashboard/:path*",
     "/results/:path*",
     "/summary/:path*",
   ],
