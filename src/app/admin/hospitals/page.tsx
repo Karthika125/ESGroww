@@ -124,12 +124,13 @@ export default function HospitalsAdminPage() {
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
-          <Button asChild size="sm" className="h-9 bg-[#00673F] text-white hover:bg-[#008F56]">
-            <Link href="/register">
-              <Plus className="mr-1 h-4 w-4" aria-hidden />
-              Register organization
-            </Link>
-          </Button>
+          <Link
+            href="/register"
+            className="inline-flex h-9 items-center rounded-md bg-[#00673F] px-3 text-sm font-medium text-white transition hover:bg-[#008F56]"
+          >
+            <Plus className="mr-1 h-4 w-4" aria-hidden />
+            Register organization
+          </Link>
           <ExportCsvButton
             filename="esgroww-organizations.csv"
             rows={filtered as unknown as Record<string, unknown>[]}
@@ -155,7 +156,7 @@ export default function HospitalsAdminPage() {
           onChange={(e) => setSearch(e.target.value)}
           className="h-9 max-w-xs border-[#d5ddd6] bg-white/80 text-sm"
         />
-        <Select value={sector} onValueChange={setSector}>
+        <Select value={sector} onValueChange={(value) => setSector(value ?? "all") }>
           <SelectTrigger className="h-9 w-[160px] border-[#d5ddd6] bg-white/80 text-sm">
             <SelectValue placeholder="Sector" />
           </SelectTrigger>
@@ -167,7 +168,7 @@ export default function HospitalsAdminPage() {
             ))}
           </SelectContent>
         </Select>
-        <Select value={status} onValueChange={setStatus}>
+        <Select value={status} onValueChange={(value) => setStatus(value ?? "all")}>
           <SelectTrigger className="h-9 w-[200px] border-[#d5ddd6] bg-white/80 text-sm">
             <SelectValue placeholder="Account status" />
           </SelectTrigger>

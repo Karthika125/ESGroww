@@ -108,11 +108,7 @@ export default function GenericSpiderChart({
             stroke="#e5e7eb"
             strokeDasharray="0"
             strokeOpacity={0.25}
-            radialLines={{ 
-              stroke: "#e5e7eb", 
-              strokeOpacity: 0.15,
-              strokeDasharray: "0"
-            }}
+            radialLines={false}
           />
 
           {/* Metric Labels - Prominent and Clear */}
@@ -159,7 +155,7 @@ export default function GenericSpiderChart({
               fillOpacity={idx === 0 ? 0.5 : 0.25}
               isAnimationActive={true}
               animationDuration={1200}
-              animationEasing="ease-inOut"
+              animationEasing="ease-in-out"
               strokeWidth={idx === 0 ? 3.5 : 2.5}
               dot={{
                 r: idx === 0 ? 6.5 : 4.5,

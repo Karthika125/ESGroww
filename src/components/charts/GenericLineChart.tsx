@@ -110,7 +110,7 @@ export default function GenericLineChart({
             activeDot={{ r: 6, fill: color }}
             strokeWidth={strokeWidth}
             animationDuration={800}
-            animationEasing="ease-inOut"
+            animationEasing="ease-in-out"
             isAnimationActive={true}
           />
         ))}

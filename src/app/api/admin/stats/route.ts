@@ -7,7 +7,7 @@ export async function GET() {
     const hospitalsCount = await prisma.hospital.count();
 
     // 2. Calculate average ESG score across all hospitals
-    const esgScores = await prisma.esgScore.findMany({
+    const esgScores = await prisma.eSGScore.findMany({
       select: { overallScore: true },
     });
 

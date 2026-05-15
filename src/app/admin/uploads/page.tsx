@@ -364,7 +364,7 @@ export default function UploadIntelligencePage() {
             onChange={(e) => setSearch(e.target.value)}
             className="h-9 max-w-md border-[#d5ddd6] bg-white/80 text-sm"
           />
-          <Select value={category} onValueChange={setCategory}>
+          <Select value={category} onValueChange={(value) => setCategory(value ?? "all")}>
             <SelectTrigger className="h-9 w-full max-w-[200px] border-[#d5ddd6] bg-white/80 text-sm">
               <SelectValue placeholder="Category" />
             </SelectTrigger>

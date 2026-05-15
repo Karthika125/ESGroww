@@ -86,7 +86,7 @@ export async function GET(req: Request) {
         orderBy: { createdAt: "desc" },
         take: 100,
       }),
-      prisma.esgScore.findMany({
+      prisma.eSGScore.findMany({
         where: { hospitalId },
         orderBy: { createdAt: "desc" },
         take: 1,

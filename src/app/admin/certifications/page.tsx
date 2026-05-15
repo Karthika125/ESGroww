@@ -104,7 +104,7 @@ export default function CertificationsAdminPage() {
       </div>
 
       <div className="flex flex-wrap items-end gap-3">
-        <Select value={hospitalId} onValueChange={setHospitalId}>
+        <Select value={hospitalId} onValueChange={(value) => setHospitalId(value ?? "all")}>
           <SelectTrigger className="h-9 min-w-[220px] border-[#d5ddd6] bg-white/80 text-sm">
             <SelectValue placeholder="Organization" />
           </SelectTrigger>
@@ -117,7 +117,7 @@ export default function CertificationsAdminPage() {
             ))}
           </SelectContent>
         </Select>
-        <Select value={sector} onValueChange={setSector}>
+        <Select value={sector} onValueChange={(value) => setSector(value ?? "all")}>
           <SelectTrigger className="h-9 min-w-[160px] border-[#d5ddd6] bg-white/80 text-sm">
             <SelectValue placeholder="Sector" />
           </SelectTrigger>

@@ -66,7 +66,7 @@ export function EmissionsChart({ emissions }: Props) {
               }}
             />
             <Tooltip
-              formatter={(value: number) => [`${value.toFixed(2)} kg CO₂e`, ""]}
+              formatter={(value) => [`${Number(value ?? 0).toFixed(2)} kg CO₂e`, ""]}
               labelStyle={{ color: "#374151" }}
               contentStyle={{
                 backgroundColor: "#ffffff",

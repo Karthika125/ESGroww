@@ -147,7 +147,7 @@ export default function CalculationsAdminPage() {
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <Select value={hid} onValueChange={setHid}>
+          <Select value={hid} onValueChange={(value) => setHid(value ?? "all")}>
             <SelectTrigger className="h-9 min-w-[220px] border-[#d5ddd6] bg-white/80 text-sm">
               <SelectValue placeholder="Organization" />
             </SelectTrigger>

@@ -79,7 +79,7 @@ export async function GET() {
       .filter((r) => r.readinessStage)
       .map((r) => ({
         stage: r.readinessStage as string,
-        count: r._count._all,
+        count: r._count,
       }));
 
     const certByStatus: Record<string, number> = {};

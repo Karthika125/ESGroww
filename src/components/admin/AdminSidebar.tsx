@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { motion } from "framer-motion";
+import type { LucideIcon } from "lucide-react";
 import {
   Activity,
   Award,
@@ -17,7 +18,14 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-const NAV = [
+type NavItem = {
+  href: string;
+  label: string;
+  icon: LucideIcon;
+  exact?: boolean;
+};
+
+const NAV: NavItem[] = [
   { href: "/admin", label: "Overview", icon: LayoutDashboard, exact: true },
   { href: "/admin/uploads", label: "Upload Intelligence", icon: Upload },
   { href: "/admin/calculations", label: "Calculations Engine", icon: BarChart3 },
