@@ -1,10 +1,20 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import { useEffect, useState } from "react";
 import CategoryCard from "@/components/metrics/CategoryCard";
-import OverallMetricsChart from "@/components/metrics/OverallMetricsChart";
-import CategoryComparisonChart from "@/components/metrics/CategoryComparisonChart";
-import ConfidenceChart from "@/components/metrics/ConfidenceChart";
+const OverallMetricsChart = dynamic(() => import("@/components/metrics/OverallMetricsChart"), {
+  ssr: false,
+  loading: () => <div className="h-40 w-full animate-pulse bg-white/5" />,
+});
+const CategoryComparisonChart = dynamic(() => import("@/components/metrics/CategoryComparisonChart"), {
+  ssr: false,
+  loading: () => <div className="h-40 w-full animate-pulse bg-white/5" />,
+});
+const ConfidenceChart = dynamic(() => import("@/components/metrics/ConfidenceChart"), {
+  ssr: false,
+  loading: () => <div className="h-40 w-full animate-pulse bg-white/5" />,
+});
 import PageLayout from "@/components/shared/PageLayout";
 
 type AssessmentResponse = {

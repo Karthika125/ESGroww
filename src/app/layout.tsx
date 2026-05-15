@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { Geist_Mono, Lexend } from "next/font/google";
 import "./globals.css";
 import { AppChrome } from "@/components/layout/AppChrome";
-import { ConditionalChatbot } from "@/components/chatbot/ConditionalChatbot";
+import ConditionalChatbotClient from "@/components/chatbot/ConditionalChatbotClient";
 import VerticalFloatingMenuWrapper from "@/components/ui/VerticalFloatingMenuWrapper";
 
 const lexend = Lexend({
@@ -30,7 +30,7 @@ export default function RootLayout({
     <html lang="en" className={`${lexend.variable} ${geistMono.variable} h-full antialiased`}>
       <body className="flex h-full flex-col bg-background font-sans text-foreground">
         <AppChrome>{children}</AppChrome>
-        <ConditionalChatbot />
+        <ConditionalChatbotClient />
         <VerticalFloatingMenuWrapper />
       </body>
     </html>

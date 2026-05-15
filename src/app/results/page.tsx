@@ -1,8 +1,12 @@
 "use client";
+import dynamic from "next/dynamic";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { DownloadReportButton } from "@/components/shared/DownloadReportButton";
-import { ReportPdfCapture } from "@/components/pdf/ReportPdfCapture";
+const ReportPdfCapture = dynamic(() => import("@/components/pdf/ReportPdfCapture").then((m) => m.ReportPdfCapture), {
+  ssr: false,
+  loading: () => <div className="h-2 w-full" />,
+});
 import { Link2, Mail, Phone } from "lucide-react";
 import {
   evaluateEnergyIntensity,

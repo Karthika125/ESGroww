@@ -2,7 +2,15 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { Zap, Droplets, Fuel, Trash2, Snowflake, Truck, ShieldCheck, FileText } from "lucide-react";
+import dynamic from "next/dynamic";
+const Zap = dynamic(() => import("lucide-react").then((m) => m.Zap), { ssr: false, loading: () => null });
+const Droplets = dynamic(() => import("lucide-react").then((m) => m.Droplets), { ssr: false, loading: () => null });
+const Fuel = dynamic(() => import("lucide-react").then((m) => m.Fuel), { ssr: false, loading: () => null });
+const Trash2 = dynamic(() => import("lucide-react").then((m) => m.Trash2), { ssr: false, loading: () => null });
+const Snowflake = dynamic(() => import("lucide-react").then((m) => m.Snowflake), { ssr: false, loading: () => null });
+const Truck = dynamic(() => import("lucide-react").then((m) => m.Truck), { ssr: false, loading: () => null });
+const ShieldCheck = dynamic(() => import("lucide-react").then((m) => m.ShieldCheck), { ssr: false, loading: () => null });
+const FileText = dynamic(() => import("lucide-react").then((m) => m.FileText), { ssr: false, loading: () => null });
 
 import { getUploadProgress, type CategoryReadinessSlice, type UploadProgressPayload } from "@/actions/uploadProgress.actions";
 import { Card, CardContent } from "@/components/ui/card";

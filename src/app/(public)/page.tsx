@@ -1,8 +1,22 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useRef } from "react";
-import { Check, Zap, BarChart2, Map, Building2, Factory, GraduationCap, Shirt, Utensils, Truck, Globe, Building, Activity } from "lucide-react";
+import dynamic from "next/dynamic";
+const Check = dynamic(() => import("lucide-react").then((m) => m.Check), { ssr: false, loading: () => null });
+const Zap = dynamic(() => import("lucide-react").then((m) => m.Zap), { ssr: false, loading: () => null });
+const BarChart2 = dynamic(() => import("lucide-react").then((m) => m.BarChart2), { ssr: false, loading: () => null });
+const Map = dynamic(() => import("lucide-react").then((m) => m.Map), { ssr: false, loading: () => null });
+const Building2 = dynamic(() => import("lucide-react").then((m) => m.Building2), { ssr: false, loading: () => null });
+const Factory = dynamic(() => import("lucide-react").then((m) => m.Factory), { ssr: false, loading: () => null });
+const GraduationCap = dynamic(() => import("lucide-react").then((m) => m.GraduationCap), { ssr: false, loading: () => null });
+const Shirt = dynamic(() => import("lucide-react").then((m) => m.Shirt), { ssr: false, loading: () => null });
+const Utensils = dynamic(() => import("lucide-react").then((m) => m.Utensils), { ssr: false, loading: () => null });
+const Truck = dynamic(() => import("lucide-react").then((m) => m.Truck), { ssr: false, loading: () => null });
+const Globe = dynamic(() => import("lucide-react").then((m) => m.Globe), { ssr: false, loading: () => null });
+const Building = dynamic(() => import("lucide-react").then((m) => m.Building), { ssr: false, loading: () => null });
+const Activity = dynamic(() => import("lucide-react").then((m) => m.Activity), { ssr: false, loading: () => null });
 
 // ---------------------------------------------------------------------------
 // Tiny utility: fade-up observer hook
@@ -136,8 +150,6 @@ export default function HomePage() {
     >
       {/* Lexend font import & animations */}
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;500;600;700;800&display=swap');
-        * { font-family: 'Lexend', sans-serif; }
         .fade-section { opacity: 0; transform: translateY(24px); transition: opacity 0.65s ease, transform 0.65s ease; }
         .fade-section.opacity-100 { opacity: 1; transform: translateY(0); }
         @keyframes shimmer { 0%,100% { opacity:0.6 } 50% { opacity:1 } }
@@ -149,7 +161,7 @@ export default function HomePage() {
         {/* Sticky top nav inside hero */}
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2">
-            <img src="/logo.svg" alt="ESGroww" className="h-7 w-7 rounded object-contain" />
+            <Image src="/logo.svg" alt="ESGroww" width={28} height={28} className="h-7 w-7 rounded object-contain" priority />
             <h1 className="text-lg font-bold text-[#00673F]">ESGroww</h1>
           </div>
           <div className="flex gap-1.5">

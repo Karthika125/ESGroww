@@ -1,21 +1,19 @@
 "use client";
 
-import { motion } from "framer-motion";
-
 export default function Loading() {
   return (
     <div className="fixed inset-0 z-[9999] pointer-events-none">
+      <style>{`
+        @keyframes loading-bar {
+          0% { transform: translateX(-100%); }
+          100% { transform: translateX(250%); }
+        }
+      `}</style>
       {/* Top Loading Line */}
       <div className="absolute top-0 left-0 h-[3px] w-full overflow-hidden">
-        <motion.div
+        <div
           className="h-full w-[40%] bg-gradient-to-r from-emerald-400 via-emerald-500 to-teal-500 shadow-[0_0_12px_rgba(16,185,129,0.8)]"
-          initial={{ x: "-100%" }}
-          animate={{ x: "250%" }}
-          transition={{
-            repeat: Infinity,
-            duration: 1.2,
-            ease: "easeInOut",
-          }}
+          style={{ animation: "loading-bar 1.2s ease-in-out infinite" }}
         />
       </div>
 

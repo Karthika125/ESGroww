@@ -1,7 +1,14 @@
 "use client";
 
 import { useCallback, useRef, useState } from "react";
-import { UploadCloud, CheckCircle2, AlertCircle, Loader2, GitMerge, Copy, X } from "lucide-react";
+import dynamic from "next/dynamic";
+const UploadCloud = dynamic(() => import("lucide-react").then((m) => m.UploadCloud), { ssr: false, loading: () => null });
+const CheckCircle2 = dynamic(() => import("lucide-react").then((m) => m.CheckCircle2), { ssr: false, loading: () => null });
+const AlertCircle = dynamic(() => import("lucide-react").then((m) => m.AlertCircle), { ssr: false, loading: () => null });
+const Loader2 = dynamic(() => import("lucide-react").then((m) => m.Loader2), { ssr: false, loading: () => null });
+const GitMerge = dynamic(() => import("lucide-react").then((m) => m.GitMerge), { ssr: false, loading: () => null });
+const Copy = dynamic(() => import("lucide-react").then((m) => m.Copy), { ssr: false, loading: () => null });
+const X = dynamic(() => import("lucide-react").then((m) => m.X), { ssr: false, loading: () => null });
 import {
   uploadElectricityExcel,
   uploadWaterExcel,

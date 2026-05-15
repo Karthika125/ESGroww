@@ -1,7 +1,15 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Bot, ChevronDown, ChevronUp, Loader2, RefreshCw, SendHorizonal, Sparkles, UserRound } from "lucide-react";
+import dynamic from "next/dynamic";
+const Bot = dynamic(() => import("lucide-react").then((m) => m.Bot), { ssr: false, loading: () => null });
+const ChevronDown = dynamic(() => import("lucide-react").then((m) => m.ChevronDown), { ssr: false, loading: () => null });
+const ChevronUp = dynamic(() => import("lucide-react").then((m) => m.ChevronUp), { ssr: false, loading: () => null });
+const Loader2 = dynamic(() => import("lucide-react").then((m) => m.Loader2), { ssr: false, loading: () => null });
+const RefreshCw = dynamic(() => import("lucide-react").then((m) => m.RefreshCw), { ssr: false, loading: () => null });
+const SendHorizonal = dynamic(() => import("lucide-react").then((m) => m.SendHorizonal), { ssr: false, loading: () => null });
+const Sparkles = dynamic(() => import("lucide-react").then((m) => m.Sparkles), { ssr: false, loading: () => null });
+const UserRound = dynamic(() => import("lucide-react").then((m) => m.UserRound), { ssr: false, loading: () => null });
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";

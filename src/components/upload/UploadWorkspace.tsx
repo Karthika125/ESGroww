@@ -5,7 +5,11 @@ import { useCallback, useState } from "react";
 import ProceedButton from "@/components/upload/ProceedButton";
 import RecentUploadsTable from "@/components/upload/RecentUploadsTable";
 import UploadCategoryGrid from "@/components/upload/UploadCategoryGrid";
-import UploadOverviewPanel from "@/components/upload/UploadOverviewPanel";
+import dynamic from "next/dynamic";
+const UploadOverviewPanel = dynamic(() => import("@/components/upload/UploadOverviewPanel"), {
+  ssr: false,
+  loading: () => <div className="h-24 w-full animate-pulse bg-white/5" />,
+});
 import { BRD_MIN_MONTHS_FOR_READINESS_GATE } from "@/lib/upload/brdConstants";
 
 /** Laptop-first dashboard: primary path in one viewport; uploads list scrolls inside panel. */
