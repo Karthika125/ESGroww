@@ -100,7 +100,7 @@ export default function MetricsPage() {
       key: "governance",
       title: "Governance",
       score: categoryScores.governance,
-      conf: null,
+      conf: categoryConfidence.find((c: any) => c.category === "Governance"),
       monthKey: "governance",
     },
   ];

@@ -1,11 +1,25 @@
 "use client";
 
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 
 import BackButton from "@/components/BackButton";
 
 export default function TopNav() {
   const pathname = usePathname();
+  const router = useRouter();
+
+  async function handleHomeClick() {
+    try {
+      const res = await fetch("/api/me");
+      if (!res.ok) return;
+      const data = await res.json();
+      if (data?.authenticated) {
+        router.push("/upload");
+      }
+    } catch (e) {
+      // ignore
+    }
+  }
 
   const hiddenPaths = ["/"];
 
@@ -18,16 +32,13 @@ export default function TopNav() {
         <BackButton />
 
         {/* Project logo */}
-        <img
-          src="/logo.svg"
-          alt="ESGroww logo"
-          className="h-8 w-8 rounded-sm object-contain"
-          aria-hidden={false}
-        />
+        <button type="button" onClick={handleHomeClick} aria-label="ESGroww home" className="p-0">
+          <img src="/logo.svg" alt="ESGroww logo" className="h-8 w-8 rounded-sm object-contain" aria-hidden={false} />
+        </button>
 
-        <h1 className="text-lg font-bold tracking-tight text-primary sm:text-xl">
+        <button type="button" onClick={handleHomeClick} aria-label="ESGroww home" className="text-lg font-bold tracking-tight text-primary sm:text-xl p-0">
           ESGroww
-        </h1>
+        </button>
       </div>
     </header>
   );

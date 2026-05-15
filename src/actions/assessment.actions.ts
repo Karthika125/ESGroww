@@ -523,6 +523,11 @@ export async function computeAndSaveAssessment() {
       confidence:
         wasteConfidence,
     },
+    {
+      category: "Governance",
+      months: governanceData ? 1 : 0,
+      confidence: governanceCompleteness ? governanceCompleteness / 100 : 0,
+    },
   ];
 
   // ─────────────────────────────────────────────
@@ -839,6 +844,7 @@ export async function computeAndSaveAssessment() {
         water: waterMonths,
         fuel: fuelMonths,
         waste: wasteMonths,
+        governance: governanceData ? 1 : 0,
         transport: transportDistinctMonths,
         refrigerants: refrigerantDistinctMonths,
       },

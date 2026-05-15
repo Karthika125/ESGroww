@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Bot, ChevronDown, ChevronUp, Loader2, RefreshCw, SendHorizonal, Sparkles, UserRound } from "lucide-react";
+import { Bot, Loader2, RefreshCw, SendHorizonal, Sparkles, UserRound, X, FileCheck, Landmark, Lightbulb } from "lucide-react";
+import { AnimatePresence, motion } from "framer-motion";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -179,7 +180,7 @@ export function MistralChatbot({
     if (viewportRef.current) {
       viewportRef.current.scrollTop = viewportRef.current.scrollHeight;
     }
-  }, [conversation]);
+  }, [conversation, isSending]); // Added isSending to trigger scroll when typing animation appears
 
   async function handleSend(text: string) {
     const message = text.trim();
@@ -245,15 +246,16 @@ export function MistralChatbot({
   }
 
   function toggleOpen() {
-    setIsOpen((current) => !current);
+    setIsOpen((current) => {
+      if (!current) {
+        setIsTranscriptVisible(true);
+      }
+      return !current;
+    });
   }
 
   function handleClose() {
     setIsOpen(false);
-  }
-
-  function toggleTranscript() {
-    setIsTranscriptVisible((current) => !current);
   }
 
   function selectMode(mode: "certificate" | "regulatory" | "general") {
@@ -272,299 +274,327 @@ export function MistralChatbot({
 
   const currentDraft = draftsByMode[activeMode] ?? "";
 
-  if (!isOpen) {
-    return (
-      <div className={cn("fixed bottom-4 right-4 z-[60]", className)}>
-        <Button
-          type="button"
-          onClick={toggleOpen}
-          aria-label="Open Evio"
-          title="Open Evio"
-          className="rounded-full bg-emerald-600 p-3 text-white shadow-lg shadow-emerald-600/20 hover:bg-emerald-700"
-        >
-          <Bot className="size-5" />
-        </Button>
-      </div>
-    );
-  }
+  // Auto-resize textarea
+  const handleTextareaChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    setDraftsByMode((prev) => ({ ...prev, [activeMode]: e.target.value }));
+    e.target.style.height = 'auto';
+    e.target.style.height = `${Math.min(e.target.scrollHeight, 128)}px`; // Max height 128px (8rem/h-32)
+  };
 
   return (
-    <div className={cn("fixed bottom-4 right-4 z-[60] w-[min(24rem,calc(100vw-2rem))]", className)}>
-      <Card className="border-slate-200 bg-gradient-to-br from-white via-slate-50 to-emerald-50/60 shadow-xl max-h-[90vh] overflow-y-auto flex flex-col">
-      <CardHeader className="border-b border-slate-200/80 pb-3">
-        <div className="flex items-start justify-between gap-3">
-          <div className="space-y-0.5">
-            <div className="flex items-center gap-2">
-              <div className="flex size-7 items-center justify-center rounded-lg bg-emerald-600 text-white">
-                <Bot className="size-3.5" />
-              </div>
-              <div className="flex items-center gap-2">
-                <CardTitle className="text-base text-slate-900">{title}</CardTitle>
-                <span className="text-xs rounded-full px-2 py-0.5 bg-slate-100 text-slate-700">
-                  {activeMode === "certificate" ? "Certificate" : activeMode === "regulatory" ? "Regulatory" : "General"}
-                </span>
-              </div>
-            </div>
-            <p className="text-xs text-slate-500 mt-1">{description}</p>
-          </div>
-
-          <div className="flex items-center gap-2">
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              className="text-slate-500 hover:text-slate-900 pl-1.5"
-              onClick={handleReset}
-            >
-              <RefreshCw className="mr-2 size-4" />
-              Reset
-            </Button>
-          </div>
-        </div>
-      </CardHeader>
-
-      <CardContent className="space-y-3 p-3 md:p-4">
-        <div className="space-y-2.5">
-          <div className="flex items-center justify-between rounded-2xl border border-slate-200 bg-white/80 px-2.5 py-1.5">
-            <div className="flex items-center gap-1.5">
-              <button
-                type="button"
-                onClick={() => selectMode("certificate")}
-                className={cn(
-                  "rounded-full px-2.5 py-0.5 text-xs",
-                  activeMode === "certificate"
-                    ? "bg-emerald-600 text-white"
-                    : "bg-white text-slate-600 border border-slate-200"
-                )}
-              >
-                Certificate Relevance Check
-              </button>
-              <button
-                type="button"
-                onClick={() => selectMode("regulatory")}
-                className={cn(
-                  "rounded-full px-2.5 py-0.5 text-xs",
-                  activeMode === "regulatory"
-                    ? "bg-emerald-600 text-white"
-                    : "bg-white text-slate-600 border border-slate-200"
-                )}
-              >
-                Regulatory FAQ
-              </button>
-              <button
-                type="button"
-                onClick={() => selectMode("general")}
-                className={cn(
-                  "rounded-full px-2.5 py-0.5 text-xs",
-                  activeMode === "general"
-                    ? "bg-emerald-600 text-white"
-                    : "bg-white text-slate-600 border border-slate-200"
-                )}
-              >
-                General Sustainability Query
-              </button>
-            </div>
-          </div>
-
-          <div className="text-xs text-slate-600">
-            {activeMode === "certificate" && (
-              <span>Check certificate relevance for your sector and understand key requirements and next steps.</span>
-            )}
-            {activeMode === "regulatory" && (
-              <span>Understand regulatory compliance requirements, standards (BRSR, GRI, ISO), and compliance deadlines.</span>
-            )}
-            {activeMode === "general" && (
-              <span>Get ESG insights: scores, readiness gaps, recommendations, and practical sustainability actions.</span>
-            )}
-          </div>
-        </div>
-
-        {isTranscriptVisible && (
-          <div
-            ref={viewportRef}
-            className="max-h-[32rem] space-y-2.5 overflow-y-auto rounded-2xl border border-slate-200 bg-white/80 p-2.5 shadow-inner"
-            aria-live="polite"
+    <>
+      <AnimatePresence>
+        {!isOpen && (
+          <motion.div
+            initial={{ scale: 0, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            exit={{ scale: 0, opacity: 0 }}
+            className={cn("fixed bottom-6 right-6 z-[60]", className)}
           >
-            {conversation.filter((message) => 
-              activeMode === "certificate" ? message.role === "assistant" : true
-            ).map((message, index) => (
-              <div
-                key={`${message.role}-${index}`}
-                className={cn(
-                  "flex gap-3",
-                  message.role === "user" ? "justify-end" : "justify-start"
-                )}
-              >
-                {message.role === "assistant" && (
-                  <div className="mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-emerald-700">
-                    <Sparkles className="size-4" />
-                  </div>
-                )}
-
-                <div
-                  className={cn(
-                    "max-w-[85%] rounded-2xl px-4 py-3 text-sm leading-6",
-                    message.role === "user"
-                      ? "rounded-br-md bg-emerald-600 text-white"
-                      : "rounded-bl-md border border-slate-200 bg-slate-50 text-slate-700"
-                  )}
-                >
-                  {stripMarkdownFormatting(normalizeMessageContent(message.content))}
-                </div>
-
-                {message.role === "user" && (
-                  <div className="mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-full bg-slate-900 text-white">
-                    <UserRound className="size-4" />
-                  </div>
-                )}
-              </div>
-            ))}
-
-            {isSending && (
-              <div className="flex gap-3">
-                <div className="mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-emerald-700">
-                  <Loader2 className="size-4 animate-spin" />
-                </div>
-                <div className="rounded-2xl rounded-bl-md border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-500">
-                    Evio is thinking...
-                </div>
-              </div>
-            )}
-          </div>
+            <button
+              type="button"
+              onClick={toggleOpen}
+              aria-label="Open Evio"
+              title="Open Evio"
+              className="group relative flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-br from-emerald-500 to-emerald-600 text-white shadow-lg shadow-emerald-500/40 transition-all hover:scale-105 hover:shadow-emerald-500/60"
+            >
+              <span className="absolute inset-0 rounded-full bg-emerald-400/50 animate-ping opacity-75" />
+              <Bot className="relative z-10 size-6 transition-transform group-hover:-rotate-12" />
+            </button>
+          </motion.div>
         )}
+      </AnimatePresence>
 
-        <div className="flex flex-wrap gap-1.5">
-          {activeMode === "regulatory" && REGULATORY_SUGGESTIONS.map((prompt) => (
-            <Button
-              key={prompt}
-              type="button"
-              variant="outline"
-              size="sm"
-              className="rounded-full border-slate-200 bg-white text-slate-600 hover:bg-slate-100 text-xs"
-              onClick={() => handleSend(prompt)}
-              disabled={isSending}
-            >
-              {prompt}
-            </Button>
-          ))}
-          {activeMode === "general" && GENERAL_SUGGESTIONS.map((prompt) => (
-            <Button
-              key={prompt}
-              type="button"
-              variant="outline"
-              size="sm"
-              className="rounded-full border-slate-200 bg-white text-slate-600 hover:bg-slate-100 text-xs"
-              onClick={() => handleSend(prompt)}
-              disabled={isSending}
-            >
-              {prompt}
-            </Button>
-          ))}
-        </div>
-
-          <form
-            className="space-y-2.5"
-            onSubmit={(event) => {
-              event.preventDefault();
-              if (activeMode === "certificate") {
-                const msg = `Let's explore how the "${certificateSelection.certification}" certification can strengthen our ESG commitment in the "${certificateSelection.sectorName}" sector. What makes it relevant for ESG, what are the key requirements, and how can we leverage it to drive meaningful sustainability outcomes?`;
-                void handleSend(msg);
-              } else {
-                void handleSend(currentDraft);
-              }
-            }}
+      <AnimatePresence>
+        {isOpen && (
+          <motion.div
+            initial={{ opacity: 0, y: 40, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 40, scale: 0.95 }}
+            transition={{ type: "spring", damping: 25, stiffness: 300 }}
+            className={cn("fixed bottom-6 right-6 z-[60] w-[min(24rem,calc(100vw-2rem))] origin-bottom-right", className)}
           >
-            {activeMode === "certificate" ? (
-              <div className="space-y-1.5">
-                <label className="text-xs text-slate-600 block">Select sector</label>
-                <select
-                  value={certificateSelection.sectorName}
-                  onChange={(e) => {
-                    const sector = SECTOR_OPTIONS.find((s) => s.sectorName === e.target.value)!;
-                    setCertificateSelection({ sectorName: sector.sectorName, certification: sector.certifications[0] });
-                  }}
-                  className="w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm"
-                >
-                  <option value="" disabled>Select Sector</option>
-                  {SECTOR_OPTIONS.map((s) => (
-                    <option key={s.sectorName} value={s.sectorName}>
-                      {s.sectorName}
-                    </option>
-                  ))}
-                </select>
+            <Card className="border-0 bg-white/95 backdrop-blur-xl shadow-2xl overflow-hidden flex flex-col ring-1 ring-slate-200/50 sm:max-h-[85vh] max-h-[90vh]">
+              <CardHeader className="bg-gradient-to-r from-emerald-600 to-teal-700 p-4 pb-4">
+                <div className="flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-3">
+                    <div className="relative flex size-10 items-center justify-center rounded-xl bg-white/20 text-white shadow-inner backdrop-blur-md">
+                      <Bot className="size-5" />
+                      <span className="absolute -bottom-1 -right-1 flex h-3 w-3 rounded-full bg-green-400 ring-2 ring-emerald-700"></span>
+                    </div>
+                    <div>
+                      <CardTitle className="text-lg font-semibold text-white tracking-tight">{title}</CardTitle>
+                      <p className="text-xs text-emerald-100 font-medium">Online • ESG Assistant</p>
+                    </div>
+                  </div>
 
-                <label className="text-xs text-slate-600 block">Select certification</label>
-                <select
-                  value={certificateSelection.certification}
-                  onChange={(e) => setCertificateSelection((prev) => ({ ...prev, certification: e.target.value }))}
-                  className="w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm"
+                  <div className="flex items-center gap-1">
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="size-8 rounded-full text-white/80 hover:bg-white/20 hover:text-white"
+                      onClick={handleReset}
+                      title="Reset Chat"
+                    >
+                      <RefreshCw className="size-4" />
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="size-8 rounded-full text-white/80 hover:bg-white/20 hover:text-white"
+                      onClick={handleClose}
+                      title="Close"
+                    >
+                      <X className="size-5" />
+                    </Button>
+                  </div>
+                </div>
+              </CardHeader>
+              
+              <CardContent className="flex-1 flex flex-col p-4 bg-slate-50/50 overflow-hidden min-h-[400px]">
+                {/* Mode Selector */}
+                <div className="flex p-1 bg-slate-200/60 rounded-xl mb-4 relative z-0 overflow-hidden shrink-0">
+                  <div className="absolute inset-y-1 transition-all duration-300 ease-in-out bg-white rounded-lg shadow-sm z-[-1]"
+                    style={{
+                      width: 'calc(33.333% - 5px)',
+                      left: activeMode === 'certificate' ? '4px' : activeMode === 'regulatory' ? 'calc(33.333% + 2px)' : 'calc(66.666% - 1px)'
+                    }}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => selectMode("certificate")}
+                    className={cn(
+                      "flex-1 flex flex-col items-center justify-center py-2 px-1 text-[10px] sm:text-xs font-medium rounded-lg transition-colors z-10",
+                      activeMode === "certificate" ? "text-emerald-700" : "text-slate-500 hover:text-slate-700"
+                    )}
+                  >
+                    <FileCheck className="size-4 mb-1" />
+                    <span className="text-center leading-tight">Certificate</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => selectMode("regulatory")}
+                    className={cn(
+                      "flex-1 flex flex-col items-center justify-center py-2 px-1 text-[10px] sm:text-xs font-medium rounded-lg transition-colors z-10",
+                      activeMode === "regulatory" ? "text-emerald-700" : "text-slate-500 hover:text-slate-700"
+                    )}
+                  >
+                    <Landmark className="size-4 mb-1" />
+                    <span className="text-center leading-tight">Regulatory</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => selectMode("general")}
+                    className={cn(
+                      "flex-1 flex flex-col items-center justify-center py-2 px-1 text-[10px] sm:text-xs font-medium rounded-lg transition-colors z-10",
+                      activeMode === "general" ? "text-emerald-700" : "text-slate-500 hover:text-slate-700"
+                    )}
+                  >
+                    <Lightbulb className="size-4 mb-1" />
+                    <span className="text-center leading-tight">General</span>
+                  </button>
+                </div>
+
+                {/* Transcript area */}
+                <div
+                  ref={viewportRef}
+                  className="flex-1 overflow-y-auto space-y-4 rounded-xl mb-4 pr-1 scrollbar-thin scrollbar-thumb-slate-200"
+                  aria-live="polite"
                 >
-                  <option value="" disabled>Select Certificate</option>
-                  {SECTOR_OPTIONS.find((s) => s.sectorName === certificateSelection.sectorName)?.certifications.map((c) => (
-                    <option key={c} value={c}>
-                      {c}
-                    </option>
+                  <AnimatePresence initial={false}>
+                    {isTranscriptVisible && conversation.filter((message) => 
+                      activeMode === "certificate" ? message.role === "assistant" : true
+                    ).map((message, index) => (
+                      <motion.div
+                        key={`${message.role}-${index}`}
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className={cn(
+                          "flex gap-3",
+                          message.role === "user" ? "justify-end" : "justify-start"
+                        )}
+                      >
+                        {message.role === "assistant" && (
+                          <div className="mt-auto flex size-8 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-emerald-100 to-teal-100 text-emerald-700 shadow-sm border border-emerald-200/50">
+                            <Sparkles className="size-4" />
+                          </div>
+                        )}
+
+                        <div
+                          className={cn(
+                            "max-w-[85%] px-4 py-2.5 text-sm leading-relaxed shadow-sm",
+                            message.role === "user"
+                              ? "rounded-2xl rounded-br-sm bg-emerald-600 text-white"
+                              : "rounded-2xl rounded-bl-sm border border-slate-200/60 bg-white text-slate-700"
+                          )}
+                        >
+                          {stripMarkdownFormatting(normalizeMessageContent(message.content))}
+                        </div>
+
+                        {message.role === "user" && (
+                          <div className="mt-auto flex size-8 shrink-0 items-center justify-center rounded-full bg-slate-800 text-white shadow-sm border border-slate-700">
+                            <UserRound className="size-4" />
+                          </div>
+                        )}
+                      </motion.div>
+                    ))}
+
+                    {isSending && (
+                      <motion.div
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, scale: 0.95 }}
+                        className="flex gap-3 justify-start"
+                      >
+                        <div className="mt-auto flex size-8 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-emerald-100 to-teal-100 text-emerald-700 shadow-sm border border-emerald-200/50">
+                          <Loader2 className="size-4 animate-spin" />
+                        </div>
+                        <div className="rounded-2xl rounded-bl-sm border border-slate-200/60 bg-white px-4 py-3 text-sm text-slate-500 shadow-sm flex items-center gap-1.5 h-10">
+                          <span className="size-1.5 rounded-full bg-emerald-500 animate-bounce" style={{ animationDelay: '0ms' }}></span>
+                          <span className="size-1.5 rounded-full bg-emerald-500 animate-bounce" style={{ animationDelay: '150ms' }}></span>
+                          <span className="size-1.5 rounded-full bg-emerald-500 animate-bounce" style={{ animationDelay: '300ms' }}></span>
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+
+                <div className="flex flex-wrap gap-2 mb-3 shrink-0">
+                  {activeMode === "regulatory" && REGULATORY_SUGGESTIONS.map((prompt) => (
+                    <button
+                      key={prompt}
+                      type="button"
+                      className="rounded-full border border-slate-200 bg-white px-3 py-1.5 text-[11px] font-medium text-slate-600 hover:bg-emerald-50 hover:text-emerald-700 hover:border-emerald-200 transition-colors shadow-sm text-left line-clamp-1"
+                      onClick={() => handleSend(prompt)}
+                      disabled={isSending}
+                    >
+                      {prompt}
+                    </button>
                   ))}
-                </select>
-              </div>
-            ) : (
-              <textarea
-                ref={inputRef}
-                value={currentDraft}
-                onChange={(event) => setDraftsByMode((prev) => ({ ...prev, [activeMode]: event.target.value }))}
-                onKeyDown={(event) => {
-                  if (event.key === "Enter" && !event.shiftKey) {
+                  {activeMode === "general" && GENERAL_SUGGESTIONS.map((prompt) => (
+                    <button
+                      key={prompt}
+                      type="button"
+                      className="rounded-full border border-slate-200 bg-white px-3 py-1.5 text-[11px] font-medium text-slate-600 hover:bg-emerald-50 hover:text-emerald-700 hover:border-emerald-200 transition-colors shadow-sm text-left line-clamp-1"
+                      onClick={() => handleSend(prompt)}
+                      disabled={isSending}
+                    >
+                      {prompt}
+                    </button>
+                  ))}
+                </div>
+
+                <form
+                  className="mt-auto shrink-0"
+                  onSubmit={(event) => {
                     event.preventDefault();
-                    void handleSend(currentDraft);
-                  }
-                }}
-                placeholder={
-                  activeMode === "regulatory"
-                    ? "Ask about regulatory compliance, standards, or deadlines..."
-                    : "Ask about ESG gaps, recommendations, or sustainability strategies..."
-                }
-                className="min-h-20 w-full resize-none rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm outline-none transition-colors placeholder:text-slate-400 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20"
-                aria-label="Chat message"
-                rows={4}
-              />
-            )}
+                    if (activeMode === "certificate") {
+                      const msg = `Let's explore how the "${certificateSelection.certification}" certification can strengthen our ESG commitment in the "${certificateSelection.sectorName}" sector. What makes it relevant for ESG, what are the key requirements, and how can we leverage it to drive meaningful sustainability outcomes?`;
+                      void handleSend(msg);
+                    } else {
+                      void handleSend(currentDraft);
+                    }
+                  }}
+                >
+                  {activeMode === "certificate" ? (
+                    <div className="space-y-3 bg-white p-3 rounded-xl border border-slate-200 shadow-sm">
+                      <div className="space-y-1.5">
+                        <label className="text-xs font-semibold text-slate-700 block ml-1">Select Sector</label>
+                        <select
+                          value={certificateSelection.sectorName}
+                          onChange={(e) => {
+                            const sector = SECTOR_OPTIONS.find((s) => s.sectorName === e.target.value)!;
+                            setCertificateSelection({ sectorName: sector.sectorName, certification: sector.certifications[0] });
+                          }}
+                          className="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-800 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none transition-all"
+                        >
+                          <option value="" disabled>Choose your industry...</option>
+                          {SECTOR_OPTIONS.map((s) => (
+                            <option key={s.sectorName} value={s.sectorName}>
+                              {s.sectorName}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
 
-          <div className="flex items-center justify-between gap-2">
-            {activeMode !== "certificate" && (
-              <p className="text-xs text-slate-500">
-                ⏎ send, Shift+⏎ new line
-              </p>
-            )}
+                      <div className="space-y-1.5">
+                        <label className="text-xs font-semibold text-slate-700 block ml-1">Select Certification</label>
+                        <select
+                          value={certificateSelection.certification}
+                          onChange={(e) => setCertificateSelection((prev) => ({ ...prev, certification: e.target.value }))}
+                          className="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-800 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none transition-all disabled:opacity-50"
+                          disabled={!certificateSelection.sectorName}
+                        >
+                          <option value="" disabled>Choose a framework...</option>
+                          {SECTOR_OPTIONS.find((s) => s.sectorName === certificateSelection.sectorName)?.certifications.map((c) => (
+                            <option key={c} value={c}>
+                              {c}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="relative flex items-end gap-2 bg-white rounded-2xl border border-slate-200 p-1 pl-2 shadow-sm focus-within:ring-2 focus-within:ring-emerald-500/20 focus-within:border-emerald-500 transition-all">
+                      <textarea
+                        ref={inputRef}
+                        value={currentDraft}
+                        onChange={handleTextareaChange}
+                        onKeyDown={(event) => {
+                          if (event.key === "Enter" && !event.shiftKey) {
+                            event.preventDefault();
+                            void handleSend(currentDraft);
+                            event.currentTarget.style.height = 'auto'; // Reset height on send
+                          }
+                        }}
+                        placeholder={
+                          activeMode === "regulatory"
+                            ? "Ask about compliance, standards..."
+                            : "Ask about ESG gaps, recommendations..."
+                        }
+                        className="max-h-32 min-h-[44px] w-full resize-none bg-transparent py-3 text-sm text-slate-800 outline-none placeholder:text-slate-400 scrollbar-thin"
+                        aria-label="Chat message"
+                        rows={1}
+                      />
+                    </div>
+                  )}
 
-            <Button
-              type="submit"
-              className="bg-emerald-600 text-white hover:bg-emerald-700"
-              disabled={isSending || (activeMode === "certificate" ? !certificateSelection.sectorName || !certificateSelection.certification : !currentDraft.trim())}
-            >
-              {isSending ? (
-                <>
-                  <Loader2 className="mr-2 size-4 animate-spin" />
-                  Sending
-                </>
-              ) : (
-                <>
-                  <SendHorizonal className="mr-2 size-4" />
-                  Send
-                </>
-              )}
-            </Button>
-          </div>
-        </form>
-      </CardContent>
-      </Card>
-      <Button
-        type="button"
-        onClick={toggleOpen}
-        className="mt-2 w-full rounded-full bg-slate-900 px-4 py-2 text-white shadow-lg hover:bg-slate-800"
-      >
-        <ChevronUp className="mr-2 size-4" />
-        Hide Evio
-      </Button>
-    </div>
+                  <div className="mt-3 flex items-center justify-between pl-1">
+                    {activeMode !== "certificate" ? (
+                      <p className="text-[10px] text-slate-400 font-medium">
+                        ⏎ to send • Shift+⏎ for new line
+                      </p>
+                    ) : (
+                      <div />
+                    )}
+
+                    <Button
+                      type="submit"
+                      size="sm"
+                      className="bg-emerald-600 text-white hover:bg-emerald-700 shadow-sm shadow-emerald-600/20 rounded-full px-5 transition-all"
+                      disabled={isSending || (activeMode === "certificate" ? !certificateSelection.sectorName || !certificateSelection.certification : !currentDraft.trim())}
+                    >
+                      {isSending ? (
+                        <>
+                          <Loader2 className="mr-2 size-4 animate-spin" />
+                          Sending
+                        </>
+                      ) : (
+                        <>
+                          <SendHorizonal className="mr-2 size-4" />
+                          Send
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                </form>
+              </CardContent>
+            </Card>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </>
   );
 }
