@@ -1,14 +1,10 @@
 "use client";
 
 import React from "react";
-import dynamic from "next/dynamic";
 import { useFetchAssessment } from "@/hooks/useFetchAssessment";
 import { Zap, Droplets, Leaf, RotateCcw, Radar } from "lucide-react";
 import PageLayout from "@/components/shared/PageLayout";
-const GenericSpiderChart = dynamic(() => import("@/components/charts/GenericSpiderChart"), {
-  ssr: false,
-  loading: () => <div className="h-[260px] w-full animate-pulse bg-white/5" />,
-});
+import GenericSpiderChart from "@/components/charts/GenericSpiderChart";
 
 export default function AnalysisPage() {
   const { data, loading, error } = useFetchAssessment();

@@ -30,6 +30,12 @@ The platform is designed to feel analytical, consulting-grade, transparent, and 
 
 # Key Features
 
+## AI Assistant / Chatbot
+- Integrated AI chatbot to help users navigate the platform, answer common questions, and assist with data uploads and interpretation.
+- Implemented as a client-only, lazy-loaded component to avoid adding runtime weight to server-rendered pages. See `src/components/chatbot/ConditionalChatbotClient.tsx` and `src/components/chatbot/MistralChatbot.tsx` for implementation details.
+- Chatbot is isolated behind a client wrapper (`ssr: false` moved into the client) to keep Server Components SSR-safe while preserving interactivity.
+- Verification: open any page and confirm the chatbot loads client-side and responds to queries; check network/devtools to see the chatbot bundle loaded lazily.
+
 ## ESG Intelligence Features
 
 - Multi-sector ESG readiness assessment
@@ -560,7 +566,7 @@ Planned future enhancements:
 ## Developed By
 
 Karthika Suresh
-
+Karthik S
 ---
 
 # License

@@ -1,15 +1,19 @@
 "use client";
 
+import { motion } from "framer-motion";
+
 export default function Template({ children }: { children: React.ReactNode }) {
   return (
-    <div className="flex flex-1 flex-col" style={{ animation: "template-enter 0.4s ease-in-out" }}>
-      <style>{`
-        @keyframes template-enter {
-          from { opacity: 0; transform: translateY(10px); }
-          to { opacity: 1; transform: translateY(0); }
-        }
-      `}</style>
+    <motion.div
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ 
+        ease: "easeInOut",
+        duration: 0.4 
+      }}
+      className="flex-1 flex flex-col"
+    >
       {children}
-    </div>
+    </motion.div>
   );
 }

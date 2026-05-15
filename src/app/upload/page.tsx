@@ -21,7 +21,7 @@ export default function UploadPage() {
             <Info className="mt-0.5 size-3.5 shrink-0 text-primary" aria-hidden />
             <p>
               <strong className="font-semibold text-foreground">Incremental uploads</strong> are always accepted when valid. Readiness for
-              summary unlocks at <strong>{BRD_MIN_MONTHS_FOR_READINESS_GATE} distinct months</strong> each for Electricity, Water, and Waste.{" "}
+              summary unlocks at <strong>{BRD_MIN_MONTHS_FOR_READINESS_GATE} distinct months</strong> each for Electricity, Water, and Waste. {" "}
               <strong className="font-semibold text-foreground">12 months</strong> recommended for maximum confidence.
             </p>
           </div>

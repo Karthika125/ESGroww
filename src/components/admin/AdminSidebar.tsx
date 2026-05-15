@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { motion } from "framer-motion";
 import type { LucideIcon } from "lucide-react";
 import {
   Activity,
@@ -63,13 +64,15 @@ export function AdminSidebar() {
           const Icon = item.icon;
           return (
             <Link key={item.href} href={item.href} className="block rounded-lg">
-              <span
+              <motion.span
                 className={cn(
-                  "flex items-center gap-2.5 rounded-lg px-3 py-2 text-[13px] font-medium transition-colors transition-transform hover:translate-x-px",
+                  "flex items-center gap-2.5 rounded-lg px-3 py-2 text-[13px] font-medium transition-colors",
                   active
                     ? "bg-[#00673F]/12 text-[#00673F] shadow-[inset_0_0_0_1px_rgba(0,103,63,0.18)]"
                     : "text-[#3d5248] hover:bg-white/60 hover:text-[#15221a]"
                 )}
+                whileHover={{ x: 1 }}
+                transition={{ type: "spring", stiffness: 400, damping: 28 }}
               >
                 <Icon
                   className={cn("h-4 w-4 shrink-0", active ? "text-[#00673F]" : "text-[#3d5248]/70")}
@@ -79,7 +82,7 @@ export function AdminSidebar() {
                 {active && (
                   <span className="ml-auto h-1.5 w-1.5 rounded-full bg-[#00A86B] shadow-[0_0_8px_rgba(0,168,107,0.65)]" />
                 )}
-              </span>
+              </motion.span>
             </Link>
           );
         })}

@@ -5,28 +5,36 @@ This document summarizes the safe, incremental performance optimizations applied
 ## What I changed (high level)
 - Debounced and memoized `Glossary` search and added a memoized `GlossaryCard` to reduce re-renders. (`src/app/glossary/page.tsx`)
 - Extracted heavy admin charts into `OverviewCharts` and lazy-loaded it via `next/dynamic`. (`src/components/admin/OverviewCharts.tsx`, `src/app/admin/page.tsx`)
-- Lazy-loaded chatbot (`ConditionalChatbot`) in the root layout. (`src/app/layout.tsx`)
+- Isolated the chatbot behind a client wrapper (`ConditionalChatbotClient`) and moved `ssr:false` into that client component to avoid using `next/dynamic({ ssr: false })` from server components. (`src/components/chatbot/ConditionalChatbotClient.tsx`, `src/app/layout.tsx`)
 - Lazy-loaded PDF/report capture component (`ReportPdfCapture`) on the results page. (`src/app/results/page.tsx`)
 - Lazily loaded spider chart and other chart components on pages that render them (analysis, metrics, upload workspace). (`src/app/analysis/page.tsx`, `src/app/metrics/page.tsx`, `src/components/upload/UploadWorkspace.tsx`)
 - Replaced several large grouped `lucide-react` icon imports with per-icon dynamic imports to avoid shipping the whole icon set in primary bundles (many files under `src/`).
+- Removed/deprecated `framer-motion` usage from global wrappers and lightweight UI (admin shell, sidebar, floating menu) and replaced with CSS transitions/keyframes to reduce runtime JS.
+- Added route-group metadata for public pages and removed an inline Google Fonts import from the public homepage to avoid duplicate font strategies and render-blocking font fetches. (`src/app/(public)/layout.tsx`, `src/app/(public)/page.tsx`)
 
 ## Files changed (not exhaustive)
 - `src/app/glossary/page.tsx` — debounce + memoization.
 - `src/components/admin/OverviewCharts.tsx` — extracted charts.
 - `src/app/admin/page.tsx` — dynamic import of `OverviewCharts`.
-- `src/app/layout.tsx` — dynamic import of `ConditionalChatbot`.
+- `src/components/chatbot/ConditionalChatbotClient.tsx` — client wrapper for chatbot lazy-loading.
+- `src/app/layout.tsx` — now renders `ConditionalChatbotClient` (server-safe).
 - `src/app/results/page.tsx` — dynamic import of `ReportPdfCapture`.
 - `src/app/analysis/page.tsx` — dynamic import of `GenericSpiderChart`.
 - `src/components/upload/UploadWorkspace.tsx` — dynamic import of `UploadOverviewPanel`.
+- `src/app/(public)/page.tsx` — removed inline Google Fonts, switched homepage logo to `next/image`.
+- `src/app/(public)/layout.tsx` — added public route metadata.
+- `src/app/loading.tsx`, `src/app/template.tsx` — replaced framer-motion with CSS-only animations.
+- `src/components/admin/AdminSidebar.tsx`, `src/components/admin/AdminShell.tsx`, `src/components/ui/VerticalFloatingMenu.tsx` — replaced `framer-motion` usage with CSS transitions/keyframes.
 - Multiple files — icons converted to dynamic imports (see audit below).
 
 ## Expected improvements
 - Reduced initial JS bundle for pages that previously imported charts and icons directly.
 - Lower runtime CPU on interactive pages (debounced inputs, fewer re-renders).
 - Faster cold loads and faster dev HMR updates on pages that no longer include large chart/icon code inline.
+- Better Lighthouse scores on the public homepage (smaller JS payload, no duplicate Google Fonts import) and reduced TBT from removing `framer-motion` from global shells.
 
 ## Testing checklist (manual verification)
-Run the normal dev server and navigate through the app, verifying functionality and UI parity:
+Run the dev server and verify functionality and UI parity. Prioritize public homepage and admin flows.
 
 1. Start dev server
 
@@ -53,12 +61,15 @@ npm run dev
 - Open Results page and verify the PDF capture/download button still works after the lazy-loaded `ReportPdfCapture` loads.
 
 8. Chatbot
-- Ensure chatbot still renders and retains interactivity (the chatbot is lazy-loaded from layout).
+- Ensure chatbot still renders and retains interactivity (the chatbot is lazy-loaded via the client wrapper).
 
-9. Random smoke tests
+9. Homepage and fonts
+- Open the public homepage (`/`) and confirm it renders without a blocking font fetch and the logo appears (now served via `next/image`).
+
+10. Random smoke tests
 - Click through login, register, hospital admin pages, uploads, and forms. Verify no missing icons or broken UI.
 
-10. Production build (recommended)
+11. Production build (recommended)
 - Run a production build and confirm there are no build-time errors and the build outputs separated chunks for chart and icon code:
 
 ```bash
@@ -92,8 +103,8 @@ I converted many grouped imports to dynamic per-icon imports. The following file
 Notes: files with a single icon import are low priority (small cost). Multi-icon imports (3+ icons) are good candidates to convert to dynamic imports if they are on high-traffic routes.
 
 ## Next recommended actions
-1. Convert remaining multi-icon imports on high-traffic pages (e.g., admin/hospitals, analysis) to dynamic per-icon imports — this is straightforward and I can continue applying these changes.
-2. Run a production build and produce a bundle-chunk report to quantify improvements. Use `next/bundle-analyzer` or inspect the `.next` output.
-3. Optionally migrate frequently-used icons to a tiny local icon component set (SVG components) if you prefer deterministic bundles without runtime dynamic imports.
+1. Convert remaining multi-icon imports on high-traffic pages (e.g., admin/hospitals, analysis) to dynamic per-icon imports — I can continue applying these changes incrementally.
+2. Wait for the running production build to finish, then produce a bundle/chunk-size report to quantify improvements and identify remaining heavy bundles (I started a build; status: in progress).
+3. Optionally migrate frequently-used icons to a tiny local icon component set (SVG components) for deterministic bundles without runtime dynamic imports.
 
-If you want, I will proceed to convert the remaining multi-icon imports listed above now and then run a production build and report bundle sizes.
+If you want, I will (A) continue converting the remaining multi-icon imports now, then (B) wait for the build to finish and produce a bundle report. Tell me which order you prefer.

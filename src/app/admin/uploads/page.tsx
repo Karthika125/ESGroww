@@ -1,12 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import dynamic from "next/dynamic";
-const AlertTriangle = dynamic(() => import("lucide-react").then((m) => m.AlertTriangle), { ssr: false, loading: () => null });
-const Fingerprint = dynamic(() => import("lucide-react").then((m) => m.Fingerprint), { ssr: false, loading: () => null });
-const Gauge = dynamic(() => import("lucide-react").then((m) => m.Gauge), { ssr: false, loading: () => null });
-const Layers = dynamic(() => import("lucide-react").then((m) => m.Layers), { ssr: false, loading: () => null });
-const Server = dynamic(() => import("lucide-react").then((m) => m.Server), { ssr: false, loading: () => null });
+import { AlertTriangle, Fingerprint, Gauge, Layers, Server } from "lucide-react";
 import { adminGlassCard, AdminEmpty, AdminSectionTitle, ExportCsvButton } from "@/components/admin/admin-ui";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";

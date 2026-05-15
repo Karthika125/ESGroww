@@ -2,12 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import dynamic from "next/dynamic";
-const CheckCircle2 = dynamic(() => import("lucide-react").then((m) => m.CheckCircle2), { ssr: false, loading: () => null });
-const Clock = dynamic(() => import("lucide-react").then((m) => m.Clock), { ssr: false, loading: () => null });
-const AlertCircle = dynamic(() => import("lucide-react").then((m) => m.AlertCircle), { ssr: false, loading: () => null });
-const FileSpreadsheet = dynamic(() => import("lucide-react").then((m) => m.FileSpreadsheet), { ssr: false, loading: () => null });
-const MoreVertical = dynamic(() => import("lucide-react").then((m) => m.MoreVertical), { ssr: false, loading: () => null });
+import { CheckCircle2, Clock, AlertCircle, FileSpreadsheet, MoreVertical } from "lucide-react";
 
 import { getRecentUploads } from "@/actions/uploadProgress.actions";
 import { cn } from "@/lib/utils";

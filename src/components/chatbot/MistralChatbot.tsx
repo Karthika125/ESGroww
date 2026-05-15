@@ -1,15 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import dynamic from "next/dynamic";
-const Bot = dynamic(() => import("lucide-react").then((m) => m.Bot), { ssr: false, loading: () => null });
-const ChevronDown = dynamic(() => import("lucide-react").then((m) => m.ChevronDown), { ssr: false, loading: () => null });
-const ChevronUp = dynamic(() => import("lucide-react").then((m) => m.ChevronUp), { ssr: false, loading: () => null });
-const Loader2 = dynamic(() => import("lucide-react").then((m) => m.Loader2), { ssr: false, loading: () => null });
-const RefreshCw = dynamic(() => import("lucide-react").then((m) => m.RefreshCw), { ssr: false, loading: () => null });
-const SendHorizonal = dynamic(() => import("lucide-react").then((m) => m.SendHorizonal), { ssr: false, loading: () => null });
-const Sparkles = dynamic(() => import("lucide-react").then((m) => m.Sparkles), { ssr: false, loading: () => null });
-const UserRound = dynamic(() => import("lucide-react").then((m) => m.UserRound), { ssr: false, loading: () => null });
+import { Bot, ChevronDown, ChevronUp, Loader2, RefreshCw, SendHorizonal, Sparkles, UserRound } from "lucide-react";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -282,7 +274,7 @@ export function MistralChatbot({
 
   if (!isOpen) {
     return (
-      <div className={cn("fixed bottom-4 right-4 z-50", className)}>
+      <div className={cn("fixed bottom-4 right-4 z-[60]", className)}>
         <Button
           type="button"
           onClick={toggleOpen}
@@ -297,7 +289,7 @@ export function MistralChatbot({
   }
 
   return (
-    <div className={cn("fixed bottom-4 right-4 z-50 w-[min(24rem,calc(100vw-2rem))]", className)}>
+    <div className={cn("fixed bottom-4 right-4 z-[60] w-[min(24rem,calc(100vw-2rem))]", className)}>
       <Card className="border-slate-200 bg-gradient-to-br from-white via-slate-50 to-emerald-50/60 shadow-xl max-h-[90vh] overflow-y-auto flex flex-col">
       <CardHeader className="border-b border-slate-200/80 pb-3">
         <div className="flex items-start justify-between gap-3">

@@ -11,19 +11,18 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import {
-  BookOpen,
-  FileText,
-  Cloud,
-  Key,
-  Zap,
-  Droplet,
-  Layers,
-  FlaskRound,
-  ShieldCheck,
-  Globe,
-  TrendingUp,
-} from "lucide-react";
+import dynamic from "next/dynamic";
+const BookOpen = dynamic(() => import("lucide-react").then((m) => m.BookOpen), { ssr: false, loading: () => null });
+const FileText = dynamic(() => import("lucide-react").then((m) => m.FileText), { ssr: false, loading: () => null });
+const Cloud = dynamic(() => import("lucide-react").then((m) => m.Cloud), { ssr: false, loading: () => null });
+const Key = dynamic(() => import("lucide-react").then((m) => m.Key), { ssr: false, loading: () => null });
+const Zap = dynamic(() => import("lucide-react").then((m) => m.Zap), { ssr: false, loading: () => null });
+const Droplet = dynamic(() => import("lucide-react").then((m) => m.Droplet), { ssr: false, loading: () => null });
+const Layers = dynamic(() => import("lucide-react").then((m) => m.Layers), { ssr: false, loading: () => null });
+const FlaskRound = dynamic(() => import("lucide-react").then((m) => m.FlaskRound), { ssr: false, loading: () => null });
+const ShieldCheck = dynamic(() => import("lucide-react").then((m) => m.ShieldCheck), { ssr: false, loading: () => null });
+const Globe = dynamic(() => import("lucide-react").then((m) => m.Globe), { ssr: false, loading: () => null });
+const TrendingUp = dynamic(() => import("lucide-react").then((m) => m.TrendingUp), { ssr: false, loading: () => null });
 
 // Icon map kept outside component to avoid recreation on every render
 const ICON_MAP: Record<string, any> = {
