@@ -66,11 +66,6 @@ export const glossaryData: GlossaryItem[] = [
       "International Sustainability Standards Board — global standard for investor-focused sustainability disclosures.",
   },
   {
-    term: "JWT",
-    definition:
-      "JSON Web Token — a compact, URL-safe token standard used for user authentication and session management.",
-  },
-  {
     term: "kWh",
     definition:
       "Kilowatt-hour — standard unit of electricity consumption.",
